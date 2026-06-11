@@ -1,107 +1,176 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Button, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
 export default function SignInScreen() {
-  const [email, setEmail] = useState('');
+  const router = useRouter();
+  
+  const [portal, setPortal] = useState<'cliente' | 'profesionista'>('cliente');
+  const [identificador, setIdentificador] = useState(''); 
   const [password, setPassword] = useState('');
   const [cargando, setCargando] = useState(false);
-  const router = useRouter();
+  const [mensajeError, setMensajeError] = useState('');
+
+  const cambiarDePortal = (tipo: 'cliente' | 'profesionista') => {
+    setPortal(tipo);
+    setMensajeError('');
+    setIdentificador('');
+    setPassword('');
+  };
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Aviso', 'Por favor ingresa tu correo y contraseña.');
-      return;
+    setMensajeError('');
+    const entradaLimpia = identificador.trim();
+
+    if (!entradaLimpia || !password) {
+      return setMensajeError('Faltan datos: Por favor, escribe tu correo/usuario y contraseña.');
     }
 
     setCargando(true);
 
     try {
-      // 1. Iniciar sesión en la bóveda de Supabase Auth
+      let correoFinal = entradaLimpia;
+
+      // Revisa si tiene '@' 
+      const esCorreo = entradaLimpia.includes('@');
+
+      if (!esCorreo) {
+        // Si no tiene '@', es un usuario
+        if (portal === 'cliente') {
+          const { data: usuarioEncontrado } = await supabase
+            .from('users')
+            .select('email')
+            .eq('username', entradaLimpia)
+            .maybeSingle();
+
+          if (usuarioEncontrado) {
+            correoFinal = usuarioEncontrado.email; 
+          } else {
+            throw new Error('Usuario no encontrado: No existe un Cliente con ese nombre de usuario.');
+          }
+        } else {
+          const { data: profEncontrado } = await supabase
+            .from('professionals')
+            .select('email')
+            .eq('username', entradaLimpia)
+            .maybeSingle();
+
+          if (profEncontrado) {
+            correoFinal = profEncontrado.email; 
+          } else {
+            throw new Error('Usuario no encontrado: No existe un Profesionista con ese nombre de usuario.');
+          }
+        }
+      }
+
+      //  correo seguro, le pedimos permiso a la bóveda
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email,
+        email: correoFinal,
         password: password,
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        throw new Error('Acceso denegado: La contraseña es incorrecta.');
+      }
 
-      // 2. ¿A dónde lo mandamos? Buscamos en la tabla de clientes primero
-      const { data: clientes } = await supabase
-        .from('users')
-        .select('email')
-        .eq('email', email);
-
-      if (clientes && clientes.length > 0) {
+     
+      if (portal === 'cliente') {
         router.replace('/(cliente)');
-        return;
-      }
-
-      // 3. Si no estaba en clientes, buscamos en profesionistas
-      const { data: profesionistas } = await supabase
-        .from('professionals')
-        .select('email')
-        .eq('email', email);
-
-      if (profesionistas && profesionistas.length > 0) {
+      } else {
         router.replace('/(profesionista)');
-        return;
       }
-
-      // Si por alguna razón no está en ninguna tabla
-      Alert.alert('Aviso', 'Sesión iniciada, pero no se encontró tu perfil.');
 
     } catch (error: any) {
-      Alert.alert('Error al iniciar sesión', error.message || 'Credenciales incorrectas.');
+      setMensajeError(error.message || 'Ocurrió un error inesperado al entrar.');
     } finally {
       setCargando(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Bienvenido de nuevo</Text>
-      
-      <TextInput 
-        style={styles.input} 
-        placeholder="Correo electrónico" 
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        editable={!cargando}
-      />
-      <TextInput 
-        style={styles.input} 
-        placeholder="Contraseña" 
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        editable={!cargando}
-      />
-      
-      <View style={styles.buttonContainer}>
-        <Button 
-          title={cargando ? "Iniciando..." : "Iniciar Sesión"} 
-          onPress={handleLogin} 
-          disabled={cargando}
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        
+        <Text style={styles.title}>
+          {portal === 'cliente' ? 'Portal Clientes' : 'Portal Profesionistas'}
+        </Text>
+        <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
+
+        <View style={styles.tabContainer}>
+          <TouchableOpacity 
+            style={[styles.tabButton, portal === 'cliente' && styles.tabClienteActive]} 
+            onPress={() => cambiarDePortal('cliente')}
+            disabled={cargando}
+          >
+            <Text style={portal === 'cliente' ? styles.textActive : styles.textInactive}>Soy Cliente</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.tabButton, portal === 'profesionista' && styles.tabProfActive]} 
+            onPress={() => cambiarDePortal('profesionista')}
+            disabled={cargando}
+          >
+            <Text style={portal === 'profesionista' ? styles.textActive : styles.textInactive}>Soy Profesionista</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* texto de ayuda */}
+        <TextInput 
+          style={styles.input} 
+          placeholder="Correo electrónico o Usuario" 
+          value={identificador} 
+          onChangeText={setIdentificador} 
+          autoCapitalize="none" 
+          editable={!cargando} 
         />
+        
+        <TextInput 
+          style={styles.input} 
+          placeholder="Contraseña" 
+          value={password} 
+          onChangeText={setPassword} 
+          secureTextEntry 
+          editable={!cargando} 
+        />
+
+        {mensajeError !== '' && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{mensajeError}</Text>
+          </View>
+        )}
+
+        <View style={styles.buttonContainer}>
+          <Button 
+            title={cargando ? "Verificando..." : "Entrar a mi Cuenta"} 
+            onPress={handleLogin} 
+            disabled={cargando}
+            color={portal === 'cliente' ? '#007bff' : '#28a745'}
+          />
+        </View>
+
+        <Text style={styles.link} onPress={() => router.push('/(auth)/sign-up')}>
+          ¿No tienes cuenta? Regístrate aquí
+        </Text>
       </View>
-      
-      <Text 
-        style={styles.link} 
-        onPress={() => router.push('/(auth)/sign-up')}
-      >
-        ¿No tienes cuenta? Regístrate aquí
-      </Text>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 12, marginBottom: 15, borderRadius: 5, backgroundColor: '#f9f9f9' },
-  buttonContainer: { marginTop: 10 },
-  link: { color: '#007bff', marginTop: 25, textAlign: 'center', fontSize: 16 }
+  scrollContainer: { flexGrow: 1, backgroundColor: '#fff' },
+  container: { flex: 1, justifyContent: 'center', padding: 20 },
+  title: { fontSize: 26, fontWeight: 'bold', textAlign: 'center', color: '#333' },
+  subtitle: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 25, marginTop: 5 },
+  input: { borderWidth: 1, borderColor: '#ccc', padding: 12, marginBottom: 15, borderRadius: 5, backgroundColor: '#f9f9f9', fontSize: 15 },
+  tabContainer: { flexDirection: 'row', backgroundColor: '#f0f0f0', borderRadius: 8, padding: 4, marginBottom: 25 },
+  tabButton: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 6 },
+  tabClienteActive: { backgroundColor: '#007bff' },
+  tabProfActive: { backgroundColor: '#28a745' },
+  textActive: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+  textInactive: { color: '#666', fontSize: 14 },
+  buttonContainer: { marginTop: 10, borderRadius: 5, overflow: 'hidden' },
+  link: { color: '#007bff', marginTop: 25, textAlign: 'center', fontSize: 15 },
+  errorBox: { backgroundColor: '#ffe6e6', padding: 12, borderRadius: 5, marginBottom: 15, borderWidth: 1, borderColor: '#ff4d4d' },
+  errorText: { color: '#d9534f', textAlign: 'center', fontWeight: 'bold', fontSize: 14 }
 });
