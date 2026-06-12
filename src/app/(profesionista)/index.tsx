@@ -1,27 +1,30 @@
-import { useRouter } from 'expo-router';
-import React from 'react';
-import { Button, StyleSheet, Text, View } from 'react-native';
-import { supabase } from '../../lib/supabase';
+import { StyleSheet, Text, View } from 'react-native';
 
-export default function ProfesionistaDashboard() {
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.replace('/(auth)/sign-in');
-  };
-
+export default function DashboardProfesionista() {
+  // armamos un contenedor basico para confirmar que el usuario llego a su panel
+  // despues cambiaremos los textos por las tarjetas de metricas reales
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>parte del Profesionista</Text>
-      <Text style={styles.subtitle}>Aquí verás tus solicitudes de trabajo pendientes.</Text>
-      <Button title="Cerrar Sesión" onPress={handleLogout} color="red" />
+      <Text style={styles.saludo}>Bienvenido a tu panel</Text>
+      <Text style={styles.subtexto}>Aquí verás tus próximas citas y un resumen de tu trabajo.</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 10 },
-  subtitle: { fontSize: 16, color: '#666', marginBottom: 30, textAlign: 'center' }
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  saludo: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  subtexto: {
+    fontSize: 16,
+    color: '#666',
+  }
 });
