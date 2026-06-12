@@ -36,7 +36,7 @@ export default function SignInScreen() {
       const esCorreo = entradaLimpia.includes('@');
 
       if (!esCorreo) {
-        // Si no tiene '@', es un usuario
+        // Si no tiene @, es un usuario
         if (portal === 'cliente') {
           const { data: usuarioEncontrado } = await supabase
             .from('users')

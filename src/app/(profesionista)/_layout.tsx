@@ -5,47 +5,40 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { supabase } from '../../lib/supabase';
 
-
-// armamos el menu a nuestra medida para poder meterle el boton al final
 function MenuPersonalizado(props: DrawerContentComponentProps) {
   const router = useRouter();
 
   const salirDeLaCuenta = async () => {
-    // le decimos a la base de datos que cierre la sesion de forma segura
+    //  esto cierra sesion en la base de datos
     await supabase.auth.signOut();
-    
-    // lo sacamos de la zona del profesionista y lo mandamos al inicio
+    // regresamos al portal de inicio
     router.replace('/(auth)/sign-in');
   };
 
   return (
-    <DrawerContentScrollView {...props}>
-      <View style={styles.contenedorMenu}>
-        <View>
-          {/* esto respeta e imprime las pantallas normales que configures en el drawer */}
-          <DrawerItemList {...props} />
-        </View>
+    <View style={styles.contenedorPrincipal}>
+      {/* Esta es la zona resbaladiza para tus enlaces normales */}
+      <DrawerContentScrollView {...props}>
+        <DrawerItemList {...props} />
+      </DrawerContentScrollView>
 
-        <View>
-          <View style={styles.separador} />
-          <DrawerItem 
-            label="Cerrar Sesión" 
-            onPress={salirDeLaCuenta}
-            labelStyle={styles.textoSalir}
-          />
-        </View>
+      {/* Esta es la zona fija pegada al piso del menu */}
+      <View style={styles.contenedorFijoAbajo}>
+        <DrawerItem 
+          label="Cerrar Sesión" 
+          onPress={salirDeLaCuenta}
+          labelStyle={styles.textoSalir}
+        />
       </View>
-    </DrawerContentScrollView>
+    </View>
   );
 }
-
 export default function ProfesionistaLayout() {
   const router = useRouter();
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Drawer
-        // le avisamos que no use el menu por defecto, sino el que acabamos de armar arriba
         drawerContent={(props) => <MenuPersonalizado {...props} />}
         screenOptions={{
           headerStyle: { backgroundColor: '#5c4b8a' },
@@ -92,16 +85,14 @@ export default function ProfesionistaLayout() {
 }
 
 const styles = StyleSheet.create({
-  contenedorMenu: {
+  contenedorPrincipal: {
     flex: 1,
-    justifyContent: 'space-between',
-    minHeight: '100%',
   },
-  separador: {
-    height: 1,
-    backgroundColor: '#ddd',
-    marginVertical: 10,
-    marginHorizontal: 15,
+  contenedorFijoAbajo: {
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+    paddingBottom: 25, 
+    paddingTop: 5,
   },
   textoSalir: {
     color: '#d9534f',
