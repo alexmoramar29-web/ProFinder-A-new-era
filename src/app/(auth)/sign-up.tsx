@@ -51,7 +51,7 @@ export default function SignUpScreen() {
         upsert: true 
       });
 
-    if (error) throw new Error(`Fallo al subir foto: ${error.message}`);
+    if (error) throw new Error(`Fallo al subir foto a la bodega: ${error.message}`);
 
     const { data } = supabase.storage.from('profesionales-documentos').getPublicUrl(nombreArchivo);
     return data.publicUrl;
@@ -72,7 +72,6 @@ export default function SignUpScreen() {
       return setMensajeError('Contraseña débil: Debe tener mínimo 8 caracteres.');
     }
 
-    //  Revisar si las dos contraseñas son gemelas
     if (password !== confirmPassword) {
       return setMensajeError('Las contraseñas no coinciden: Escribe exactamente lo mismo en ambas cajas.');
     }
@@ -84,9 +83,35 @@ export default function SignUpScreen() {
     setCargando(true);
 
     try {
+      let urlIneFinal = null;
+      let urlCedulaFinal = null;
+      let urlCertificadoFinal = null;
+
+      if (rol === 'profesionista') {
+        setMensajeExito('Guardando documentos en la bodega segura...');
+        const tiempo = Date.now();
+        urlIneFinal = await subirFotoAlAlmacen(ineFoto!.base64, `ine_${usuarioLimpio}_${tiempo}.jpg`);
+        urlCedulaFinal = await subirFotoAlAlmacen(cedulaFoto!.base64, `cedula_${usuarioLimpio}_${tiempo}.jpg`);
+        urlCertificadoFinal = await subirFotoAlAlmacen(certificadoFoto!.base64, `cert_${usuarioLimpio}_${tiempo}.jpg`);
+      }
+
+      setMensajeExito('Creando tu gafete oficial...');
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: correoLimpio,
         password: password,
+        options: {
+          data: {
+            rol_temporal: rol,
+            username_temporal: usuarioLimpio,
+            fullname_temporal: fullName,
+            phone_temporal: phone || null,
+            speciality_temporal: rol === 'profesionista' ? speciality : null,
+            ine_temporal: urlIneFinal,
+            cedula_temporal: urlCedulaFinal,
+            certificado_temporal: urlCertificadoFinal,
+          }
+        }
       });
 
       if (authError) {
@@ -94,62 +119,8 @@ export default function SignUpScreen() {
         throw authError;
       }
 
-      if (rol === 'cliente') {
-        const { error: dbError } = await supabase.from('users').insert([{
-          username: usuarioLimpio,
-          full_name: fullName,
-          email: correoLimpio,
-          phone: phone || null,
-          password_hash: 'PROTEGIDO_POR_AUTH'
-        }]);
-
-        if (dbError) throw new Error('No se pudo crear el perfil de cliente.');
-        
-        setMensajeExito('¡Cuenta de cliente lista!');
-        setTimeout(() => router.replace('/(cliente)'), 1500);
-
-      } else {
-        setMensajeExito('Creando tu perfil maestro...');
-        
-        const { data: nuevoProf, error: profError } = await supabase
-          .from('professionals')
-          .insert([{
-            username: usuarioLimpio,
-            full_name: fullName,
-            email: correoLimpio,
-            phone: phone || null,
-            speciality: speciality,
-            password_hash: 'PROTEGIDO_POR_AUTH'
-          }])
-          .select('prof_id')
-          .single();
-
-        if (profError) throw new Error('No se pudo guardar los datos principales.');
-        
-        const idDelProfesionista = nuevoProf.prof_id; 
-
-        setMensajeExito('Subiendo documentos de verificación...');
-        const tiempo = Date.now();
-        
-        const urlIne = await subirFotoAlAlmacen(ineFoto!.base64, `ine_${usuarioLimpio}_${tiempo}.jpg`);
-        const urlCedula = await subirFotoAlAlmacen(cedulaFoto!.base64, `cedula_${usuarioLimpio}_${tiempo}.jpg`);
-        const urlCertificado = await subirFotoAlAlmacen(certificadoFoto!.base64, `cert_${usuarioLimpio}_${tiempo}.jpg`);
-
-        setMensajeExito('Vinculando documentos de forma ordenada...');
-        
-        const { error: docsError } = await supabase
-          .from('professional_documents')
-          .insert([
-            { prof_id: idDelProfesionista, document_type: 'INE', file_url: urlIne },
-            { prof_id: idDelProfesionista, document_type: 'Cédula Profesional', file_url: urlCedula },
-            { prof_id: idDelProfesionista, document_type: 'Certificado', file_url: urlCertificado }
-          ]);
-
-        if (docsError) throw new Error('Fallo al asociar los enlaces de tus documentos.');
-
-        setMensajeExito('¡Registro profesional completado y verificado!');
-        setTimeout(() => router.replace('/(profesionista)'), 1500);
-      }
+      setMensajeExito('¡Cuenta creada! Por favor, revisa tu Gmail y dale clic al enlace para verificar tu cuenta.');
+      setTimeout(() => router.replace('/(auth)/sign-in'), 3500);
 
     } catch (error: any) {
       setMensajeError(error.message || 'Error inesperado.');
@@ -177,10 +148,8 @@ export default function SignUpScreen() {
         <TextInput style={styles.input} placeholder="Correo electrónico" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" maxLength={100} editable={!cargando} />
         <TextInput style={styles.input} placeholder="Teléfono" value={phone} onChangeText={setPhone} keyboardType="phone-pad" maxLength={20} editable={!cargando} />
         
-        {/* contraseña original */}
         <TextInput style={styles.input} placeholder="Contraseña (mínimo 8 caracteres)" value={password} onChangeText={setPassword} secureTextEntry maxLength={50} editable={!cargando} />
         
-        {/* Confirmar contraseña */}
         <TextInput style={styles.input} placeholder="Confirmar tu contraseña" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry maxLength={50} editable={!cargando} />
 
         {rol === 'profesionista' && (

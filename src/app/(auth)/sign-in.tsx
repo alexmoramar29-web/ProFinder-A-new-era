@@ -11,16 +11,19 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [cargando, setCargando] = useState(false);
   const [mensajeError, setMensajeError] = useState('');
+  const [mensajeEstado, setMensajeEstado] = useState('');
 
   const cambiarDePortal = (tipo: 'cliente' | 'profesionista') => {
     setPortal(tipo);
     setMensajeError('');
+    setMensajeEstado('');
     setIdentificador('');
     setPassword('');
   };
 
   const handleLogin = async () => {
     setMensajeError('');
+    setMensajeEstado('');
     const entradaLimpia = identificador.trim();
 
     if (!entradaLimpia || !password) {
@@ -31,53 +34,90 @@ export default function SignInScreen() {
 
     try {
       let correoFinal = entradaLimpia;
-
-      // Revisa si tiene '@' 
       const esCorreo = entradaLimpia.includes('@');
 
+      // revisamos de que lado esta intentando entrar con su usuario
       if (!esCorreo) {
-        // Si no tiene @, es un usuario
         if (portal === 'cliente') {
-          const { data: usuarioEncontrado } = await supabase
-            .from('users')
-            .select('email')
-            .eq('username', entradaLimpia)
-            .maybeSingle();
-
-          if (usuarioEncontrado) {
-            correoFinal = usuarioEncontrado.email; 
-          } else {
-            throw new Error('Usuario no encontrado: No existe un Cliente con ese nombre de usuario.');
-          }
+          const { data: usuarioEncontrado } = await supabase.from('users').select('email').eq('username', entradaLimpia).maybeSingle();
+          if (usuarioEncontrado) correoFinal = usuarioEncontrado.email; 
+          else throw new Error('No existe un cliente con ese nombre de usuario.');
         } else {
-          const { data: profEncontrado } = await supabase
-            .from('professionals')
-            .select('email')
-            .eq('username', entradaLimpia)
-            .maybeSingle();
-
-          if (profEncontrado) {
-            correoFinal = profEncontrado.email; 
-          } else {
-            throw new Error('Usuario no encontrado: No existe un Profesionista con ese nombre de usuario.');
-          }
+          const { data: profEncontrado } = await supabase.from('professionals').select('email').eq('username', entradaLimpia).maybeSingle();
+          if (profEncontrado) correoFinal = profEncontrado.email; 
+          else throw new Error('No existe un profesionista con ese nombre de usuario.');
         }
       }
 
-      //  correo seguro, le pedimos permiso a la bóveda
+      // supabase valida la contraseña
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: correoFinal,
         password: password,
       });
 
-      if (authError) {
-        throw new Error('Acceso denegado: La contraseña es incorrecta.');
+      if (authError) throw new Error('Acceso denegado: Revisa tu contraseña o verifica si ya activaste tu correo.');
+
+      const idDelUsuario = authData.user.id;
+      const metadatos = authData.user.user_metadata;
+
+      // EL CADENERO: validacion estricta de roles
+      // sacamos el rol original con el que se registro esta cuenta
+      const rolOriginal = metadatos.rol_temporal;
+
+      // si el rol de su cuenta no coincide con el portal que selecciono en pantalla, lo bloqueamos
+      if (rolOriginal && rolOriginal !== portal) {
+        // cerramos la sesion que se acaba de abrir por error
+        await supabase.auth.signOut();
+        throw new Error(`Esta cuenta no esta disponible, haz el intento en el otro portal`);
       }
 
-     
+      // si pasa el cadenero, hacemos el proceso normal de guardar sus datos
       if (portal === 'cliente') {
+        const { data: existeCliente } = await supabase.from('users').select('user_id').eq('user_id', idDelUsuario).maybeSingle();
+        
+        if (!existeCliente && metadatos.rol_temporal === 'cliente') {
+          setMensajeEstado('Configurando tu nuevo perfil de cliente...');
+          const { error: dbError } = await supabase.from('users').insert([{
+            user_id: idDelUsuario,
+            username: metadatos.username_temporal,
+            full_name: metadatos.fullname_temporal,
+            email: correoFinal,
+            phone: metadatos.phone_temporal,
+            password_hash: 'PROTEGIDO_POR_AUTH'
+          }]);
+          if (dbError) throw new Error('No se pudo crear el perfil en la base de datos.');
+        }
         router.replace('/(cliente)');
-      } else {
+      } 
+      
+      else {
+        const { data: existeProf } = await supabase.from('professionals').select('prof_id').eq('prof_id', idDelUsuario).maybeSingle();
+        
+        if (!existeProf && metadatos.rol_temporal === 'profesionista') {
+          setMensajeEstado('Configurando tu nuevo perfil profesional...');
+          
+          const { error: profError } = await supabase.from('professionals').insert([{
+            prof_id: idDelUsuario,
+            username: metadatos.username_temporal,
+            full_name: metadatos.fullname_temporal,
+            email: correoFinal,
+            phone: metadatos.phone_temporal,
+            speciality: metadatos.speciality_temporal,
+            password_hash: 'PROTEGIDO_POR_AUTH'
+          }]);
+          
+          if (profError) throw new Error('No se pudo guardar tus datos de profesionista.');
+
+          setMensajeEstado('Vinculando documentos de seguridad...');
+          
+          const { error: docsError } = await supabase.from('professional_documents').insert([
+            { prof_id: idDelUsuario, document_type: 'INE', file_url: metadatos.ine_temporal },
+            { prof_id: idDelUsuario, document_type: 'Cédula Profesional', file_url: metadatos.cedula_temporal },
+            { prof_id: idDelUsuario, document_type: 'Certificado', file_url: metadatos.certificado_temporal }
+          ]);
+
+          if (docsError) throw new Error('Fallo al asociar los enlaces de tus documentos.');
+        }
         router.replace('/(profesionista)');
       }
 
@@ -115,7 +155,6 @@ export default function SignInScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* texto de ayuda */}
         <TextInput 
           style={styles.input} 
           placeholder="Correo electrónico o Usuario" 
@@ -137,6 +176,12 @@ export default function SignInScreen() {
         {mensajeError !== '' && (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{mensajeError}</Text>
+          </View>
+        )}
+
+        {mensajeEstado !== '' && (
+          <View style={styles.infoBox}>
+            <Text style={styles.infoText}>{mensajeEstado}</Text>
           </View>
         )}
 
@@ -172,5 +217,7 @@ const styles = StyleSheet.create({
   buttonContainer: { marginTop: 10, borderRadius: 5, overflow: 'hidden' },
   link: { color: '#007bff', marginTop: 25, textAlign: 'center', fontSize: 15 },
   errorBox: { backgroundColor: '#ffe6e6', padding: 12, borderRadius: 5, marginBottom: 15, borderWidth: 1, borderColor: '#ff4d4d' },
-  errorText: { color: '#d9534f', textAlign: 'center', fontWeight: 'bold', fontSize: 14 }
+  errorText: { color: '#d9534f', textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+  infoBox: { backgroundColor: '#eef6ff', padding: 12, borderRadius: 5, marginBottom: 15, borderWidth: 1, borderColor: '#007bff' },
+  infoText: { color: '#007bff', textAlign: 'center', fontWeight: 'bold', fontSize: 14 }
 });
