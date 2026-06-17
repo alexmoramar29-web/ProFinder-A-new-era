@@ -1,6 +1,11 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Button, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  signInWithApple,
+  signInWithGithub,
+  signInWithGoogle,
+} from '../../lib/authService';
 import { supabase } from '../../lib/supabase';
 
 export default function SignInScreen() {
@@ -173,6 +178,7 @@ export default function SignInScreen() {
           editable={!cargando} 
         />
 
+
         {mensajeError !== '' && (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{mensajeError}</Text>
@@ -193,6 +199,36 @@ export default function SignInScreen() {
             color={portal === 'cliente' ? '#007bff' : '#28a745'}
           />
         </View>
+
+  <TouchableOpacity 
+  style={styles.googleButton}
+  onPress={() => signInWithGoogle()}
+  disabled={cargando}
+>
+  <Text style={styles.socialButtonText}>
+    Continuar con Google
+  </Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+  style={styles.githubButton}
+  onPress={() => signInWithGithub()}
+  disabled={cargando}
+>
+  <Text style={styles.socialButtonText}>
+    Continuar con GitHub
+  </Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+  style={styles.appleButton}
+  onPress={() => signInWithApple()}
+  disabled={cargando}
+>
+  <Text style={styles.socialButtonText}>
+    Continuar con Apple
+  </Text>
+</TouchableOpacity>
 
         <Text style={styles.link} onPress={() => router.push('/(auth)/sign-up')}>
           ¿No tienes cuenta? Regístrate aquí
@@ -219,5 +255,35 @@ const styles = StyleSheet.create({
   errorBox: { backgroundColor: '#ffe6e6', padding: 12, borderRadius: 5, marginBottom: 15, borderWidth: 1, borderColor: '#ff4d4d' },
   errorText: { color: '#d9534f', textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
   infoBox: { backgroundColor: '#eef6ff', padding: 12, borderRadius: 5, marginBottom: 15, borderWidth: 1, borderColor: '#007bff' },
-  infoText: { color: '#007bff', textAlign: 'center', fontWeight: 'bold', fontSize: 14 }
+  infoText: { color: '#007bff', textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+
+  googleButton: {
+  backgroundColor: '#DB4437',
+  padding: 14,
+  borderRadius: 8,
+  marginTop: 15,
+  alignItems: 'center',
+},
+
+githubButton: {
+  backgroundColor: '#24292E',
+  padding: 14,
+  borderRadius: 8,
+  marginTop: 10,
+  alignItems: 'center',
+},
+
+appleButton: {
+  backgroundColor: '#000000',
+  padding: 14,
+  borderRadius: 8,
+  marginTop: 10,
+  alignItems: 'center',
+},
+
+socialButtonText: {
+  color: '#FFFFFF',
+  fontSize: 15,
+  fontWeight: 'bold',
+},
 });
