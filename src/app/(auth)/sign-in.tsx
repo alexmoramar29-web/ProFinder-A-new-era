@@ -1,12 +1,12 @@
+import { supabase } from '@/lib/supabase';
+import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import React, { useState } from 'react';
 import { Button, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import {
-  signInWithApple,
-  signInWithGithub,
-  signInWithGoogle,
-} from '../../lib/authService';
-import { supabase } from '../../lib/supabase';
+
+// Esto escucha a la ventana emergente en la web para cerrarla cuando Google termina
+WebBrowser.maybeCompleteAuthSession();
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -26,6 +26,120 @@ export default function SignInScreen() {
     setPassword('');
   };
 
+  const manejarLoginSocial = async (proveedor: 'google' | 'github') => {
+    setMensajeError('');
+    setCargando(true);
+
+    try {
+      const urlDeRegreso = Linking.createURL('');
+
+      // Pedimos la ventana de inicio de sesión a Supabase (Funciona igual en Web y Móvil)
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: proveedor,
+        options: {
+          redirectTo: urlDeRegreso,
+          skipBrowserRedirect: true, 
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        // Abrimos la ventanita mágica
+        const resultado = await WebBrowser.openAuthSessionAsync(data.url, urlDeRegreso);
+        
+        if (resultado.type === 'success' && resultado.url) {
+          setMensajeEstado('Verificando llaves de seguridad...');
+          
+          const stringParametros = resultado.url.split('#')[1] || resultado.url.split('?')[1];
+          if (!stringParametros) throw new Error('No se recibieron credenciales de la red social.');
+
+          const pares = stringParametros.split('&');
+          const tokens: any = {};
+          for (const par of pares) {
+            const [llave, valor] = par.split('=');
+            tokens[llave] = valor;
+          }
+
+          if (!tokens.access_token || !tokens.refresh_token) {
+             throw new Error('Faltan los tokens de acceso en el regreso.');
+          }
+
+          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+            access_token: tokens.access_token,
+            refresh_token: tokens.refresh_token,
+          });
+
+          if (sessionError) throw sessionError;
+
+          const usuarioRedSocial = sessionData.user;
+          if (!usuarioRedSocial) throw new Error('Error al leer el perfil.');
+
+          const idDelUsuario = usuarioRedSocial.id;
+          const correo = usuarioRedSocial.email || '';
+          const nombreCompleto = usuarioRedSocial.user_metadata?.full_name || usuarioRedSocial.user_metadata?.name || 'Usuario';
+          const nombreUsuarioGenerado = correo.split('@')[0] + Math.floor(Math.random() * 100);
+
+          setMensajeEstado('Preparando tu espacio de trabajo...');
+
+          if (portal === 'cliente') {
+            const { data: existeCliente } = await supabase.from('users').select('user_id').eq('user_id', idDelUsuario).maybeSingle();
+            
+            if (!existeCliente) {
+              await supabase.from('users').insert([{
+                user_id: idDelUsuario,
+                username: nombreUsuarioGenerado,
+                full_name: nombreCompleto,
+                email: correo,
+                password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
+              }]);
+
+              await supabase.from('social_logins').insert([{
+                user_id: idDelUsuario,
+                provider: proveedor,
+                provider_id: idDelUsuario
+              }]);
+            }
+            router.replace('/(cliente)');
+          } 
+          
+          else {
+            const { data: existeProf } = await supabase.from('professionals').select('prof_id').eq('prof_id', idDelUsuario).maybeSingle();
+            
+            if (!existeProf) {
+              await supabase.from('professionals').insert([{
+                prof_id: idDelUsuario,
+                username: nombreUsuarioGenerado,
+                full_name: nombreCompleto,
+                email: correo,
+                speciality: 'Por definir', 
+                profile_picture: usuarioRedSocial.user_metadata?.avatar_url || null, 
+                password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
+              }]);
+
+              await supabase.from('social_logins').insert([{
+                prof_id: idDelUsuario,
+                provider: proveedor,
+                provider_id: idDelUsuario
+              }]);
+
+              // SECUESTRO DE SEGURIDAD: Es nuevo, lo mandamos a editar su perfil obligatoriamente
+              router.replace('/(profesionista)/perfil/editar');
+              return; 
+            }
+
+            // Si ya existía, entra normal al inicio
+            router.replace('/(profesionista)');
+          }
+        }
+      }
+    } catch (error: any) {
+      setMensajeError(error.message || `No se pudo iniciar sesión con ${proveedor}`);
+    } finally {
+      setCargando(false);
+    }
+  };
+
   const handleLogin = async () => {
     setMensajeError('');
     setMensajeEstado('');
@@ -41,7 +155,6 @@ export default function SignInScreen() {
       let correoFinal = entradaLimpia;
       const esCorreo = entradaLimpia.includes('@');
 
-      // revisamos de que lado esta intentando entrar con su usuario
       if (!esCorreo) {
         if (portal === 'cliente') {
           const { data: usuarioEncontrado } = await supabase.from('users').select('email').eq('username', entradaLimpia).maybeSingle();
@@ -54,29 +167,22 @@ export default function SignInScreen() {
         }
       }
 
-      // supabase valida la contraseña
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: correoFinal,
         password: password,
       });
 
-      if (authError) throw new Error('Acceso denegado: Revisa tu contraseña o verifica si ya activaste tu correo.');
+      if (authError) throw new Error('Acceso denegado: Revisa tu contraseña.');
 
       const idDelUsuario = authData.user.id;
       const metadatos = authData.user.user_metadata;
-
-      // EL CADENERO: validacion estricta de roles
-      // sacamos el rol original con el que se registro esta cuenta
       const rolOriginal = metadatos.rol_temporal;
 
-      // si el rol de su cuenta no coincide con el portal que selecciono en pantalla, lo bloqueamos
       if (rolOriginal && rolOriginal !== portal) {
-        // cerramos la sesion que se acaba de abrir por error
         await supabase.auth.signOut();
         throw new Error(`Esta cuenta no esta disponible, haz el intento en el otro portal`);
       }
 
-      // si pasa el cadenero, hacemos el proceso normal de guardar sus datos
       if (portal === 'cliente') {
         const { data: existeCliente } = await supabase.from('users').select('user_id').eq('user_id', idDelUsuario).maybeSingle();
         
@@ -111,17 +217,16 @@ export default function SignInScreen() {
             password_hash: 'PROTEGIDO_POR_AUTH'
           }]);
           
-          if (profError) throw new Error('No se pudo guardar tus datos de profesionista.');
+          if (profError) throw new Error('No se pudo guardar tus datos.');
 
           setMensajeEstado('Vinculando documentos de seguridad...');
-          
           const { error: docsError } = await supabase.from('professional_documents').insert([
             { prof_id: idDelUsuario, document_type: 'INE', file_url: metadatos.ine_temporal },
             { prof_id: idDelUsuario, document_type: 'Cédula Profesional', file_url: metadatos.cedula_temporal },
             { prof_id: idDelUsuario, document_type: 'Certificado', file_url: metadatos.certificado_temporal }
           ]);
 
-          if (docsError) throw new Error('Fallo al asociar los enlaces de tus documentos.');
+          if (docsError) throw new Error('Fallo al asociar los enlaces.');
         }
         router.replace('/(profesionista)');
       }
@@ -178,7 +283,6 @@ export default function SignInScreen() {
           editable={!cargando} 
         />
 
-
         {mensajeError !== '' && (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{mensajeError}</Text>
@@ -200,35 +304,21 @@ export default function SignInScreen() {
           />
         </View>
 
-  <TouchableOpacity 
-  style={styles.googleButton}
-  onPress={() => signInWithGoogle()}
-  disabled={cargando}
->
-  <Text style={styles.socialButtonText}>
-    Continuar con Google
-  </Text>
-</TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.googleButton}
+          onPress={() => manejarLoginSocial('google')}
+          disabled={cargando}
+        >
+          <Text style={styles.socialButtonText}>Continuar con Google</Text>
+        </TouchableOpacity>
 
-<TouchableOpacity
-  style={styles.githubButton}
-  onPress={() => signInWithGithub()}
-  disabled={cargando}
->
-  <Text style={styles.socialButtonText}>
-    Continuar con GitHub
-  </Text>
-</TouchableOpacity>
-
-<TouchableOpacity
-  style={styles.appleButton}
-  onPress={() => signInWithApple()}
-  disabled={cargando}
->
-  <Text style={styles.socialButtonText}>
-    Continuar con Apple
-  </Text>
-</TouchableOpacity>
+        <TouchableOpacity
+          style={styles.githubButton}
+          onPress={() => manejarLoginSocial('github')}
+          disabled={cargando}
+        >
+          <Text style={styles.socialButtonText}>Continuar con GitHub</Text>
+        </TouchableOpacity>
 
         <Text style={styles.link} onPress={() => router.push('/(auth)/sign-up')}>
           ¿No tienes cuenta? Regístrate aquí
@@ -256,34 +346,7 @@ const styles = StyleSheet.create({
   errorText: { color: '#d9534f', textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
   infoBox: { backgroundColor: '#eef6ff', padding: 12, borderRadius: 5, marginBottom: 15, borderWidth: 1, borderColor: '#007bff' },
   infoText: { color: '#007bff', textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
-
-  googleButton: {
-  backgroundColor: '#DB4437',
-  padding: 14,
-  borderRadius: 8,
-  marginTop: 15,
-  alignItems: 'center',
-},
-
-githubButton: {
-  backgroundColor: '#24292E',
-  padding: 14,
-  borderRadius: 8,
-  marginTop: 10,
-  alignItems: 'center',
-},
-
-appleButton: {
-  backgroundColor: '#000000',
-  padding: 14,
-  borderRadius: 8,
-  marginTop: 10,
-  alignItems: 'center',
-},
-
-socialButtonText: {
-  color: '#FFFFFF',
-  fontSize: 15,
-  fontWeight: 'bold',
-},
+  googleButton: { backgroundColor: '#DB4437', padding: 14, borderRadius: 8, marginTop: 15, alignItems: 'center' },
+  githubButton: { backgroundColor: '#24292E', padding: 14, borderRadius: 8, marginTop: 10, alignItems: 'center' },
+  socialButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold' },
 });

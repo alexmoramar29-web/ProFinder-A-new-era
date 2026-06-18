@@ -15,4 +15,4 @@ export const PerfilProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 // esta es la antena para que cualquier pantalla se pueda comunicar en real-time      
-export const usePerfil = () => useContext(PerfilContext);
+export const usePerfil = () => useContext(PerfilContext); 
