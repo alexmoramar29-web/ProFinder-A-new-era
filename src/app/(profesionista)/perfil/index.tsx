@@ -7,6 +7,7 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacit
 export default function PerfilScreen() {
   const router = useRouter();
   const [perfil, setPerfil] = useState<any>(null);
+  const [portafolio, setPortafolio] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   const { fotoGlobal } = usePerfil();
 
@@ -17,6 +18,10 @@ export default function PerfilScreen() {
         const { data, error } = await supabase.from('professionals').select('*').eq('prof_id', user.id).single();
         if (error) throw error;
         setPerfil(data);
+
+        // Cargamos la galeria de trabajos
+        const { data: fotos } = await supabase.from('professional_images').select('*').eq('prof_id', user.id);
+        if (fotos) setPortafolio(fotos);
       }
     } catch (error) {
       console.log(error);
@@ -50,7 +55,6 @@ export default function PerfilScreen() {
               <Text style={styles.textoFotoVacia}>Sin Foto</Text>
             </View>
           )}
-
           {estaVerificado && (
             <View style={styles.medallitaMorada}>
               <Image source={require('../../../../assets/images/palomita.png')} style={styles.palomitaBlanca} />
@@ -66,18 +70,32 @@ export default function PerfilScreen() {
           <Text style={styles.datoTitulo}>Nombre de usuario</Text>
           <Text style={styles.datoValor}>@{perfil?.username}</Text>
 
-          <Text style={styles.datoTitulo}>Profesión</Text>
+          <Text style={styles.datoTitulo}>Profesion</Text>
           <Text style={styles.datoValor}>{perfil?.speciality}</Text>
 
-          <Text style={styles.datoTitulo}>Teléfono de contacto</Text>
-          <Text style={styles.datoValor}>{perfil?.phone || 'Sin teléfono'}</Text>
+          <Text style={styles.datoTitulo}>Telefono de contacto</Text>
+          <Text style={styles.datoValor}>{perfil?.phone || 'Sin telefono'}</Text>
 
-          <Text style={styles.datoTitulo}>Descripción</Text>
-          <Text style={styles.datoValor}>{perfil?.profile_description || 'Sin descripción'}</Text>
+          <Text style={styles.datoTitulo}>Descripcion</Text>
+          <Text style={styles.datoValor}>{perfil?.profile_description || 'Sin descripcion'}</Text>
         </View>
 
+
+        {/* GALERIA DE FOTOS VISUAL */}
+        {portafolio.length > 0 && (
+          <View style={styles.portafolioContenedor}>
+            <Text style={styles.tituloSeccion}>Mis Trabajos</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carrusel}>
+              {portafolio.map((item) => (
+                <Image key={item.image_id} source={{ uri: item.image_url }} style={styles.fotoTrabajo} />
+              ))}
+            </ScrollView>
+          </View>
+        )}
+        
+        {/* ESPACIO RESERVADO PARA EL MAPA */}
         <View style={styles.mapaPlaceholder}>
-          <Text style={styles.mapaTexto}>Mapa de ubicación</Text>
+          <Text style={styles.textoMapa}>Aqui ira el mapa de ubicacion</Text>
         </View>
 
         <View style={styles.contenedorBotones}>
@@ -86,7 +104,7 @@ export default function PerfilScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.botonPrimario} onPress={() => router.push('/(profesionista)/completar-registro')}>
-            <Text style={styles.textoBoton}>Verificación</Text>
+            <Text style={styles.textoBoton}>Verificacion</Text>
           </TouchableOpacity>
         </View>
 
@@ -99,29 +117,23 @@ const styles = StyleSheet.create({
   cargandoContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scrollContainer: { flexGrow: 1, backgroundColor: '#f4f4f4' },
   container: { flex: 1, padding: 20, alignItems: 'center' },
-  
   fotoContainer: { marginBottom: 15, position: 'relative' },
   foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#ddd' },
   fotoVacia: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' },
   textoFotoVacia: { color: '#666', fontWeight: 'bold' },
-  
-  medallitaMorada: {
-    position: 'absolute', bottom: 5, right: 5, width: 32, height: 32,
-    borderRadius: 16, backgroundColor: '#5c4b8a', borderWidth: 2, borderColor: '#ffffff',
-    justifyContent: 'center', alignItems: 'center', elevation: 3
-  },
+  medallitaMorada: { position: 'absolute', bottom: 5, right: 5, width: 32, height: 32, borderRadius: 16, backgroundColor: '#5c4b8a', borderWidth: 2, borderColor: '#ffffff', justifyContent: 'center', alignItems: 'center', elevation: 3 },
   palomitaBlanca: { width: 14, height: 14, tintColor: '#ffffff', resizeMode: 'contain' },
-
   nombreContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   nombreTexto: { fontSize: 24, fontWeight: 'bold', color: '#333', textAlign: 'center' },
-  
   datosCard: { width: '100%', backgroundColor: '#fff', padding: 20, borderRadius: 10, elevation: 3, marginBottom: 20 },
   datoTitulo: { fontSize: 12, color: '#888', marginTop: 10, fontWeight: 'bold' },
   datoValor: { fontSize: 16, color: '#333', marginBottom: 5 },
-  
-  mapaPlaceholder: { width: '100%', height: 150, backgroundColor: '#e9ecef', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: '#ccc', borderStyle: 'dashed' },
-  mapaTexto: { color: '#6c757d', fontWeight: 'bold' },
-  
+  mapaPlaceholder: { width: '100%', height: 150, backgroundColor: '#e9ecef', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderWidth: 2, borderColor: '#ccc', borderStyle: 'dashed' },
+  textoMapa: { color: '#6c757d', fontWeight: 'bold', fontSize: 16 },
+  portafolioContenedor: { width: '100%', marginBottom: 20 },
+  tituloSeccion: { fontSize: 16, fontWeight: 'bold', color: '#5c4b8a', marginBottom: 10, alignSelf: 'flex-start' },
+  carrusel: { flexDirection: 'row' },
+  fotoTrabajo: { width: 120, height: 120, borderRadius: 10, marginRight: 15, backgroundColor: '#ddd', borderWidth: 1, borderColor: '#ccc' },
   contenedorBotones: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
   botonPrimario: { flex: 1, backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center', marginLeft: 5 },
   botonSecundario: { flex: 1, backgroundColor: '#007bff', padding: 15, borderRadius: 8, alignItems: 'center', marginRight: 5 },

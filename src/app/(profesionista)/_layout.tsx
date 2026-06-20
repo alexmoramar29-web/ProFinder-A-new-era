@@ -104,6 +104,7 @@ useEffect(() => {
         <Drawer.Screen name="index" options={{ drawerLabel: 'Inicio' }} />
         <Drawer.Screen name="perfil/index" options={{ drawerLabel: 'Mi Perfil' }} />
         <Drawer.Screen name="perfil/editar" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="completar-registro" options={{ drawerItemStyle: { display: 'none' }, headerTitle: '' }} />
       </Drawer>
     </GestureHandlerRootView>
   );
