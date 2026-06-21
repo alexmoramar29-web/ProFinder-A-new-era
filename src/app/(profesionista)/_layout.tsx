@@ -127,13 +127,13 @@ function EnrutadorProfesionista() {
           ),
         }}
       >
-        <Drawer.Screen name="index" options={{ drawerLabel: 'Inicio' }} />
-        <Drawer.Screen name="horarios" options={{ drawerLabel: 'Mis Horarios' }} />
-        <Drawer.Screen name="servicios/index" options={{ drawerLabel: 'Mis Servicios' }} />
-        <Drawer.Screen name="servicios/agregar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Agregar Servicio' }} />
-        <Drawer.Screen name="perfil/index" options={{ drawerLabel: 'Mi Perfil' }} />
-        <Drawer.Screen name="perfil/editar" options={{ drawerItemStyle: { display: 'none' } }} />
-        <Drawer.Screen name="completar-registro" options={{ drawerItemStyle: { display: 'none' }, headerTitle: '' }} />
+<Drawer.Screen name="index" options={{ drawerLabel: 'Inicio', headerTitle: 'Inicio', headerTitleAlign: 'center' }} />
+        <Drawer.Screen name="horarios" options={{ drawerLabel: 'Mis Horarios', headerTitle: 'Mis Horarios', headerTitleAlign: 'center' }} />
+        <Drawer.Screen name="servicios/index" options={{ drawerLabel: 'Mis Servicios', headerTitle: 'Mis Servicios', headerTitleAlign: 'center' }} />
+        <Drawer.Screen name="servicios/agregar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Agregar Servicio', headerTitleAlign: 'center' }} />
+        <Drawer.Screen name="perfil/index" options={{ drawerLabel: 'Mi Perfil', headerTitle: 'Mi Perfil', headerTitleAlign: 'center' }} />
+        <Drawer.Screen name="perfil/editar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Editar Perfil', headerTitleAlign: 'center' }} />
+        <Drawer.Screen name="completar-registro" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Verificación Profesional', headerTitleAlign: 'center' }} />
       </Drawer>
     </GestureHandlerRootView>
   );
