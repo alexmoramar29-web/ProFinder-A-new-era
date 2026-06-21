@@ -67,7 +67,7 @@ export default function CompletarRegistroScreen() {
         if (error) throw error;
       } else {
         const fileInfo = await FileSystem.getInfoAsync(archivo.uri);
-        if (!fileInfo.exists) throw new Error(`No se pudo leer el archivo`);
+        if (!fileInfo.exists) throw new Error('No se pudo leer el archivo');
         const base64 = await FileSystem.readAsStringAsync(archivo.uri, { encoding: 'base64' });
         const { error } = await supabase.storage.from('profesionales-documentos').upload(nombre, decode(base64), { contentType: 'application/pdf' });
         if (error) throw error;
@@ -90,7 +90,7 @@ export default function CompletarRegistroScreen() {
     setTextoEstado('Procesando documentos...'); 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Sesión expirada');
+      if (!user) throw new Error('Sesion expirada');
       
       const urlIne = await procesarArchivo(ine, user.id, 'ine');
       const urlCedula = await procesarArchivo(cedula, user.id, 'cedula');
@@ -107,7 +107,7 @@ export default function CompletarRegistroScreen() {
         { prof_id: user.id, document_type: 'Certificado', file_url: urlCert}
       ]);
 
-      Alert.alert('Éxito', 'Documentos actualizados correctamente');
+      Alert.alert('Exito', 'Documentos actualizados correctamente');
       router.replace('/(profesionista)/perfil');
     } catch (e: any) { Alert.alert('Error', e.message); } 
     finally { setGuardando(false); setTextoEstado(''); }
@@ -118,8 +118,8 @@ export default function CompletarRegistroScreen() {
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.container}>
-        <Text style={styles.titulo}>Verificación Profesional</Text>
-        <Text style={styles.label}>Selecciona tu Profesión</Text>
+        <Text style={styles.titulo}>Verificacion Profesional</Text>
+        <Text style={styles.label}>Selecciona tu Profesion</Text>
         <View style={styles.pickerContainer}>
           <Picker selectedValue={speciality} onValueChange={(item) => setSpeciality(item)} enabled={!guardando}>
             <Picker.Item label="Doctor" value="Doctor" />
@@ -134,7 +134,7 @@ export default function CompletarRegistroScreen() {
         </View>
 
         <Text style={styles.label}>Documentos en PDF</Text>
-        {[ {s:ine, f:setIne, t:'INE'}, {s:cedula, f:setCedula, t:'Cédula Profesional'}, {s:certificado, f:setCertificado, t:'Certificado'} ].map((item, i) => {
+        {[ {s:ine, f:setIne, t:'INE'}, {s:cedula, f:setCedula, t:'Cedula Profesional'}, {s:certificado, f:setCertificado, t:'Certificado'} ].map((item, i) => {
           const esUrl = typeof item.s === 'string';
           return (
             <View key={i} style={styles.tarjeta}>
@@ -143,7 +143,7 @@ export default function CompletarRegistroScreen() {
                 {esUrl && <TouchableOpacity onPress={() => Linking.openURL(item.s)}><Text style={styles.linkVer}>Ver PDF</Text></TouchableOpacity>}
               </View>
               <TouchableOpacity style={[styles.btn, item.s && styles.btnOk]} onPress={() => seleccionarDocumento(item.f)} disabled={guardando}>
-                <Text style={styles.txtBtn}>{esUrl ? 'Cambiar archivo actual' : (item.s ? 'Nuevo PDF listo ✓' : 'Subir PDF')}</Text>
+                <Text style={styles.txtBtn}>{esUrl ? 'Cambiar archivo actual' : (item.s ? 'Nuevo PDF listo' : 'Subir PDF')}</Text>
               </TouchableOpacity>
             </View>
           );
@@ -151,9 +151,17 @@ export default function CompletarRegistroScreen() {
 
         {textoEstado !== '' && <Text style={styles.textoCargando}>{textoEstado}</Text>}
 
-        <TouchableOpacity style={[styles.btnEnv, guardando && styles.botonDeshabilitado]} onPress={handleGuardar} disabled={guardando}>
-          {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.txtEnv}>Guardar y Enviar</Text>}
-        </TouchableOpacity>
+        {/* BOTONES DE ACCION DOBLES */}
+        <View style={styles.contenedorBotonesAccion}>
+          <TouchableOpacity style={styles.botonCancelar} onPress={() => router.replace('/(profesionista)/perfil')} disabled={guardando}>
+            <Text style={styles.textoBotonCancelar}>Cancelar</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={[styles.botonGuardar, guardando && styles.botonDeshabilitado]} onPress={handleGuardar} disabled={guardando}>
+            {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoBotonGuardar}>Guardar y Enviar</Text>}
+          </TouchableOpacity>
+        </View>
+
       </View>
     </ScrollView>
   );
@@ -174,7 +182,11 @@ const styles = StyleSheet.create({
   btnOk: { backgroundColor: '#28a745' },
   txtBtn: { color: '#fff', fontWeight: 'bold' },
   textoCargando: { color: '#5c4b8a', fontWeight: 'bold', textAlign: 'center', marginVertical: 15 },
-  btnEnv: { backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 20 },
+  
+  contenedorBotonesAccion: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
+  botonCancelar: { flex: 1, backgroundColor: '#6c757d', padding: 15, borderRadius: 8, alignItems: 'center', marginRight: 10 },
+  textoBotonCancelar: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  botonGuardar: { flex: 1, backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center', marginLeft: 10 },
   botonDeshabilitado: { backgroundColor: '#aaa' },
-  txtEnv: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
+  textoBotonGuardar: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
 });

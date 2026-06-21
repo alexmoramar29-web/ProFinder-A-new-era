@@ -2,7 +2,7 @@ import { usePerfil } from '@/context/PerfilContext';
 import { supabase } from '@/lib/supabase';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function PerfilScreen() {
   const router = useRouter();
@@ -10,6 +10,8 @@ export default function PerfilScreen() {
   const [portafolio, setPortafolio] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   const { fotoGlobal } = usePerfil();
+
+  const [fotoAmpliada, setFotoAmpliada] = useState<string | null>(null);
 
   const cargarPerfil = async () => {
     try {
@@ -19,7 +21,6 @@ export default function PerfilScreen() {
         if (error) throw error;
         setPerfil(data);
 
-        // Cargamos la galeria de trabajos
         const { data: fotos } = await supabase.from('professional_images').select('*').eq('prof_id', user.id);
         if (fotos) setPortafolio(fotos);
       }
@@ -41,90 +42,136 @@ export default function PerfilScreen() {
   }
 
   const fotoGrandeMostrar = fotoGlobal || perfil?.profile_picture;
-  const estaVerificado = perfil?.verification_status?.toLowerCase() === 'verificado';
+  const estadoVerificacion = perfil?.verification_status || 'Pendiente';
+  const perfilPausado = perfil?.is_active === false;
+
+  let colorEtiqueta = '#6c757d'; 
+  let textoEtiqueta = 'Documentos sin revisar';
+
+  if (estadoVerificacion.toLowerCase() === 'verificado') {
+    colorEtiqueta = '#28a745'; 
+    textoEtiqueta = 'Perfil Aprobado';
+  } else if (estadoVerificacion.toLowerCase() === 'en revision' || estadoVerificacion.toLowerCase() === 'en revisión') {
+    colorEtiqueta = '#ffc107'; 
+    textoEtiqueta = 'Documentos en revision';
+  } else if (estadoVerificacion.toLowerCase() === 'rechazado') {
+    colorEtiqueta = '#dc3545'; 
+    textoEtiqueta = 'Documentos rechazados';
+  }
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
+    <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
         
-        <View style={styles.fotoContainer}>
-          {fotoGrandeMostrar ? (
-            <Image source={{ uri: fotoGrandeMostrar }} style={styles.foto} />
-          ) : (
-            <View style={styles.fotoVacia}>
-              <Text style={styles.textoFotoVacia}>Sin Foto</Text>
-            </View>
-          )}
-          {estaVerificado && (
-            <View style={styles.medallitaMorada}>
-              <Image source={require('../../../../assets/images/palomita.png')} style={styles.palomitaBlanca} />
-            </View>
-          )}
-        </View>
-
-        <View style={styles.nombreContainer}>
-          <Text style={styles.nombreTexto}>{perfil?.full_name || 'Nombre no disponible'}</Text>
-        </View>
-
-        <View style={styles.datosCard}>
-          <Text style={styles.datoTitulo}>Nombre de usuario</Text>
-          <Text style={styles.datoValor}>@{perfil?.username}</Text>
-
-          <Text style={styles.datoTitulo}>Profesion</Text>
-          <Text style={styles.datoValor}>{perfil?.speciality}</Text>
-
-          <Text style={styles.datoTitulo}>Telefono de contacto</Text>
-          <Text style={styles.datoValor}>{perfil?.phone || 'Sin telefono'}</Text>
-
-          <Text style={styles.datoTitulo}>Descripcion</Text>
-          <Text style={styles.datoValor}>{perfil?.profile_description || 'Sin descripcion'}</Text>
-        </View>
-
-
-        {/* GALERIA DE FOTOS VISUAL */}
-        {portafolio.length > 0 && (
-          <View style={styles.portafolioContenedor}>
-            <Text style={styles.tituloSeccion}>Mis Trabajos</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carrusel}>
-              {portafolio.map((item) => (
-                <Image key={item.image_id} source={{ uri: item.image_url }} style={styles.fotoTrabajo} />
-              ))}
-            </ScrollView>
+        {perfilPausado && (
+          <View style={styles.bannerPausado}>
+            <Text style={styles.textoBannerPausado}>
+              TU PERFIL ESTA PAUSADO. LOS CLIENTES NO PUEDEN VERTE.
+            </Text>
           </View>
         )}
-        
-        {/* ESPACIO RESERVADO PARA EL MAPA */}
-        <View style={styles.mapaPlaceholder}>
-          <Text style={styles.textoMapa}>Aqui ira el mapa de ubicacion</Text>
-        </View>
 
-        <View style={styles.contenedorBotones}>
-          <TouchableOpacity style={styles.botonSecundario} onPress={() => router.push('/(profesionista)/perfil/editar')}>
-            <Text style={styles.textoBoton}>Editar Perfil</Text>
+        <View style={styles.container}>
+          
+          <View style={styles.fotoContainer}>
+            {/* NUEVO: Al tocar la foto de perfil, activamos el Modal */}
+            <TouchableOpacity onPress={() => { if (fotoGrandeMostrar) setFotoAmpliada(fotoGrandeMostrar); }}>
+              {fotoGrandeMostrar ? (
+                <Image source={{ uri: fotoGrandeMostrar }} style={styles.foto} />
+              ) : (
+                <View style={styles.fotoVacia}>
+                  <Text style={styles.textoFotoVacia}>Sin Foto</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.nombreContainer}>
+            <Text style={styles.nombreTexto}>{perfil?.full_name || 'Nombre no disponible'}</Text>
+          </View>
+
+          <View style={[styles.etiquetaVerificacion, { backgroundColor: colorEtiqueta }]}>
+            <Text style={styles.textoEtiqueta}>{textoEtiqueta}</Text>
+          </View>
+
+          <View style={styles.datosCard}>
+            <Text style={styles.datoTitulo}>Nombre de usuario</Text>
+            <Text style={styles.datoValor}>@{perfil?.username}</Text>
+
+            <Text style={styles.datoTitulo}>Profesion</Text>
+            <Text style={styles.datoValor}>{perfil?.speciality}</Text>
+
+            <Text style={styles.datoTitulo}>Telefono de contacto</Text>
+            <Text style={styles.datoValor}>{perfil?.phone || 'Sin telefono'}</Text>
+
+            <Text style={styles.datoTitulo}>Descripcion</Text>
+            <Text style={styles.datoValor}>{perfil?.profile_description || 'Sin descripcion'}</Text>
+          </View>
+
+          <View style={styles.mapaPlaceholder}>
+            <Text style={styles.textoMapa}>Aqui ira el mapa de ubicacion</Text>
+          </View>
+
+          {portafolio.length > 0 && (
+            <View style={styles.portafolioContenedor}>
+              <Text style={styles.tituloSeccion}>Mis Trabajos</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carrusel}>
+                {portafolio.map((item) => (
+                  // NUEVO: Al tocar una foto del portafolio, activamos el Modal
+                  <TouchableOpacity key={item.image_id} onPress={() => setFotoAmpliada(item.image_url)}>
+                    <Image source={{ uri: item.image_url }} style={styles.fotoTrabajo} />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          <View style={styles.contenedorBotones}>
+            <TouchableOpacity style={styles.botonSecundario} onPress={() => router.push('/(profesionista)/perfil/editar')}>
+              <Text style={styles.textoBoton}>Editar Perfil</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.botonPrimario} onPress={() => router.push('/(profesionista)/completar-registro')}>
+              <Text style={styles.textoBoton}>Documentos</Text>
+            </TouchableOpacity>
+          </View>
+
+        </View>
+      </ScrollView>
+
+      {/* NUEVO: Capa oscura que se muestra solo cuando hay una foto seleccionada */}
+      <Modal visible={fotoAmpliada !== null} transparent={true} animationType="fade">
+        <View style={styles.modalFondoOscuro}>
+          {/* Boton para cerrar la foto */}
+          <TouchableOpacity style={styles.botonCerrarModal} onPress={() => setFotoAmpliada(null)}>
+            <Text style={styles.textoCerrarModal}>Cerrar X</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.botonPrimario} onPress={() => router.push('/(profesionista)/completar-registro')}>
-            <Text style={styles.textoBoton}>Verificacion</Text>
-          </TouchableOpacity>
+          {/* Foto expandida centrada */}
+          {fotoAmpliada && (
+            <Image source={{ uri: fotoAmpliada }} style={styles.fotoGigante} resizeMode="contain" />
+          )}
         </View>
+      </Modal>
 
-      </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   cargandoContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scrollContainer: { flexGrow: 1, backgroundColor: '#f4f4f4' },
+  bannerPausado: { backgroundColor: '#6c757d', padding: 10, width: '100%', alignItems: 'center' },
+  textoBannerPausado: { color: '#fff', fontWeight: 'bold', fontSize: 12, textAlign: 'center' },
   container: { flex: 1, padding: 20, alignItems: 'center' },
   fotoContainer: { marginBottom: 15, position: 'relative' },
   foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#ddd' },
   fotoVacia: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' },
   textoFotoVacia: { color: '#666', fontWeight: 'bold' },
-  medallitaMorada: { position: 'absolute', bottom: 5, right: 5, width: 32, height: 32, borderRadius: 16, backgroundColor: '#5c4b8a', borderWidth: 2, borderColor: '#ffffff', justifyContent: 'center', alignItems: 'center', elevation: 3 },
-  palomitaBlanca: { width: 14, height: 14, tintColor: '#ffffff', resizeMode: 'contain' },
-  nombreContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  nombreContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
   nombreTexto: { fontSize: 24, fontWeight: 'bold', color: '#333', textAlign: 'center' },
+  etiquetaVerificacion: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 15, marginBottom: 20 },
+  textoEtiqueta: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
   datosCard: { width: '100%', backgroundColor: '#fff', padding: 20, borderRadius: 10, elevation: 3, marginBottom: 20 },
   datoTitulo: { fontSize: 12, color: '#888', marginTop: 10, fontWeight: 'bold' },
   datoValor: { fontSize: 16, color: '#333', marginBottom: 5 },
@@ -137,5 +184,9 @@ const styles = StyleSheet.create({
   contenedorBotones: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
   botonPrimario: { flex: 1, backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center', marginLeft: 5 },
   botonSecundario: { flex: 1, backgroundColor: '#007bff', padding: 15, borderRadius: 8, alignItems: 'center', marginRight: 5 },
-  textoBoton: { color: '#fff', fontWeight: 'bold', fontSize: 15 }
+  textoBoton: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  modalFondoOscuro: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.9)', justifyContent: 'center', alignItems: 'center' },
+  botonCerrarModal: { position: 'absolute', top: 50, right: 20, padding: 10, backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 5, zIndex: 10 },
+  textoCerrarModal: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  fotoGigante: { width: '90%', height: '80%' }
 });

@@ -1,7 +1,7 @@
 import { DrawerContentComponentProps, DrawerContentScrollView, DrawerItem, DrawerItemList, DrawerToggleButton } from '@react-navigation/drawer';
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PerfilProvider, usePerfil } from '../../context/PerfilContext';
@@ -35,9 +35,20 @@ function MenuPersonalizado(props: DrawerContentComponentProps) {
 function EnrutadorProfesionista() {
   const router = useRouter();
   const { fotoGlobal, setFotoGlobal } = usePerfil();
+  const [verificando, setVerificando] = useState(true);
 
-useEffect(() => {
-    const revisarAduanaYFoto = async () => {
+  useEffect(() => {
+    const revisarSeguridadYDatos = async () => {
+      // 1. EL GUARDIA: Revisamos si hay una sesión activa
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // Si no hay sesión, lo pateamos al inicio de sesión y terminamos el proceso
+        router.replace('/(auth)/sign-in');
+        return;
+      }
+
+      // 2. EL CADENERO: Si hay sesión, revisamos sus datos de profesionista
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase
@@ -50,15 +61,31 @@ useEffect(() => {
           setFotoGlobal(data.profile_picture);
         }
 
-        // EL CADENERO INVISIBLE: Si no tiene profesión anotada, o dice 'Por definir', o de plano no existe, ¡A LA ADUANA!
         if (!data || !data.speciality || data.speciality === 'Por definir') {
           router.replace('/(profesionista)/completar-registro');
         }
       }
+
+      // 3. Si todo está en orden, quitamos la pantalla de carga invisible
+      setVerificando(false);
     };
-    revisarAduanaYFoto();
+
+    revisarSeguridadYDatos();
+
+    // 4. Oyente extra por si cierran sesión desde el menú estando adentro
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.replace('/(auth)/sign-in');
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
-    
+
+  // Pantalla en blanco mientras verifica, para no mostrar contenido prohibido
+  if (verificando) {
+    return null; 
+  }
 
   const fotoMostrar = fotoGlobal || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
   const logoProfinder = require('../../../assets/images/logo.png');
@@ -68,7 +95,6 @@ useEffect(() => {
       <Drawer
         drawerContent={(props) => <MenuPersonalizado {...props} />}
         screenOptions={{
-          // Eliminamos el 'height' fijo para que el celular respete su barra de estado
           headerStyle: { backgroundColor: '#5c4b8a' }, 
           headerTintColor: '#fff',
           drawerActiveTintColor: '#5c4b8a',
@@ -102,6 +128,9 @@ useEffect(() => {
         }}
       >
         <Drawer.Screen name="index" options={{ drawerLabel: 'Inicio' }} />
+        <Drawer.Screen name="horarios" options={{ drawerLabel: 'Mis Horarios' }} />
+        <Drawer.Screen name="servicios/index" options={{ drawerLabel: 'Mis Servicios' }} />
+        <Drawer.Screen name="servicios/agregar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Agregar Servicio' }} />
         <Drawer.Screen name="perfil/index" options={{ drawerLabel: 'Mi Perfil' }} />
         <Drawer.Screen name="perfil/editar" options={{ drawerItemStyle: { display: 'none' } }} />
         <Drawer.Screen name="completar-registro" options={{ drawerItemStyle: { display: 'none' }, headerTitle: '' }} />
@@ -122,19 +151,9 @@ const styles = StyleSheet.create({
   contenedorPrincipal: { flex: 1 },
   contenedorFijoAbajo: { borderTopWidth: 1, borderTopColor: '#ddd', paddingBottom: 25, paddingTop: 5 },
   textoSalir: { color: '#d9534f', fontWeight: 'bold', fontSize: 16 },
-  
-  // Agregamos más margen a la izquierda
   contenedorIzquierdo: { marginLeft: 20, justifyContent: 'center' },
-  
-  // Tamaño más limpio y equilibrado (42x42)
   logoImagen: { width: 42, height: 42, borderRadius: 21, overflow: 'hidden', resizeMode: 'cover' },
-  
-  // Separamos todo de la orilla derecha
   contenedorDerecho: { flexDirection: 'row', alignItems: 'center', marginRight: 15 },
-  
-  // Reducimos el tamaño de la foto (40x40) y la separamos del menú (marginRight: 15)
   fotoPerfil: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: '#ffffff', marginRight: 15, backgroundColor: '#ccc', overflow: 'hidden' },
-  
-  // Escalamos el menú de hamburguesa de forma más sutil
   contenedorMenuBoton: { transform: [{ scale: 1.1 }], justifyContent: 'center', alignItems: 'center' }
 });

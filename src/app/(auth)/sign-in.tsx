@@ -5,7 +5,6 @@ import * as WebBrowser from 'expo-web-browser';
 import React, { useState } from 'react';
 import { Button, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-// Esto escucha a la ventana emergente en la web para cerrarla cuando Google termina
 WebBrowser.maybeCompleteAuthSession();
 
 export default function SignInScreen() {
@@ -17,6 +16,9 @@ export default function SignInScreen() {
   const [cargando, setCargando] = useState(false);
   const [mensajeError, setMensajeError] = useState('');
   const [mensajeEstado, setMensajeEstado] = useState('');
+  
+  // Nuevo interruptor para cambiar la pantalla al modo de recuperación
+  const [modoRecuperar, setModoRecuperar] = useState(false);
 
   const cambiarDePortal = (tipo: 'cliente' | 'profesionista') => {
     setPortal(tipo);
@@ -24,6 +26,7 @@ export default function SignInScreen() {
     setMensajeEstado('');
     setIdentificador('');
     setPassword('');
+    setModoRecuperar(false);
   };
 
   const manejarLoginSocial = async (proveedor: 'google' | 'github') => {
@@ -33,7 +36,6 @@ export default function SignInScreen() {
     try {
       const urlDeRegreso = Linking.createURL('');
 
-      // Pedimos la ventana de inicio de sesión a Supabase (Funciona igual en Web y Móvil)
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: proveedor,
         options: {
@@ -45,7 +47,6 @@ export default function SignInScreen() {
       if (error) throw error;
 
       if (data?.url) {
-        // Abrimos la ventanita mágica
         const resultado = await WebBrowser.openAuthSessionAsync(data.url, urlDeRegreso);
         
         if (resultado.type === 'success' && resultado.url) {
@@ -123,18 +124,16 @@ export default function SignInScreen() {
                 provider_id: idDelUsuario
               }]);
 
-              // SECUESTRO DE SEGURIDAD: Es nuevo, lo mandamos a editar su perfil obligatoriamente
               router.replace('/(profesionista)/perfil/editar');
               return; 
             }
 
-            // Si ya existía, entra normal al inicio
             router.replace('/(profesionista)');
           }
         }
       }
     } catch (error: any) {
-      setMensajeError(error.message || `No se pudo iniciar sesión con ${proveedor}`);
+      setMensajeError(error.message || `No se pudo iniciar sesion con ${proveedor}`);
     } finally {
       setCargando(false);
     }
@@ -146,7 +145,7 @@ export default function SignInScreen() {
     const entradaLimpia = identificador.trim();
 
     if (!entradaLimpia || !password) {
-      return setMensajeError('Faltan datos: Por favor, escribe tu correo/usuario y contraseña.');
+      return setMensajeError('Faltan datos: Por favor, escribe tu correo/usuario y contrasena.');
     }
 
     setCargando(true);
@@ -172,7 +171,7 @@ export default function SignInScreen() {
         password: password,
       });
 
-      if (authError) throw new Error('Acceso denegado: Revisa tu contraseña.');
+      if (authError) throw new Error('Acceso denegado: Revisa tu contrasena. Si es correcta, es posible que tu cuenta este bloqueada, intenta registrarte de nuevo.');
 
       const idDelUsuario = authData.user.id;
       const metadatos = authData.user.user_metadata;
@@ -232,7 +231,40 @@ export default function SignInScreen() {
       }
 
     } catch (error: any) {
-      setMensajeError(error.message || 'Ocurrió un error inesperado al entrar.');
+      setMensajeError(error.message || 'Ocurrio un error inesperado al entrar.');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  // NUENA FUNCIÓN: Lógica para enviar el correo de recuperación
+  const handleRecuperarPassword = async () => {
+    setMensajeError('');
+    setMensajeEstado('');
+    const entradaLimpia = identificador.trim();
+
+    if (!entradaLimpia) {
+      return setMensajeError('Escribe tu correo o usuario para enviarte el enlace de recuperación.');
+    }
+
+    setCargando(true);
+    try {
+      let correoFinal = entradaLimpia;
+      const esCorreo = entradaLimpia.includes('@');
+
+      if (!esCorreo) {
+        const tabla = portal === 'cliente' ? 'users' : 'professionals';
+        const { data: usuario } = await supabase.from(tabla).select('email').eq('username', entradaLimpia).maybeSingle();
+        if (usuario) correoFinal = usuario.email;
+        else throw new Error('No encontramos una cuenta con ese nombre de usuario.');
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(correoFinal);
+      if (error) throw error;
+
+      setMensajeEstado('Revisa tu bandeja de entrada. Te hemos enviado un enlace para crear una contraseña nueva.');
+    } catch (error: any) {
+      setMensajeError(error.message || 'No se pudo enviar el correo de recuperación.');
     } finally {
       setCargando(false);
     }
@@ -245,7 +277,9 @@ export default function SignInScreen() {
         <Text style={styles.title}>
           {portal === 'cliente' ? 'Portal Clientes' : 'Portal Profesionistas'}
         </Text>
-        <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
+        <Text style={styles.subtitle}>
+          {modoRecuperar ? 'Recupera el acceso a tu cuenta' : 'Inicia sesion para continuar'}
+        </Text>
 
         <View style={styles.tabContainer}>
           <TouchableOpacity 
@@ -267,21 +301,24 @@ export default function SignInScreen() {
 
         <TextInput 
           style={styles.input} 
-          placeholder="Correo electrónico o Usuario" 
+          placeholder="Correo electronico o Usuario" 
           value={identificador} 
           onChangeText={setIdentificador} 
           autoCapitalize="none" 
           editable={!cargando} 
         />
         
-        <TextInput 
-          style={styles.input} 
-          placeholder="Contraseña" 
-          value={password} 
-          onChangeText={setPassword} 
-          secureTextEntry 
-          editable={!cargando} 
-        />
+        {/* Si NO estamos en modo recuperar, mostramos la caja de contraseña */}
+        {!modoRecuperar && (
+          <TextInput 
+            style={styles.input} 
+            placeholder="Contrasena" 
+            value={password} 
+            onChangeText={setPassword} 
+            secureTextEntry 
+            editable={!cargando} 
+          />
+        )}
 
         {mensajeError !== '' && (
           <View style={styles.errorBox}>
@@ -297,32 +334,43 @@ export default function SignInScreen() {
 
         <View style={styles.buttonContainer}>
           <Button 
-            title={cargando ? "Verificando..." : "Entrar a mi Cuenta"} 
-            onPress={handleLogin} 
+            title={cargando ? "Procesando..." : (modoRecuperar ? "Enviar enlace de recuperacion" : "Entrar a mi Cuenta")} 
+            onPress={modoRecuperar ? handleRecuperarPassword : handleLogin} 
             disabled={cargando}
             color={portal === 'cliente' ? '#007bff' : '#28a745'}
           />
         </View>
 
-        <TouchableOpacity 
-          style={styles.googleButton}
-          onPress={() => manejarLoginSocial('google')}
-          disabled={cargando}
-        >
-          <Text style={styles.socialButtonText}>Continuar con Google</Text>
+        <TouchableOpacity onPress={() => setModoRecuperar(!modoRecuperar)}>
+          <Text style={styles.linkRecuperar}>
+            {modoRecuperar ? 'Cancelar y volver a iniciar sesion' : 'Olvide mi contrasena'}
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.githubButton}
-          onPress={() => manejarLoginSocial('github')}
-          disabled={cargando}
-        >
-          <Text style={styles.socialButtonText}>Continuar con GitHub</Text>
-        </TouchableOpacity>
+        {/* Si NO estamos en modo recuperar, mostramos los botones de redes sociales y el registro */}
+        {!modoRecuperar && (
+          <>
+            <TouchableOpacity 
+              style={styles.googleButton}
+              onPress={() => manejarLoginSocial('google')}
+              disabled={cargando}
+            >
+              <Text style={styles.socialButtonText}>Continuar con Google</Text>
+            </TouchableOpacity>
 
-        <Text style={styles.link} onPress={() => router.push('/(auth)/sign-up')}>
-          ¿No tienes cuenta? Regístrate aquí
-        </Text>
+            <TouchableOpacity
+              style={styles.githubButton}
+              onPress={() => manejarLoginSocial('github')}
+              disabled={cargando}
+            >
+              <Text style={styles.socialButtonText}>Continuar con GitHub</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.linkRegistro} onPress={() => router.push('/(auth)/sign-up')}>
+              No tienes cuenta? Registrate aqui
+            </Text>
+          </>
+        )}
       </View>
     </ScrollView>
   );
@@ -341,12 +389,13 @@ const styles = StyleSheet.create({
   textActive: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   textInactive: { color: '#666', fontSize: 14 },
   buttonContainer: { marginTop: 10, borderRadius: 5, overflow: 'hidden' },
-  link: { color: '#007bff', marginTop: 25, textAlign: 'center', fontSize: 15 },
+  linkRecuperar: { color: '#d9534f', marginTop: 15, textAlign: 'center', fontSize: 14, fontWeight: 'bold' },
+  linkRegistro: { color: '#007bff', marginTop: 25, textAlign: 'center', fontSize: 15 },
   errorBox: { backgroundColor: '#ffe6e6', padding: 12, borderRadius: 5, marginBottom: 15, borderWidth: 1, borderColor: '#ff4d4d' },
   errorText: { color: '#d9534f', textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
   infoBox: { backgroundColor: '#eef6ff', padding: 12, borderRadius: 5, marginBottom: 15, borderWidth: 1, borderColor: '#007bff' },
   infoText: { color: '#007bff', textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
-  googleButton: { backgroundColor: '#DB4437', padding: 14, borderRadius: 8, marginTop: 15, alignItems: 'center' },
+  googleButton: { backgroundColor: '#DB4437', padding: 14, borderRadius: 8, marginTop: 25, alignItems: 'center' },
   githubButton: { backgroundColor: '#24292E', padding: 14, borderRadius: 8, marginTop: 10, alignItems: 'center' },
   socialButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold' },
 });

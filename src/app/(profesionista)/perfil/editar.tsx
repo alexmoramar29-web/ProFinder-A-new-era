@@ -4,7 +4,7 @@ import { decode } from 'base64-arraybuffer';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function EditarPerfilScreen() {
   const router = useRouter();
@@ -20,6 +20,7 @@ export default function EditarPerfilScreen() {
   const [description, setDescription] = useState('');
   const [fotoPerfil, setFotoPerfil] = useState<any>(null);
   
+  const [isActive, setIsActive] = useState(true);
   const [portafolio, setPortafolio] = useState<any[]>([]);
 
   useEffect(() => {
@@ -37,9 +38,9 @@ export default function EditarPerfilScreen() {
         setUsername(perfilData.username || '');
         setPhone(perfilData.phone || '');
         setDescription(perfilData.profile_description || '');
+        setIsActive(perfilData.is_active ?? true);
         if (perfilData.profile_picture) setFotoPerfil({ uri: perfilData.profile_picture });
 
-        // Traemos las fotos de la tabla corregida
         const { data: fotosData } = await supabase.from('professional_images').select('*').eq('prof_id', user.id);
         if (fotosData) setPortafolio(fotosData);
       }
@@ -78,7 +79,7 @@ export default function EditarPerfilScreen() {
         if (!user) return;
 
         const fileName = `trabajo_${user.id}_${Date.now()}.jpg`;
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError = null } = await supabase.storage
           .from('profesionales-documentos')
           .upload(fileName, decode(resultado.assets[0].base64), { contentType: 'image/jpeg', upsert: true });
 
@@ -148,13 +149,14 @@ export default function EditarPerfilScreen() {
           phone: telefonoLimpio,
           profile_description: descripcionLimpia,
           profile_picture: publicUrl,
+          is_active: isActive
         })
         .eq('prof_id', user.id);
 
       if (updateError) throw updateError;
       if (publicUrl) setFotoGlobal(publicUrl);
 
-      router.back();
+      router.replace('/(profesionista)/perfil');
     } catch (error) {
       Alert.alert('Error', 'No se pudieron guardar los cambios');
     } finally {
@@ -184,23 +186,38 @@ export default function EditarPerfilScreen() {
           )}
         </TouchableOpacity>
 
+        <View style={styles.switchContainer}>
+          <View style={styles.switchTextos}>
+            <Text style={styles.switchTitulo}>Perfil Visible</Text>
+            <Text style={styles.switchSubtitulo}>
+              {isActive ? "Los clientes pueden encontrarte" : "Tu perfil esta oculto (Modo pausa)"}
+            </Text>
+          </View>
+          <Switch
+            trackColor={{ false: "#ccc", true: "#5c4b8a" }}
+            thumbColor={isActive ? "#fff" : "#f4f3f4"}
+            onValueChange={() => setIsActive(!isActive)}
+            value={isActive}
+          />
+        </View>
+
         <Text style={styles.label}>Nombre Completo</Text>
         <TextInput style={styles.input} value={fullName} onChangeText={setFullName} maxLength={100} />
 
         <Text style={styles.label}>Nombre de Usuario</Text>
         <TextInput style={styles.input} value={username} onChangeText={setUsername} autoCapitalize="none" maxLength={50} />
 
-      <Text style={styles.label}>Teléfono</Text>
+        <Text style={styles.label}>Telefono</Text>
         <TextInput 
           style={styles.input} 
           value={phone} 
-          onChangeText={(texto) => setPhone(texto.replace(/[^0-9+]/g, ''))} 
+          onChangeText={(texto) => setPhone(texto.replace(/[^0-9]/g, ''))} 
           keyboardType="phone-pad" 
-          maxLength={13} 
+          maxLength={10} 
         />
 
-        <Text style={styles.label}>Descripción Profesional</Text>
-        <TextInput style={[styles.input, styles.textArea]} value={description} onChangeText={setDescription} multiline numberOfLines={4} maxLength={500} placeholder="Cuéntale a tus clientes sobre tu experiencia..." />
+        <Text style={styles.label}>Descripcion Profesional</Text>
+        <TextInput style={[styles.input, styles.textArea]} value={description} onChangeText={setDescription} multiline numberOfLines={4} maxLength={500} placeholder="Cuentale a tus clientes sobre tu experiencia..." />
 
         <Text style={[styles.label, { marginTop: 25 }]}>Mis Trabajos (Fotos)</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carrusel}>
@@ -213,13 +230,20 @@ export default function EditarPerfilScreen() {
             </View>
           ))}
           <TouchableOpacity style={styles.btnAgregarFoto} onPress={agregarFotoPortafolio} disabled={subiendoTrabajo}>
-            {subiendoTrabajo ? <ActivityIndicator color="#5c4b8a" /> : <Text style={styles.txtAgregarFoto}>+ Añadir</Text>}
+            {subiendoTrabajo ? <ActivityIndicator color="#5c4b8a" /> : <Text style={styles.txtAgregarFoto}>+ Anadir</Text>}
           </TouchableOpacity>
         </ScrollView>
 
-        <TouchableOpacity style={[styles.boton, guardando && styles.botonDeshabilitado]} onPress={handleGuardar} disabled={guardando}>
-          {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.botonTexto}>Guardar Cambios</Text>}
-        </TouchableOpacity>
+        <View style={styles.contenedorBotonesAccion}>
+          {/* CORREGIDO: Ahora usa router.replace para ir directo al perfil */}
+          <TouchableOpacity style={styles.botonCancelar} onPress={() => router.replace('/(profesionista)/perfil')} disabled={guardando}>
+            <Text style={styles.textoBotonCancelar}>Cancelar</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={[styles.botonGuardar, guardando && styles.botonDeshabilitado]} onPress={handleGuardar} disabled={guardando}>
+            {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoBotonGuardar}>Guardar</Text>}
+          </TouchableOpacity>
+        </View>
 
       </View>
     </ScrollView>
@@ -234,6 +258,10 @@ const styles = StyleSheet.create({
   foto: { width: 120, height: 120, borderRadius: 60 },
   fotoPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#e9ecef', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#ccc' },
   textoPlaceholder: { color: '#6c757d', fontSize: 14, fontWeight: 'bold' },
+  switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f4f1fa', padding: 15, borderRadius: 8, marginBottom: 20, borderWidth: 1, borderColor: '#ddd' },
+  switchTextos: { flex: 1 },
+  switchTitulo: { fontSize: 16, fontWeight: 'bold', color: '#333' },
+  switchSubtitulo: { fontSize: 12, color: '#666', marginTop: 2 },
   label: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 5, marginTop: 15 },
   input: { borderWidth: 1, borderColor: '#ccc', padding: 12, borderRadius: 8, backgroundColor: '#f9f9f9', fontSize: 16 },
   textArea: { height: 100, textAlignVertical: 'top' },
@@ -244,7 +272,10 @@ const styles = StyleSheet.create({
   txtBorrarFoto: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
   btnAgregarFoto: { width: 100, height: 100, borderRadius: 8, borderWidth: 2, borderColor: '#5c4b8a', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f4f1fa' },
   txtAgregarFoto: { color: '#5c4b8a', fontWeight: 'bold' },
-  boton: { backgroundColor: '#007bff', padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 30 },
+  contenedorBotonesAccion: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30 },
+  botonCancelar: { flex: 1, backgroundColor: '#6c757d', padding: 15, borderRadius: 8, alignItems: 'center', marginRight: 10 },
+  textoBotonCancelar: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  botonGuardar: { flex: 1, backgroundColor: '#007bff', padding: 15, borderRadius: 8, alignItems: 'center', marginLeft: 10 },
   botonDeshabilitado: { backgroundColor: '#ccc' },
-  botonTexto: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
+  textoBotonGuardar: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
 });
