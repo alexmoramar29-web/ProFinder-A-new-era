@@ -1,23 +1,31 @@
-import { AuthProvider } from '@/context/AuthProvider'; // ¡Le regresamos sus llaves!
+import { AuthProvider } from '@/context/AuthProvider';
 import { Slot } from 'expo-router';
 import Head from 'expo-router/head';
 import React from 'react';
-// Aquí declaramos a nuestro único Director Principal del archivo
+import { StyleSheet, View } from 'react-native';
+
 export default function LayoutPrincipal() {
   return (
     <>
-      {/* EL CANDADO MAGICO: Bloquea el zoom en celulares cuando se ve en internet */}
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
       </Head>
 
-      {/* Envolvemos tu app con tu sistema de sesiones (Auth) */}
       <AuthProvider>
-        
-        {/* Slot se encarga de mostrar la pantalla correcta (auth, profesionista, etc.) automáticamente */}
-        <Slot />
-        
+        {/* Envolvemos la app en una caja que NO puede crecer más allá de la pantalla */}
+        <View style={styles.cajaEstricta}>
+          <Slot />
+        </View>
       </AuthProvider>
     </>
   );
 }
+
+// Creamos los estilos aquí abajo
+const styles = StyleSheet.create({
+  cajaEstricta: {
+    flex: 1,
+    width: '100%',
+    overflow: 'hidden' // La tijera final en React Native
+  }
+});
