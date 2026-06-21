@@ -39,7 +39,7 @@ function EnrutadorProfesionista() {
 
   useEffect(() => {
     const revisarSeguridadYDatos = async () => {
-      // 1. EL GUARDIA: Revisamos si hay una sesión activa
+      // revisa si hay una sesión activa
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -99,7 +99,7 @@ function EnrutadorProfesionista() {
           headerTintColor: '#fff',
           drawerActiveTintColor: '#5c4b8a',
           drawerPosition: 'right',
-          headerTitle: '',
+          headerTitleAlign: 'center',
           drawerStyle: { width: 260 },
           drawerLabelStyle: { fontSize: 16, fontWeight: '500' },
           headerLeft: () => (
@@ -127,13 +127,17 @@ function EnrutadorProfesionista() {
           ),
         }}
       >
-<Drawer.Screen name="index" options={{ drawerLabel: 'Inicio', headerTitle: 'Inicio', headerTitleAlign: 'center' }} />
-        <Drawer.Screen name="horarios" options={{ drawerLabel: 'Mis Horarios', headerTitle: 'Mis Horarios', headerTitleAlign: 'center' }} />
-        <Drawer.Screen name="servicios/index" options={{ drawerLabel: 'Mis Servicios', headerTitle: 'Mis Servicios', headerTitleAlign: 'center' }} />
-        <Drawer.Screen name="servicios/agregar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Agregar Servicio', headerTitleAlign: 'center' }} />
-        <Drawer.Screen name="perfil/index" options={{ drawerLabel: 'Mi Perfil', headerTitle: 'Mi Perfil', headerTitleAlign: 'center' }} />
-        <Drawer.Screen name="perfil/editar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Editar Perfil', headerTitleAlign: 'center' }} />
-        <Drawer.Screen name="completar-registro" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Verificación Profesional', headerTitleAlign: 'center' }} />
+        <Drawer.Screen name="index" options={{ drawerLabel: 'Inicio', headerTitle: 'Inicio' }} />
+        <Drawer.Screen name="horarios" options={{ drawerLabel: 'Mis Horarios', headerTitle: 'Mis Horarios' }} />
+        <Drawer.Screen name="servicios/index" options={{ drawerLabel: 'Mis Servicios', headerTitle: 'Mis Servicios' }} />
+        <Drawer.Screen name="servicios/agregar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Agregar Servicio' }} />
+        <Drawer.Screen name="perfil/index" options={{ drawerLabel: 'Mi Perfil', headerTitle: 'Mi Perfil' }} />
+        <Drawer.Screen name="perfil/editar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Editar Perfil' }} />
+        <Drawer.Screen name="completar-registro" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Verificación Profesional' }} />
+        <Drawer.Screen name="calendario/index" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="chat/index" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="chat/[id]" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="reseñas/index" options={{ drawerItemStyle: { display: 'none' } }} />
       </Drawer>
     </GestureHandlerRootView>
   );
