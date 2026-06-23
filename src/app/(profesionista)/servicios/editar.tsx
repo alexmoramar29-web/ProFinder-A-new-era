@@ -2,12 +2,14 @@ import { supabase } from '@/lib/supabase';
 import { Picker } from '@react-native-picker/picker';
 import { decode } from 'base64-arraybuffer';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-export default function AgregarServicioScreen() {
+export default function EditarServicioScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams(); 
+
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [categorias, setCategorias] = useState<any[]>([]);
@@ -17,39 +19,63 @@ export default function AgregarServicioScreen() {
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [precio, setPrecio] = useState('');
-  const [duracion, setDuracion] = useState('60');
+  const [duracion, setDuracion] = useState('60'); 
   const [categoriaId, setCategoriaId] = useState('');
   const [modalidad, setModalidad] = useState('Presencial');
+  const [isActive, setIsActive] = useState(true);
   
-  // NUEVO: El estado para guardar la foto
+  // NUEVO: Estados para la foto
   const [foto, setFoto] = useState<any>(null);
+  const [fotoIdOriginal, setFotoIdOriginal] = useState<number | null>(null);
 
   useEffect(() => {
-    cargarCategorias();
-  }, []);
+    if (id) {
+      inicializarPantalla();
+    }
+  }, [id]);
 
-  const cargarCategorias = async () => {
+  const inicializarPantalla = async () => {
+    setCargando(true);
     try {
-      const { data, error } = await supabase.from('categories').select('*');
+      const { data: cats } = await supabase.from('categories').select('*');
+      setCategorias(cats || []);
+
+      // Pedimos el servicio Y SU FOTO
+      const { data: servicio, error } = await supabase
+        .from('services')
+        .select('*, service_images(image_id, image_url)')
+        .eq('service_id', id)
+        .single();
+
       if (error) throw error;
-      setCategorias(data || []);
-      
-      if (data && data.length > 0) {
-        setCategoriaId(data[0].category_id.toString());
+
+      if (servicio) {
+        setNombre(servicio.service_name);
+        setDescripcion(servicio.description);
+        setPrecio(servicio.base_price.toString());
+        setDuracion(servicio.duration_minutes?.toString() || '60');
+        setCategoriaId(servicio.category_id.toString());
+        setModalidad(servicio.modality || 'Presencial');
+        setIsActive(servicio.is_active ?? true);
+        
+        // Si ya tenía una foto guardada, la ponemos en la pantalla
+        if (servicio.service_images && servicio.service_images.length > 0) {
+          setFoto({ uri: servicio.service_images[0].image_url });
+          setFotoIdOriginal(servicio.service_images[0].image_id); // Guardamos el ID de la foto vieja
+        }
       }
     } catch (error: any) {
-      setMensajeError('Error al cargar las categorías.');
+      setMensajeError('No se pudieron cargar los datos: ' + error.message);
     } finally {
       setCargando(false);
     }
   };
 
-  // NUEVO: Función para abrir la galería del celular
   const seleccionarImagen = async () => {
     const resultado = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [1, 1], // Para que la foto sea cuadrada como la tarjeta
+      aspect: [1, 1],
       quality: 0.6,
       base64: true,
     });
@@ -59,7 +85,7 @@ export default function AgregarServicioScreen() {
     }
   };
 
-  const handleGuardar = async () => {
+  const handleActualizar = async () => {
     setMensajeError('');
     const nombreLimpio = nombre.trim();
     const descripcionLimpia = descripcion.trim();
@@ -75,48 +101,45 @@ export default function AgregarServicioScreen() {
 
     setGuardando(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No se encontró una sesión activa.');
-
-      // 1. Guardamos el servicio en la base de datos y le pedimos que nos devuelva el ID creado
-      const { data: nuevoServicio, error: errorServicio } = await supabase
+      // 1. Actualizamos los textos del servicio
+      const { error } = await supabase
         .from('services')
-        .insert({
-          prof_id: user.id,
+        .update({
           category_id: parseInt(categoriaId),
           service_name: nombreLimpio,
           description: descripcionLimpia,
           base_price: parseFloat(precioLimpio),
           duration_minutes: parseInt(duracion),
-          modality: modalidad
+          modality: modalidad,
+          is_active: isActive
         })
-        .select()
-        .single(); // .single() es la magia para que nos regrese el servicio recién creado
+        .eq('service_id', id);
 
-      if (errorServicio) throw errorServicio;
+      if (error) throw error;
 
-      // 2. Si el usuario seleccionó una foto, la subimos a la nube
-      if (foto?.base64 && nuevoServicio) {
-        const fileName = `servicio_${nuevoServicio.service_id}_${Date.now()}.jpg`;
+      // 2. Si hay una FOTO NUEVA (tiene base64), la subimos
+      if (foto?.base64) {
+        const fileName = `servicio_${id}_${Date.now()}.jpg`;
         
         const { error: uploadError } = await supabase.storage
           .from('profesionales-documentos')
           .upload(fileName, decode(foto.base64), { contentType: 'image/jpeg', upsert: true });
 
         if (!uploadError) {
-          // Si se subió bien, sacamos el link público y lo guardamos en la tabla de service_images
           const { data: { publicUrl } } = supabase.storage.from('profesionales-documentos').getPublicUrl(fileName);
           
-          await supabase.from('service_images').insert({
-            service_id: nuevoServicio.service_id,
-            image_url: publicUrl
-          });
+          // Si ya tenía foto vieja, la actualizamos. Si no tenía foto, la insertamos.
+          if (fotoIdOriginal) {
+            await supabase.from('service_images').update({ image_url: publicUrl }).eq('image_id', fotoIdOriginal);
+          } else {
+            await supabase.from('service_images').insert({ service_id: id, image_url: publicUrl });
+          }
         }
       }
 
       router.replace('/(profesionista)/servicios');
     } catch (error: any) {
-      setMensajeError('Error al guardar: ' + error.message);
+      setMensajeError('Error al actualizar: ' + error.message);
     } finally {
       setGuardando(false);
     }
@@ -129,20 +152,33 @@ export default function AgregarServicioScreen() {
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.container}>
-        <Text style={styles.titulo}>Crear Nuevo Servicio</Text>
-        <Text style={styles.subtitulo}>Llena los datos para ofrecer un nuevo servicio a tus clientes.</Text>
+        <Text style={styles.titulo}>Editar Servicio</Text>
+        <Text style={styles.subtitulo}>Modifica los datos de tu servicio y mantén tu menú actualizado.</Text>
 
-        {/* NUEVO: El botón para subir la foto */}
         <TouchableOpacity style={styles.fotoContainer} onPress={seleccionarImagen}>
           {foto ? (
             <Image source={{ uri: foto.uri }} style={styles.fotoSeleccionada} />
           ) : (
             <View style={styles.fotoPlaceholder}>
               <Text style={styles.textoPlaceholder}>+ Subir Foto</Text>
-              <Text style={styles.textoSubPlaceholder}>(Opcional)</Text>
             </View>
           )}
         </TouchableOpacity>
+
+        <View style={styles.switchContainer}>
+          <View style={styles.switchTextos}>
+            <Text style={styles.switchTitulo}>Estado del Servicio</Text>
+            <Text style={styles.switchSubtitulo}>
+              {isActive ? "Activo (Visible para clientes)" : "Pausado (Oculto temporalmente)"}
+            </Text>
+          </View>
+          <Switch
+            trackColor={{ false: "#ccc", true: "#5c4b8a" }}
+            thumbColor={isActive ? "#fff" : "#f4f3f4"}
+            onValueChange={() => setIsActive(!isActive)}
+            value={isActive}
+          />
+        </View>
 
         <Text style={styles.label}>Nombre del Servicio *</Text>
         <TextInput style={styles.input} value={nombre} onChangeText={setNombre} maxLength={100} editable={!guardando} />
@@ -205,12 +241,11 @@ export default function AgregarServicioScreen() {
         )}
 
         <View style={styles.contenedorBotones}>
-        <TouchableOpacity style={styles.botonCancelar} onPress={() => router.replace('/(profesionista)/servicios')} disabled={guardando}>
+         <TouchableOpacity style={styles.botonCancelar} onPress={() => router.replace('/(profesionista)/servicios')} disabled={guardando}>
   <Text style={styles.textoCancelar}>Cancelar</Text>
 </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.botonGuardar, guardando && styles.botonDeshabilitado]} onPress={handleGuardar} disabled={guardando}>
-            {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoGuardar}>Crear Servicio</Text>}
+          <TouchableOpacity style={[styles.botonGuardar, guardando && styles.botonDeshabilitado]} onPress={handleActualizar} disabled={guardando}>
+            {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoGuardar}>Guardar Cambios</Text>}
           </TouchableOpacity>
         </View>
       </View>
@@ -224,14 +259,16 @@ const styles = StyleSheet.create({
   container: { padding: 20 },
   titulo: { fontSize: 24, fontWeight: 'bold', color: '#5c4b8a', textAlign: 'center' },
   subtitulo: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20, marginTop: 5 },
-  
-  // Estilos de la foto
+
   fotoContainer: { alignSelf: 'center', marginBottom: 20 },
   fotoSeleccionada: { width: 120, height: 120, borderRadius: 12, backgroundColor: '#e9ecef', borderWidth: 1, borderColor: '#ccc' },
   fotoPlaceholder: { width: 120, height: 120, borderRadius: 12, backgroundColor: '#f4f1fa', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#5c4b8a', borderStyle: 'dashed' },
   textoPlaceholder: { color: '#5c4b8a', fontSize: 16, fontWeight: 'bold' },
-  textoSubPlaceholder: { color: '#888', fontSize: 10, marginTop: 4 },
 
+  switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f4f1fa', padding: 15, borderRadius: 8, marginBottom: 15, borderWidth: 1, borderColor: '#ddd' },
+  switchTextos: { flex: 1 },
+  switchTitulo: { fontSize: 16, fontWeight: 'bold', color: '#333' },
+  switchSubtitulo: { fontSize: 12, color: '#666', marginTop: 2 },
   label: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 5, marginTop: 10 },
   input: { borderWidth: 1, borderColor: '#ccc', padding: 12, borderRadius: 8, backgroundColor: '#f9f9f9', fontSize: 16 },
   textArea: { height: 80, textAlignVertical: 'top' },

@@ -167,23 +167,21 @@ export default function EditarPerfilScreen() {
   if (cargando) {
     return (
       <View style={styles.centro}>
-        <ActivityIndicator size="large" color="#007bff" />
+        <ActivityIndicator size="large" color="#5c4b8a" />
       </View>
     );
   }
+
+  // EL TRUCO: Si no hay foto, usamos el avatar de repuesto
+  const imagenAMostrar = fotoPerfil?.uri || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.container}>
         
         <TouchableOpacity style={styles.fotoContainer} onPress={seleccionarImagen}>
-          {fotoPerfil ? (
-            <Image source={{ uri: fotoPerfil.uri }} style={styles.foto} />
-          ) : (
-            <View style={styles.fotoPlaceholder}>
-              <Text style={styles.textoPlaceholder}>Subir Foto</Text>
-            </View>
-          )}
+          {/* Ahora siempre se dibujará una imagen redonda, ya sea la tuya o el avatar base */}
+          <Image source={{ uri: imagenAMostrar }} style={styles.foto} />
         </TouchableOpacity>
 
         <View style={styles.switchContainer}>
@@ -235,7 +233,6 @@ export default function EditarPerfilScreen() {
         </ScrollView>
 
         <View style={styles.contenedorBotonesAccion}>
-          {/* CORREGIDO: Ahora usa router.replace para ir directo al perfil */}
           <TouchableOpacity style={styles.botonCancelar} onPress={() => router.replace('/(profesionista)/perfil')} disabled={guardando}>
             <Text style={styles.textoBotonCancelar}>Cancelar</Text>
           </TouchableOpacity>
@@ -255,9 +252,7 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, backgroundColor: '#fff' },
   container: { padding: 20 },
   fotoContainer: { alignSelf: 'center', marginBottom: 25 },
-  foto: { width: 120, height: 120, borderRadius: 60 },
-  fotoPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#e9ecef', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#ccc' },
-  textoPlaceholder: { color: '#6c757d', fontSize: 14, fontWeight: 'bold' },
+  foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#e9ecef', borderWidth: 2, borderColor: '#e0e0e0' },
   switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f4f1fa', padding: 15, borderRadius: 8, marginBottom: 20, borderWidth: 1, borderColor: '#ddd' },
   switchTextos: { flex: 1 },
   switchTitulo: { fontSize: 16, fontWeight: 'bold', color: '#333' },
@@ -275,7 +270,7 @@ const styles = StyleSheet.create({
   contenedorBotonesAccion: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30 },
   botonCancelar: { flex: 1, backgroundColor: '#6c757d', padding: 15, borderRadius: 8, alignItems: 'center', marginRight: 10 },
   textoBotonCancelar: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  botonGuardar: { flex: 1, backgroundColor: '#007bff', padding: 15, borderRadius: 8, alignItems: 'center', marginLeft: 10 },
+  botonGuardar: { flex: 1, backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center', marginLeft: 10 },
   botonDeshabilitado: { backgroundColor: '#ccc' },
   textoBotonGuardar: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
 });

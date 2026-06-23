@@ -1,5 +1,6 @@
 import { usePerfil } from '@/context/PerfilContext';
 import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -47,14 +48,17 @@ export default function PerfilScreen() {
 
   let colorEtiqueta = '#6c757d'; 
   let textoEtiqueta = 'Documentos sin revisar';
+  
+  const estadoLimpio = estadoVerificacion.toLowerCase();
+  const esAprobado = estadoLimpio === 'verificado' || estadoLimpio === 'aprobado' || estadoLimpio === 'perfil aprobado';
 
-  if (estadoVerificacion.toLowerCase() === 'verificado') {
+  if (esAprobado) {
     colorEtiqueta = '#28a745'; 
     textoEtiqueta = 'Perfil Aprobado';
-  } else if (estadoVerificacion.toLowerCase() === 'en revision' || estadoVerificacion.toLowerCase() === 'en revisión') {
+  } else if (estadoLimpio === 'en revision' || estadoLimpio === 'en revisión') {
     colorEtiqueta = '#ffc107'; 
     textoEtiqueta = 'Documentos en revision';
-  } else if (estadoVerificacion.toLowerCase() === 'rechazado') {
+  } else if (estadoLimpio === 'rechazado') {
     colorEtiqueta = '#dc3545'; 
     textoEtiqueta = 'Documentos rechazados';
   }
@@ -73,8 +77,8 @@ export default function PerfilScreen() {
 
         <View style={styles.container}>
           
+          {/* PASO 1: Metemos la palomita aquí adentro para que flote sobre la foto */}
           <View style={styles.fotoContainer}>
-            {/* NUEVO: Al tocar la foto de perfil, activamos el Modal */}
             <TouchableOpacity onPress={() => { if (fotoGrandeMostrar) setFotoAmpliada(fotoGrandeMostrar); }}>
               {fotoGrandeMostrar ? (
                 <Image source={{ uri: fotoGrandeMostrar }} style={styles.foto} />
@@ -84,8 +88,16 @@ export default function PerfilScreen() {
                 </View>
               )}
             </TouchableOpacity>
+
+            {/* El circulo morado con tu palomita blanca flotando abajo a la derecha */}
+            {esAprobado && (
+              <View style={styles.circuloVerificado}>
+                <Ionicons name="checkmark" size={16} color="#fff" />
+              </View>
+            )}
           </View>
 
+          {/* El nombre vuelve a quedar limpio y centrado */}
           <View style={styles.nombreContainer}>
             <Text style={styles.nombreTexto}>{perfil?.full_name || 'Nombre no disponible'}</Text>
           </View>
@@ -117,7 +129,6 @@ export default function PerfilScreen() {
               <Text style={styles.tituloSeccion}>Mis Trabajos</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carrusel}>
                 {portafolio.map((item) => (
-                  // NUEVO: Al tocar una foto del portafolio, activamos el Modal
                   <TouchableOpacity key={item.image_id} onPress={() => setFotoAmpliada(item.image_url)}>
                     <Image source={{ uri: item.image_url }} style={styles.fotoTrabajo} />
                   </TouchableOpacity>
@@ -139,15 +150,13 @@ export default function PerfilScreen() {
         </View>
       </ScrollView>
 
-      {/* NUEVO: Capa oscura que se muestra solo cuando hay una foto seleccionada */}
-      <Modal visible={fotoAmpliada !== null} transparent={true} animationType="fade">
+     <Modal visible={fotoAmpliada !== null} transparent={true} animationType="fade">
+        
         <View style={styles.modalFondoOscuro}>
-          {/* Boton para cerrar la foto */}
           <TouchableOpacity style={styles.botonCerrarModal} onPress={() => setFotoAmpliada(null)}>
             <Text style={styles.textoCerrarModal}>Cerrar X</Text>
           </TouchableOpacity>
           
-          {/* Foto expandida centrada */}
           {fotoAmpliada && (
             <Image source={{ uri: fotoAmpliada }} style={styles.fotoGigante} resizeMode="contain" />
           )}
@@ -168,10 +177,29 @@ const styles = StyleSheet.create({
   foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#ddd' },
   fotoVacia: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' },
   textoFotoVacia: { color: '#666', fontWeight: 'bold' },
-  nombreContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
+  
+  // PASO 2: Las reglas mágicas para acomodar el círculo morado encima de la foto
+  circuloVerificado: {
+    position: 'absolute',
+    bottom: 0,
+    right: 4,
+    backgroundColor: '#5c4b8a', // Tu color morado principal
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#f4f4f4', // Una pequeña orilla clara para que resalte hermoso
+  },
+
+  nombreContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 5 },
   nombreTexto: { fontSize: 24, fontWeight: 'bold', color: '#333', textAlign: 'center' },
-  etiquetaVerificacion: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 15, marginBottom: 20 },
-  textoEtiqueta: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
+  
+  // PASO 3: Reducimos el tamaño del texto y ajustamos la etiqueta
+  etiquetaVerificacion: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginBottom: 20 },
+  textoEtiqueta: { color: '#fff', fontWeight: 'bold', fontSize: 10 }, // Texto más pequeño y fino
+  
   datosCard: { width: '100%', backgroundColor: '#fff', padding: 20, borderRadius: 10, elevation: 3, marginBottom: 20 },
   datoTitulo: { fontSize: 12, color: '#888', marginTop: 10, fontWeight: 'bold' },
   datoValor: { fontSize: 16, color: '#333', marginBottom: 5 },
