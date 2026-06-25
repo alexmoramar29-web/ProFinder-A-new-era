@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PerfilProvider, usePerfil } from '../../context/PerfilContext';
 import { supabase } from '../../lib/supabase';
 
+// 1. Aquí armamos la caja de tu menú lateral
 function MenuPersonalizado(props: DrawerContentComponentProps) {
   const router = useRouter();
 
@@ -17,11 +18,23 @@ function MenuPersonalizado(props: DrawerContentComponentProps) {
 
   return (
     <View style={styles.contenedorPrincipal}>
+      {/* Esta parte muestra las pantallas de trabajo arriba */}
       <DrawerContentScrollView {...props}>
         <DrawerItemList {...props} />
       </DrawerContentScrollView>
 
+      {/* Esta parte deja fijos los botones de configuración y salida abajo */}
       <View style={styles.contenedorFijoAbajo}>
+        <DrawerItem 
+          label="Configuración" 
+          onPress={() => router.push('/(profesionista)/configuracion' as any)}
+          labelStyle={styles.textoMenuAbajo}
+        />
+        <DrawerItem 
+          label="Ayuda" 
+          onPress={() => router.push('/(profesionista)/ayuda' as any)}
+          labelStyle={styles.textoMenuAbajo}
+        />
         <DrawerItem 
           label="Cerrar Sesión" 
           onPress={salirDeLaCuenta}
@@ -32,6 +45,7 @@ function MenuPersonalizado(props: DrawerContentComponentProps) {
   );
 }
 
+// 2. Aquí controlamos quién puede entrar y cómo se ven las pantallas
 function EnrutadorProfesionista() {
   const router = useRouter();
   const { fotoGlobal, setFotoGlobal } = usePerfil();
@@ -121,23 +135,29 @@ function EnrutadorProfesionista() {
           ),
         }}
       >
+        {/* PANTALLAS VISIBLES EN EL MENÚ DE ARRIBA */}
         <Drawer.Screen name="index" options={{ drawerLabel: 'Inicio', headerTitle: 'Inicio' }} />
+        <Drawer.Screen name="calendario/index" options={{ drawerLabel: 'Citas', headerTitle: 'Mis Citas' }}/>
         <Drawer.Screen name="horarios/index" options={{ drawerLabel: 'Mis Horarios', headerTitle: 'Mis Horarios' }}/>
         <Drawer.Screen name="servicios/index" options={{ drawerLabel: 'Mis Servicios', headerTitle: 'Mis Servicios' }} />
+        <Drawer.Screen name="chat/index" options={{ drawerLabel: 'Chat', headerTitle: 'Mis Mensajes' }} />
+        <Drawer.Screen name="perfil/index" options={{ drawerLabel: 'Mi Perfil', headerTitle: 'Mi Perfil' }} />
+        <Drawer.Screen name="reseñas/index" options={{ drawerLabel: 'Reseñas', headerTitle: 'Mis Reseñas' }} />
+        
+        
         <Drawer.Screen name="servicios/agregar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Agregar Servicio' }} />
         <Drawer.Screen name="servicios/editar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Editar Servicio' }} />
-        <Drawer.Screen name="perfil/index" options={{ drawerLabel: 'Mi Perfil', headerTitle: 'Mi Perfil' }} />
         <Drawer.Screen name="perfil/editar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Editar Perfil' }} />
         <Drawer.Screen name="completar-registro" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Verificación Profesional' }} />
-        <Drawer.Screen name="chat/index" options={{ drawerItemStyle: { display: 'none' } }} />
         <Drawer.Screen name="chat/[id]" options={{ drawerItemStyle: { display: 'none' } }} />
-        <Drawer.Screen name="reseñas/index" options={{ drawerLabel: 'Reseñas', headerTitle: 'Reseñas'}}/>
-        <Drawer.Screen name="calendario/index" options={{ drawerLabel: 'Mis citas', headerTitle: 'Mis citas' }}/>
+        <Drawer.Screen name="configuracion/index" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Configuración' }} />
+        <Drawer.Screen name="ayuda/index" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Centro de Ayuda' }} />
       </Drawer>
     </GestureHandlerRootView>
   );
 }
 
+// 3. Exportamos todo envuelto en tu proveedor de perfil
 export default function ProfesionistaLayout() {
   return (
     <PerfilProvider>
@@ -146,10 +166,12 @@ export default function ProfesionistaLayout() {
   );
 }
 
+// 4. Estilos visuales
 const styles = StyleSheet.create({
   contenedorPrincipal: { flex: 1 },
-  contenedorFijoAbajo: { borderTopWidth: 1, borderTopColor: '#ddd', paddingBottom: 25, paddingTop: 5 },
-  textoSalir: { color: '#d9534f', fontWeight: 'bold', fontSize: 16 },
+  contenedorFijoAbajo: { borderTopWidth: 1, borderTopColor: '#E5E5EA', paddingBottom: 25, paddingTop: 5, backgroundColor: '#FAFAFC' },
+  textoMenuAbajo: { color: '#1C1C1E', fontWeight: '500', fontSize: 16 },
+  textoSalir: { color: '#FF3B30', fontWeight: 'bold', fontSize: 16 },
   contenedorIzquierdo: { marginLeft: 20, justifyContent: 'center' },
   logoImagen: { width: 42, height: 42, borderRadius: 21, overflow: 'hidden', resizeMode: 'cover' },
   contenedorDerecho: { flexDirection: 'row', alignItems: 'center', marginRight: 15 },
