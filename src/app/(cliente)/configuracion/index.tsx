@@ -1,0 +1,142 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Image, Modal, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { supabase } from '../../../lib/supabase';
+
+export default function ConfiguracionScreen() {
+  const { t, i18n } = useTranslation();
+  const router = useRouter();
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [modoOscuro, setModoOscuro] = useState(false);
+  const [notificaciones, setNotificaciones] = useState(true);
+
+  const cargarFotoPerfil = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data } = await supabase.from('clientes').select('avatar_url').eq('id', user.id).single();
+      if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+    }
+  };
+
+  useFocusEffect(useCallback(() => { cargarFotoPerfil(); }, []));
+
+  const fotoNavbar = avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+
+  const menuItems = [
+    { title: 'Inicio', route: '/(cliente)' },
+    { title: 'Chat', route: '/(cliente)/chat' },
+    { title: 'Mi Perfil', route: '/(cliente)/perfil' },
+    { title: 'Configuración', route: '/(cliente)/configuracion' },
+    { title: 'Ayuda', route: '/(cliente)/ayuda' },
+  ];
+
+  return (
+    <View style={styles.container}>
+      {/* NAVBAR LIMPIA */}
+      <View style={styles.navbar}>
+        <Text style={styles.navbarTitle}>Configuración</Text>
+        <View style={styles.rightHeaderContainer}>
+          {/* AHORA LA FOTO TE LLEVA A PERFIL */}
+          <TouchableOpacity onPress={() => router.push('/(cliente)/perfil')}>
+            <Image source={{ uri: fotoNavbar }} style={styles.profileCircle} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity onPress={() => setMenuVisible(true)} style={{ marginLeft: 15 }}>
+            <Text style={{ fontSize: 24, color: '#fff' }}>☰</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* MENÚ HAMBURGUESA */}
+      <Modal visible={menuVisible} transparent={true} animationType="fade">
+        <View style={styles.modalContainer}>
+          <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}><View style={styles.overlay} /></TouchableWithoutFeedback>
+          <View style={styles.sideMenu}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {menuItems.map((item, index) => (
+                <TouchableOpacity key={index} style={[styles.menuItem, item.title === 'Configuración' && { marginTop: 30 }]} onPress={() => { setMenuVisible(false); router.push(item.route as any); }}>
+                  <Text style={styles.menuText}>{item.title}</Text>
+                </TouchableOpacity>
+              ))}
+              <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 20 }} />
+              <TouchableOpacity onPress={async () => { await supabase.auth.signOut(); router.replace('/(auth)/sign-in'); }} style={styles.menuItem}>
+                <Text style={{ color: 'red', fontWeight: 'bold' }}>Cerrar Sesión</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* CONTENIDO */}
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.cabecera}>
+          <Text style={styles.tituloSeccion}>{t('configuracionTitulo')}</Text>
+          <Text style={styles.subtituloSeccion}>{t('configuracionSubtitulo')}</Text>
+        </View>
+
+        <Text style={styles.tituloBloque}>{t('preferenciasPantalla')}</Text>
+        <View style={styles.bloqueAjustes}>
+          <View style={[styles.filaAjuste, styles.lineaDivisora]}>
+            <Text style={styles.textoFila}>{t('modoOscuro')}</Text>
+            <Switch value={modoOscuro} onValueChange={setModoOscuro} trackColor={{ false: '#E5E5EA', true: '#5c4b8a' }} thumbColor={'#FFFFFF'} />
+          </View>
+          <TouchableOpacity style={styles.filaAjuste} onPress={async () => { const lang = i18n.language === 'en' ? 'es' : 'en'; await AsyncStorage.setItem('user-language', lang); i18n.changeLanguage(lang); }}>
+            <Text style={styles.textoFila}>{t('idiomaAplicacion')}</Text>
+            <Text style={styles.textoSecundario}>{i18n.language === 'en' ? 'English ❯' : 'Español ❯'}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.tituloBloque}>{t('seguridadAlertas')}</Text>
+        <View style={styles.bloqueAjustes}>
+          <TouchableOpacity style={[styles.filaAjuste, styles.lineaDivisora]} onPress={() => router.push('/(cliente)/configuracion/cambiar-contrasena' as any)}>
+            <Text style={styles.textoFila}>{t('cambiarContrasenaBtn')}</Text>
+            <Text style={styles.flecha}>❯</Text>
+          </TouchableOpacity>
+          <View style={styles.filaAjuste}>
+            <Text style={styles.textoFila}>{t('notificacionesPush')}</Text>
+            <Switch value={notificaciones} onValueChange={setNotificaciones} trackColor={{ false: '#E5E5EA', true: '#5c4b8a' }} />
+          </View>
+        </View>
+
+        <Text style={styles.tituloBloque}>{t('acercaDe')}</Text>
+        <View style={styles.bloqueAjustes}>
+          <TouchableOpacity style={[styles.filaAjuste, styles.lineaDivisora]} onPress={() => router.push('/(cliente)/configuracion/privacidad' as any)}>
+            <Text style={styles.textoFila}>{t('terminosPrivacidad')}</Text>
+            <Text style={styles.flecha}>❯</Text>
+          </TouchableOpacity>
+          <View style={styles.filaAjuste}>
+            <Text style={styles.textoFila}>{t('versionApp')}</Text>
+            <Text style={styles.textoSecundario}>1.0.0</Text>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#FAFAFC' },
+  navbar: { height: 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, backgroundColor: '#5c4b8a' },
+  navbarTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff', textAlign: 'left' },
+  rightHeaderContainer: { flexDirection: 'row', alignItems: 'center' },
+  profileCircle: { width: 38, height: 38, borderRadius: 19, borderWidth: 2, borderColor: '#fff' },
+  modalContainer: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' },
+  sideMenu: { width: 220, backgroundColor: '#fff', padding: 20, paddingTop: 60, elevation: 10 },
+  menuItem: { paddingVertical: 10 },
+  menuText: { fontSize: 16, color: '#333' },
+  scroll: { padding: 20 },
+  cabecera: { marginBottom: 25 },
+  tituloSeccion: { fontSize: 26, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 5 },
+  subtituloSeccion: { fontSize: 15, color: '#8E8E93' },
+  tituloBloque: { fontSize: 14, fontWeight: 'bold', color: '#8E8E93', textTransform: 'uppercase', marginBottom: 8, marginLeft: 5 },
+  bloqueAjustes: { backgroundColor: '#FFFFFF', borderRadius: 12, marginBottom: 25, borderWidth: 1, borderColor: '#E5E5EA', overflow: 'hidden' },
+  filaAjuste: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16 },
+  lineaDivisora: { borderBottomWidth: 1, borderBottomColor: '#F2F2F7' },
+  textoFila: { fontSize: 16, color: '#1C1C1E', fontWeight: '500' },
+  textoSecundario: { fontSize: 16, color: '#8E8E93' },
+  flecha: { fontSize: 16, color: '#C7C7CC', fontWeight: 'bold' }
+});
