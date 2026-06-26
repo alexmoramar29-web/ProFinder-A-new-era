@@ -7,8 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "i18n": "i18next-scanner --config i18next-scanner.config.js",
-    "traducir": "i18next-scanner --config i18next-scanner.config.js && node translate.js"
+    "i18n": "i18next-scanner --config i18next-scanner.config.js"
+    
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
