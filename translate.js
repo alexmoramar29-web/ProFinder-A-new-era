@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { OpenAI } = require('openai');
 
-const openai = new OpenAI({ apiKey: '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' });
+const openai = new OpenAI({ apiKey: '' });
 
 async function traducirArchivo() {
     const json = JSON.parse(fs.readFileSync('./src/locales/en/translation.json', 'utf-8'));
