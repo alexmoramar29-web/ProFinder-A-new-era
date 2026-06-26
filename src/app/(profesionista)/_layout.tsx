@@ -2,6 +2,7 @@ import { DrawerContentComponentProps, DrawerContentScrollView, DrawerItem, Drawe
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PerfilProvider, usePerfil } from '../../context/PerfilContext';
@@ -10,6 +11,7 @@ import { supabase } from '../../lib/supabase';
 // 1. Aquí armamos la caja de tu menú lateral
 function MenuPersonalizado(props: DrawerContentComponentProps) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const salirDeLaCuenta = async () => {
     await supabase.auth.signOut();
@@ -26,17 +28,17 @@ function MenuPersonalizado(props: DrawerContentComponentProps) {
       {/* Esta parte deja fijos los botones de configuración y salida abajo */}
       <View style={styles.contenedorFijoAbajo}>
         <DrawerItem 
-          label="Configuración" 
+          label={t('configuracionMenu')} 
           onPress={() => router.push('/(profesionista)/configuracion' as any)}
           labelStyle={styles.textoMenuAbajo}
         />
         <DrawerItem 
-          label="Ayuda" 
+          label={t('ayudaMenu')} 
           onPress={() => router.push('/(profesionista)/ayuda' as any)}
           labelStyle={styles.textoMenuAbajo}
         />
         <DrawerItem 
-          label="Cerrar Sesión" 
+          label={t('cerrarSesionMenu')} 
           onPress={salirDeLaCuenta}
           labelStyle={styles.textoSalir}
         />
@@ -48,6 +50,7 @@ function MenuPersonalizado(props: DrawerContentComponentProps) {
 // 2. Aquí controlamos quién puede entrar y cómo se ven las pantallas
 function EnrutadorProfesionista() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { fotoGlobal, setFotoGlobal } = usePerfil();
   const [verificando, setVerificando] = useState(true);
 
@@ -136,22 +139,22 @@ function EnrutadorProfesionista() {
         }}
       >
         {/* PANTALLAS VISIBLES EN EL MENÚ DE ARRIBA */}
-        <Drawer.Screen name="index" options={{ drawerLabel: 'Inicio', headerTitle: 'Inicio' }} />
-        <Drawer.Screen name="calendario/index" options={{ drawerLabel: 'Citas', headerTitle: 'Mis Citas' }}/>
-        <Drawer.Screen name="horarios/index" options={{ drawerLabel: 'Mis Horarios', headerTitle: 'Mis Horarios' }}/>
-        <Drawer.Screen name="servicios/index" options={{ drawerLabel: 'Mis Servicios', headerTitle: 'Mis Servicios' }} />
-        <Drawer.Screen name="chat/index" options={{ drawerLabel: 'Chat', headerTitle: 'Mis Mensajes' }} />
-        <Drawer.Screen name="perfil/index" options={{ drawerLabel: 'Mi Perfil', headerTitle: 'Mi Perfil' }} />
-        <Drawer.Screen name="reseñas/index" options={{ drawerLabel: 'Reseñas', headerTitle: 'Mis Reseñas' }} />
-        
-        
-        <Drawer.Screen name="servicios/agregar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Agregar Servicio' }} />
-        <Drawer.Screen name="servicios/editar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Editar Servicio' }} />
-        <Drawer.Screen name="perfil/editar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Editar Perfil' }} />
-        <Drawer.Screen name="completar-registro" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Verificación Profesional' }} />
+        <Drawer.Screen name="index" options={{ drawerLabel: t('inicioMenu'), headerTitle: t('inicioMenu') }} />
+        <Drawer.Screen name="calendario/index" options={{ drawerLabel: t('citasMenu'), headerTitle: t('misCitasHeader') }}/>
+        <Drawer.Screen name="horarios/index" options={{ drawerLabel: t('misHorariosMenu'), headerTitle: t('misHorariosMenu') }}/>
+        <Drawer.Screen name="servicios/index" options={{ drawerLabel: t('misServiciosMenu'), headerTitle: t('misServiciosMenu') }} />
+        <Drawer.Screen name="chat/index" options={{ drawerLabel: t('chatMenu'), headerTitle: t('misMensajesHeader') }} />
+        <Drawer.Screen name="perfil/index" options={{ drawerLabel: t('miPerfilMenu'), headerTitle: t('miPerfilMenu') }} />
+        <Drawer.Screen name="reseñas/index" options={{ drawerLabel: t('resenasMenu'), headerTitle: t('misResenasHeader') }} />
+        <Drawer.Screen name="servicios/agregar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('agregarServicioHeader') }} />
+        <Drawer.Screen name="servicios/editar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('editarServicioHeader') }} />
+        <Drawer.Screen name="perfil/editar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('editarPerfil') }} />
+        <Drawer.Screen name="completar-registro" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('verificacionProfesional') }} />
         <Drawer.Screen name="chat/[id]" options={{ drawerItemStyle: { display: 'none' } }} />
-        <Drawer.Screen name="configuracion/index" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Configuración' }} />
-        <Drawer.Screen name="ayuda/index" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Centro de Ayuda' }} />
+        <Drawer.Screen name="configuracion/cambiar-contrasena" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('cambiarContrasenaHeader')  }} />
+        <Drawer.Screen name="configuracion/privacidad" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('privacidad') }} />
+        <Drawer.Screen name="configuracion/index" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('configuracionMenu') }} />
+        <Drawer.Screen name="ayuda/index" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('centroAyudaHeader') }} />
       </Drawer>
     </GestureHandlerRootView>
   );

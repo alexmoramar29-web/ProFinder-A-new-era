@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { Picker } from '@react-native-picker/picker';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 interface DiaHorario {
@@ -10,23 +11,18 @@ interface DiaHorario {
   is_available: boolean;
 }
 
-const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-
-// NUEVO: Plantilla base infalible. Si no tienes horarios guardados, se cargan estos.
-const SEMANA_POR_DEFECTO: DiaHorario[] = DIAS_SEMANA.map(dia => ({
-  day_of_week: dia,
-  start_time: '09:00',
-  end_time: '18:00',
-  is_available: false
-}));
-
-const HORAS_DISPONIBLES = Array.from({ length: 24 }, (_, i) => {
-  const hora = i < 10 ? `0${i}` : `${i}`;
-  return `${hora}:00`;
-});
-
 export default function HorariosScreen() {
-  // NUEVO: Iniciamos el estado con la plantilla para que NUNCA esté en blanco
+  const { t } = useTranslation();
+
+  const DIAS_SEMANA = [t('lunes'), t('martes'), t('miercoles'), t('jueves'), t('viernes'), t('sabado'), t('domingo')];
+
+  const SEMANA_POR_DEFECTO: DiaHorario[] = DIAS_SEMANA.map(dia => ({
+    day_of_week: dia,
+    start_time: '09:00',
+    end_time: '18:00',
+    is_available: false
+  }));
+
   const [horarios, setHorarios] = useState<DiaHorario[]>(SEMANA_POR_DEFECTO);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -90,8 +86,8 @@ export default function HorariosScreen() {
         const finNum = parseInt(h.end_time.replace(':', ''));
         
         if (inicioNum >= finNum) {
-          const mensaje = `El día ${h.day_of_week} tiene un error. La hora de cierre no puede ser antes o igual a la de apertura.`;
-          Platform.OS === 'web' ? alert(mensaje) : Alert.alert('Horario Inválido', mensaje);
+          const mensaje = t('errorHorarioCierre', { dia: h.day_of_week });
+          Platform.OS === 'web' ? alert(mensaje) : Alert.alert(t('horarioInvalido'), mensaje);
           return; 
         }
       }
@@ -117,12 +113,12 @@ export default function HorariosScreen() {
       if (error) throw error;
 
       Platform.OS === 'web' 
-        ? alert('¡Horarios guardados correctamente!') 
-        : Alert.alert('¡Éxito!', 'Tus horarios se han actualizado.');
+        ? alert(t('horariosGuardados')) 
+        : Alert.alert(t('exito'), t('horariosActualizados'));
 
     } catch (error: any) {
-      const msjError = 'Error al guardar: ' + error.message;
-      Platform.OS === 'web' ? alert(msjError) : Alert.alert('Error', msjError);
+      const msjError = t('errorAlGuardar') + error.message;
+      Platform.OS === 'web' ? alert(msjError) : Alert.alert(t('error'), msjError);
     } finally {
       setGuardando(false);
     }
@@ -136,8 +132,8 @@ export default function HorariosScreen() {
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.container}>
-          <Text style={styles.titulo}>Mi Horario de Atención</Text>
-          <Text style={styles.subtitulo}>Configura qué días y a qué horas los clientes pueden reservar tus servicios.</Text>
+          <Text style={styles.titulo}>{t('miHorarioAtencion')}</Text>
+          <Text style={styles.subtitulo}>{t('configuraHorariosSubtitulo')}</Text>
 
           {horarios.map((dia, index) => (
             <View key={dia.day_of_week} style={[styles.tarjetaDia, !dia.is_available && styles.tarjetaApagada]}>
@@ -155,7 +151,7 @@ export default function HorariosScreen() {
               {dia.is_available ? (
                 <View style={styles.filaTiempo}>
                   <View style={styles.cajaPicker}>
-                    <Text style={styles.labelTiempo}>Apertura</Text>
+                    <Text style={styles.labelTiempo}>{t('apertura')}</Text>
                     <View style={styles.bordePicker}>
                       <Picker
                         selectedValue={dia.start_time}
@@ -167,10 +163,10 @@ export default function HorariosScreen() {
                     </View>
                   </View>
 
-                  <Text style={styles.separadorHora}>a</Text>
+                  <Text style={styles.separadorHora}>{t('aHora')}</Text>
 
                   <View style={styles.cajaPicker}>
-                    <Text style={styles.labelTiempo}>Cierre</Text>
+                    <Text style={styles.labelTiempo}>{t('cierre')}</Text>
                     <View style={styles.bordePicker}>
                       <Picker
                         selectedValue={dia.end_time}
@@ -183,7 +179,7 @@ export default function HorariosScreen() {
                   </View>
                 </View>
               ) : (
-                <Text style={styles.textoDescanso}>Día de descanso</Text>
+                <Text style={styles.textoDescanso}>{t('diaDescanso')}</Text>
               )}
 
             </View>
@@ -193,7 +189,7 @@ export default function HorariosScreen() {
 
       <View style={styles.contenedorFijoAbajo}>
         <TouchableOpacity style={styles.botonPrimario} onPress={handleGuardar} disabled={guardando}>
-          {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoBotonPrimario}>Guardar Toda la Semana</Text>}
+          {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoBotonPrimario}>{t('guardarTodaSemana')}</Text>}
         </TouchableOpacity>
       </View>
     </View>

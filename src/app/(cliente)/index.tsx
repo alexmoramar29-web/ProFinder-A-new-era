@@ -1,10 +1,12 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, StyleSheet, Text, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
 export default function ClienteDashboard() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -13,9 +15,9 @@ export default function ClienteDashboard() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>¡Bienvenido, compañerito nuevo</Text>
-      <Text style={styles.subtitle}>Este es tu espacio simple para buscar servicios.</Text>
-      <Button title="Cerrar Sesión" onPress={handleLogout} color="red" />
+      <Text style={styles.title}>{t('bienvenidoCliente')}</Text>
+      <Text style={styles.subtitle}>{t('espacioCliente')}</Text>
+      <Button title={t('cerrarSesion')} onPress={handleLogout} color="red" />
     </View>
   );
 }

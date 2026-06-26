@@ -1,10 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [cargando, setCargando] = useState(true);
   const [nombreUsuario, setNombreUsuario] = useState('');
   const [citasHoy, setCitasHoy] = useState(0);
@@ -70,16 +72,16 @@ export default function DashboardScreen() {
       
       {/* SECCIÓN 1: Saludo y Bienvenida */}
       <View style={styles.seccionSaludo}>
-        <Text style={styles.textoSaludo}>Bienvenido de nuevo,</Text>
-        <Text style={styles.textoNombre}>{nombreUsuario || 'Profesional'}</Text>
+        <Text style={styles.textoSaludo}>{t('bienvenidoDeNuevo')}</Text>
+        <Text style={styles.textoNombre}>{nombreUsuario || t('profesionalDefault')}</Text>
       </View>
 
       {/* SECCIÓN 2: Tarjetas de Resumen Rápido */}
       <View style={styles.contenedorTarjetas}>
         <View style={styles.tarjetaPrimaria}>
-          <Text style={styles.tituloTarjetaBlanco}>Ingresos del Mes</Text>
+          <Text style={styles.tituloTarjetaBlanco}>{t('ingresosDelMes')}</Text>
           <Text style={styles.valorTarjetaBlanco}>$4,900.00</Text>
-          <Text style={styles.subtextoTarjetaBlanco}>+12% vs mes anterior</Text>
+          <Text style={styles.subtextoTarjetaBlanco}>{t('vsMesAnterior')}</Text>
         </View>
 
         <View style={styles.columnaTarjetasSecundarias}>
@@ -87,23 +89,23 @@ export default function DashboardScreen() {
             style={styles.tarjetaSecundaria}
             onPress={() => router.push('/(profesionista)/calendario')}
           >
-            <Text style={styles.tituloTarjetaOscuro}>Solicitudes</Text>
+            <Text style={styles.tituloTarjetaOscuro}>{t('solicitudes')}</Text>
             <Text style={styles.valorTarjetaOscuro}>{citasHoy}</Text>
-            <Text style={styles.subtextoTarjetaOscuro}>Pendientes</Text>
+            <Text style={styles.subtextoTarjetaOscuro}>{t('pendientes')}</Text>
           </TouchableOpacity>
 
           <View style={styles.tarjetaSecundaria}>
-            <Text style={styles.tituloTarjetaOscuro}>Calificación</Text>
+            <Text style={styles.tituloTarjetaOscuro}>{t('calificacion')}</Text>
             <Text style={styles.valorTarjetaOscuro}>4.8 / 5</Text>
-            <Text style={styles.subtextoTarjetaOscuro}>12 reseñas</Text>
+            <Text style={styles.subtextoTarjetaOscuro}>{t('doceResenas')}</Text>
           </View>
         </View>
       </View>
 
       {/* SECCIÓN 3: Gráfica de Rendimiento Financiero */}
       <View style={styles.contenedorGrafica}>
-        <Text style={styles.tituloSeccion}>Rendimiento Financiero</Text>
-        <Text style={styles.subtituloSeccion}>Historial de ingresos por mes</Text>
+        <Text style={styles.tituloSeccion}>{t('rendimientoFinanciero')}</Text>
+        <Text style={styles.subtituloSeccion}>{t('historialIngresos')}</Text>
         
         <View style={styles.areaGrafica}>
           {datosGrafica.map((dato, index) => {
@@ -123,14 +125,14 @@ export default function DashboardScreen() {
       </View>
 
       {/* SECCIÓN 4: Accesos Rápidos */}
-      <Text style={styles.tituloSeccion}>Accesos Rápidos</Text>
+      <Text style={styles.tituloSeccion}>{t('accesosRapidos')}</Text>
       <View style={styles.contenedorAcciones}>
         <TouchableOpacity style={styles.botonAccion} onPress={() => router.push('/(profesionista)/horarios')}>
-          <Text style={styles.textoBotonAccion}>Modificar Horarios</Text>
+          <Text style={styles.textoBotonAccion}>{t('modificarHorarios')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.botonAccion} onPress={() => router.push('/(profesionista)/servicios')}>
-          <Text style={styles.textoBotonAccion}>Gestionar Servicios</Text>
+          <Text style={styles.textoBotonAccion}>{t('gestionarServicios')}</Text>
         </TouchableOpacity>
       </View>
 

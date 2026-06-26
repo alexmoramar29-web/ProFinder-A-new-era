@@ -1,35 +1,43 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
+
 export default function ConfiguracionScreen() {
+  const { t, i18n } = useTranslation();
   const [modoOscuro, setModoOscuro] = useState(false);
   const [notificaciones, setNotificaciones] = useState(true);
-
+  const router = useRouter();
   // Funciones visuales simuladas para los botones
-  const cambiarContrasena = () => {
-    Alert.alert('Cambiar Contraseña', 'Te enviaremos un correo con un enlace para restablecer tu contraseña de forma segura.');
-  };
+ const cambiarContraseña = () => {
+  router.push('/(profesionista)/configuracion/cambiar-contrasena' as any);
+};
 
-  const cambiarIdioma = () => {
-    Alert.alert('Idioma', 'Aquí se abrirá una lista para elegir entre Español, Inglés, etc.');
+  const cambiarIdioma = async () => {
+    // Si el idioma actual es inglés, lo pasamos a español. De lo contrario, a inglés.
+    const nuevoIdioma = i18n.language === 'en' ? 'es' : 'en';
+    await AsyncStorage.setItem('user-language', nuevoIdioma);
+    i18n.changeLanguage(nuevoIdioma);
   };
 
   const abrirPrivacidad = () => {
-    Alert.alert('Privacidad', 'Aquí se mostrarán los términos y condiciones de la aplicación.');
+    router.push('/(profesionista)/configuracion/privacidad' as any);
   };
 
   return (
     <ScrollView style={styles.contenedorFondo} contentContainerStyle={styles.scroll}>
       
       <View style={styles.cabecera}>
-        <Text style={styles.tituloSeccion}>Configuración</Text>
-        <Text style={styles.subtituloSeccion}>Ajusta tus preferencias de la aplicación.</Text>
+        <Text style={styles.tituloSeccion}>{t('configuracionTitulo')}</Text>
+        <Text style={styles.subtituloSeccion}>{t('configuracionSubtitulo')}</Text>
       </View>
 
-      <Text style={styles.tituloBloque}>Preferencias de Pantalla</Text>
+      <Text style={styles.tituloBloque}>{t('preferenciasPantalla')}</Text>
       <View style={styles.bloqueAjustes}>
         <View style={[styles.filaAjuste, styles.lineaDivisora]}>
-          <Text style={styles.textoFila}>Modo Oscuro</Text>
+          <Text style={styles.textoFila}>{t('modoOscuro')}</Text>
           <Switch 
             value={modoOscuro} 
             onValueChange={setModoOscuro}
@@ -38,19 +46,19 @@ export default function ConfiguracionScreen() {
           />
         </View>
         <TouchableOpacity style={styles.filaAjuste} onPress={cambiarIdioma}>
-          <Text style={styles.textoFila}>Idioma de la Aplicación</Text>
-          <Text style={styles.textoSecundario}>Español ❯</Text>
+          <Text style={styles.textoFila}>{t('idiomaAplicacion')}</Text>
+          <Text style={styles.textoSecundario}>{i18n.language === 'en' ? 'English ❯' : 'Español ❯'}</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.tituloBloque}>Seguridad y Alertas</Text>
+      <Text style={styles.tituloBloque}>{t('seguridadAlertas')}</Text>
       <View style={styles.bloqueAjustes}>
-        <TouchableOpacity style={[styles.filaAjuste, styles.lineaDivisora]} onPress={cambiarContrasena}>
-          <Text style={styles.textoFila}>Cambiar Contraseña</Text>
+        <TouchableOpacity style={[styles.filaAjuste, styles.lineaDivisora]} onPress={cambiarContraseña}>
+          <Text style={styles.textoFila}>{t('cambiarContrasenaBtn')}</Text>
           <Text style={styles.flecha}>❯</Text>
         </TouchableOpacity>
         <View style={styles.filaAjuste}>
-          <Text style={styles.textoFila}>Notificaciones Push</Text>
+          <Text style={styles.textoFila}>{t('notificacionesPush')}</Text>
           <Switch 
             value={notificaciones} 
             onValueChange={setNotificaciones}
@@ -60,14 +68,14 @@ export default function ConfiguracionScreen() {
         </View>
       </View>
 
-      <Text style={styles.tituloBloque}>Acerca de</Text>
+      <Text style={styles.tituloBloque}>{t('acercaDe')}</Text>
       <View style={styles.bloqueAjustes}>
         <TouchableOpacity style={[styles.filaAjuste, styles.lineaDivisora]} onPress={abrirPrivacidad}>
-          <Text style={styles.textoFila}>Términos y Privacidad</Text>
+          <Text style={styles.textoFila}>{t('terminosPrivacidad')}</Text>
           <Text style={styles.flecha}>❯</Text>
         </TouchableOpacity>
         <View style={styles.filaAjuste}>
-          <Text style={styles.textoFila}>Versión de la App</Text>
+          <Text style={styles.textoFila}>{t('versionApp')}</Text>
           <Text style={styles.textoSecundario}>1.0.0</Text>
         </View>
       </View>
