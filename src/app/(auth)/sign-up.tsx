@@ -5,11 +5,13 @@ import * as FileSystem from 'expo-file-system';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   
   const [rol, setRol] = useState<'cliente' | 'profesionista'>('cliente');
   const [username, setUsername] = useState('');
@@ -154,24 +156,24 @@ export default function SignUpScreen() {
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
-        <Text style={styles.title}>Crea tu cuenta</Text>
+        <Text style={styles.title}>{t('creaTuCuenta')}</Text>
 
         <View style={styles.roleContainer}>
           <TouchableOpacity style={[styles.roleButton, rol === 'cliente' && styles.roleActive]} onPress={() => setRol('cliente')} disabled={cargando}>
-            <Text style={rol === 'cliente' ? styles.textActive : styles.textInactive}>Soy Cliente</Text>
+            <Text style={rol === 'cliente' ? styles.textActive : styles.textInactive}>{t('soyCliente')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.roleButton, rol === 'profesionista' && styles.roleActive]} onPress={() => setRol('profesionista')} disabled={cargando}>
-            <Text style={rol === 'profesionista' ? styles.textActive : styles.textInactive}>Soy Profesionista</Text>
+            <Text style={rol === 'profesionista' ? styles.textActive : styles.textInactive}>{t('soyProfesionista')}</Text>
           </TouchableOpacity>
         </View>
 
-        <TextInput style={styles.input} placeholder="Nombre completo" value={fullName} onChangeText={setFullName} maxLength={100} editable={!cargando} />
-        <TextInput style={styles.input} placeholder="Nombre de usuario" value={username} onChangeText={setUsername} autoCapitalize="none" maxLength={50} editable={!cargando} />
-        <TextInput style={styles.input} placeholder="Correo electronico" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" maxLength={100} editable={!cargando} />
+        <TextInput style={styles.input} placeholder={t('nombreCompleto')} value={fullName} onChangeText={setFullName} maxLength={100} editable={!cargando} />
+        <TextInput style={styles.input} placeholder={t('nombreUsuario')} value={username} onChangeText={setUsername} autoCapitalize="none" maxLength={50} editable={!cargando} />
+        <TextInput style={styles.input} placeholder={t('correoElectronico')} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" maxLength={100} editable={!cargando} />
         
         <TextInput 
           style={styles.input} 
-          placeholder="Telefono (Ej: +526141234567)" 
+          placeholder={t('telefonoPlaceholder')} 
           value={phone} 
           onChangeText={(texto) => setPhone(texto.replace(/[^0-9+]/g, ''))} 
           keyboardType="phone-pad" 
@@ -179,13 +181,13 @@ export default function SignUpScreen() {
           editable={!cargando} 
         />
         
-        <TextInput style={styles.input} placeholder="Contrasena (minimo 8 caracteres)" value={password} onChangeText={setPassword} secureTextEntry maxLength={50} editable={!cargando} />
-        <TextInput style={styles.input} placeholder="Confirmar tu contrasena" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry maxLength={50} editable={!cargando} />
+        <TextInput style={styles.input} placeholder={t('contrasenaMinimo')} value={password} onChangeText={setPassword} secureTextEntry maxLength={50} editable={!cargando} />
+        <TextInput style={styles.input} placeholder={t('confirmarContrasena')} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry maxLength={50} editable={!cargando} />
 
         {rol === 'profesionista' && (
           <View>
             <View style={styles.pickerContainer}>
-              <Text style={styles.pickerLabel}>Selecciona tu profesion:</Text>
+              <Text style={styles.pickerLabel}>{t('seleccionaProfesion')}</Text>
               <Picker selectedValue={speciality} onValueChange={(itemValue: string) => setSpeciality(itemValue)} enabled={!cargando}>
                 <Picker.Item label="Doctor" value="Doctor" />
                 <Picker.Item label="Abogado" value="Abogado" />
@@ -198,37 +200,37 @@ export default function SignUpScreen() {
               </Picker>
             </View>
 
-            <Text style={styles.sectionSubtitle}>Documentos obligatorios (Formatos PDF):</Text>
+            <Text style={styles.sectionSubtitle}>{t('docsObligatorios')}</Text>
             
             <View style={styles.docBox}>
               <TouchableOpacity style={[styles.uploadButton, ineDoc && styles.uploadSuccess]} onPress={() => seleccionarDocumento('ine')} disabled={cargando}>
-                <Text style={styles.uploadButtonText}>{ineDoc ? "Cambiar archivo INE" : "Elegir archivo PDF de INE"}</Text>
+                <Text style={styles.uploadButtonText}>{ineDoc ? t('cambiarIne') : t('elegirIne')}</Text>
               </TouchableOpacity>
               {ineDoc && (
                 <TouchableOpacity onPress={() => Linking.openURL(ineDoc.uri)}>
-                  <Text style={styles.linkVer}>Ver PDF seleccionado</Text>
+                  <Text style={styles.linkVer}>{t('verPdf')}</Text>
                 </TouchableOpacity>
               )}
             </View>
 
             <View style={styles.docBox}>
               <TouchableOpacity style={[styles.uploadButton, cedulaDoc && styles.uploadSuccess]} onPress={() => seleccionarDocumento('cedula')} disabled={cargando}>
-                <Text style={styles.uploadButtonText}>{cedulaDoc ? "Cambiar archivo Cedula" : "Elegir archivo PDF de Cedula"}</Text>
+                <Text style={styles.uploadButtonText}>{cedulaDoc ? t('cambiarCedula') : t('elegirCedula')}</Text>
               </TouchableOpacity>
               {cedulaDoc && (
                 <TouchableOpacity onPress={() => Linking.openURL(cedulaDoc.uri)}>
-                  <Text style={styles.linkVer}>Ver PDF seleccionado</Text>
+                  <Text style={styles.linkVer}>{t('verPdf')}</Text>
                 </TouchableOpacity>
               )}
             </View>
 
             <View style={styles.docBox}>
               <TouchableOpacity style={[styles.uploadButton, certificadoDoc && styles.uploadSuccess]} onPress={() => seleccionarDocumento('certificado')} disabled={cargando}>
-                <Text style={styles.uploadButtonText}>{certificadoDoc ? "Cambiar archivo Certificado" : "Elegir archivo PDF de Certificado"}</Text>
+                <Text style={styles.uploadButtonText}>{certificadoDoc ? t('cambiarCertificado') : t('elegirCertificado')}</Text>
               </TouchableOpacity>
               {certificadoDoc && (
                 <TouchableOpacity onPress={() => Linking.openURL(certificadoDoc.uri)}>
-                  <Text style={styles.linkVer}>Ver PDF seleccionado</Text>
+                  <Text style={styles.linkVer}>{t('verPdf')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -248,12 +250,12 @@ export default function SignUpScreen() {
         )}
 
         <View style={styles.buttonContainer}>
-          <Button title={cargando ? "Procesando..." : "Registrarme"} onPress={handleRegistro} disabled={cargando} />
+          <Button title={cargando ? t('procesando') : t('btnRegistrarme')} onPress={handleRegistro} disabled={cargando} />
         </View>
 
         {/* BOTON PARA VOLVER AL SIGN-IN */}
         <TouchableOpacity onPress={() => router.replace('/(auth)/sign-in')} disabled={cargando}>
-          <Text style={styles.linkLogin}>Ya tengo cuenta, iniciar sesion</Text>
+          <Text style={styles.linkLogin}>{t('yaTengoCuenta')}</Text>
         </TouchableOpacity>
 
       </View>

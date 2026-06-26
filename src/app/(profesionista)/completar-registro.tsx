@@ -6,10 +6,12 @@ import * as FileSystem from 'expo-file-system';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function CompletarRegistroScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [speciality, setSpeciality] = useState('Doctor');
   const [ine, setIne] = useState<any>(null);
   const [cedula, setCedula] = useState<any>(null);
@@ -118,8 +120,8 @@ export default function CompletarRegistroScreen() {
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.container}>
-        <Text style={styles.titulo}>Verificacion Profesional</Text>
-        <Text style={styles.label}>Selecciona tu Profesion</Text>
+        <Text style={styles.titulo}>{t('verificacionProfesional')}</Text>
+        <Text style={styles.label}>{t('seleccionaTuProfesion')}</Text>
         <View style={styles.pickerContainer}>
           <Picker selectedValue={speciality} onValueChange={(item) => setSpeciality(item)} enabled={!guardando}>
             <Picker.Item label="Doctor" value="Doctor" />
@@ -133,17 +135,17 @@ export default function CompletarRegistroScreen() {
           </Picker>
         </View>
 
-        <Text style={styles.label}>Documentos en PDF</Text>
+        <Text style={styles.label}>{t('documentosEnPdf')}</Text>
         {[ {s:ine, f:setIne, t:'INE'}, {s:cedula, f:setCedula, t:'Cedula Profesional'}, {s:certificado, f:setCertificado, t:'Certificado'} ].map((item, i) => {
           const esUrl = typeof item.s === 'string';
           return (
             <View key={i} style={styles.tarjeta}>
               <View style={styles.headerTarjeta}>
                 <Text style={styles.nombreDoc}>{item.t}</Text>
-                {esUrl && <TouchableOpacity onPress={() => Linking.openURL(item.s)}><Text style={styles.linkVer}>Ver PDF</Text></TouchableOpacity>}
+                {esUrl && <TouchableOpacity onPress={() => Linking.openURL(item.s)}><Text style={styles.linkVer}>{t('verPdfCorto')}</Text></TouchableOpacity>}
               </View>
               <TouchableOpacity style={[styles.btn, item.s && styles.btnOk]} onPress={() => seleccionarDocumento(item.f)} disabled={guardando}>
-                <Text style={styles.txtBtn}>{esUrl ? 'Cambiar archivo actual' : (item.s ? 'Nuevo PDF listo' : 'Subir PDF')}</Text>
+                <Text style={styles.txtBtn}>{esUrl ? t('cambiarArchivoActual') : (item.s ? t('nuevoPdfListo') : t('subirPdf'))}</Text>
               </TouchableOpacity>
             </View>
           );
@@ -154,11 +156,11 @@ export default function CompletarRegistroScreen() {
         {/* BOTONES DE ACCION DOBLES */}
         <View style={styles.contenedorBotonesAccion}>
           <TouchableOpacity style={styles.botonCancelar} onPress={() => router.replace('/(profesionista)/perfil')} disabled={guardando}>
-            <Text style={styles.textoBotonCancelar}>Cancelar</Text>
+            <Text style={styles.textoBotonCancelar}>{t('cancelar')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={[styles.botonGuardar, guardando && styles.botonDeshabilitado]} onPress={handleGuardar} disabled={guardando}>
-            {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoBotonGuardar}>Guardar y Enviar</Text>}
+            {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoBotonGuardar}>{t('guardarYEnviar')}</Text>}
           </TouchableOpacity>
         </View>
 

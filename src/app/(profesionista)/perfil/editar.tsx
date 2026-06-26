@@ -4,10 +4,12 @@ import { decode } from 'base64-arraybuffer';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function EditarPerfilScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { setFotoGlobal } = usePerfil();
 
   const [cargando, setCargando] = useState(true);
@@ -97,7 +99,7 @@ export default function EditarPerfilScreen() {
         setPortafolio([...portafolio, nuevaFoto]);
 
       } catch (e) {
-        Alert.alert('Error', 'No se pudo subir la foto del trabajo');
+        Alert.alert(t('error'), t('errorSubirFotoTrabajo'));
       } finally {
         setSubiendoTrabajo(false);
       }
@@ -109,7 +111,7 @@ export default function EditarPerfilScreen() {
       await supabase.from('professional_images').delete().eq('image_id', id);
       setPortafolio(portafolio.filter(foto => foto.image_id !== id));
     } catch (e) {
-      Alert.alert('Error', 'No se pudo borrar la foto');
+      Alert.alert(t('error'), t('errorBorrarFoto'));
     }
   };
 
@@ -120,7 +122,7 @@ export default function EditarPerfilScreen() {
     const descripcionLimpia = description.trim();
 
     if (!nombreLimpio || !usuarioLimpio) {
-      Alert.alert('Error', 'Nombre y Usuario son obligatorios');
+      Alert.alert(t('error'), t('nombreUsuarioObligatorios'));
       return;
     }
 
@@ -158,7 +160,7 @@ export default function EditarPerfilScreen() {
 
       router.replace('/(profesionista)/perfil');
     } catch (error) {
-      Alert.alert('Error', 'No se pudieron guardar los cambios');
+      Alert.alert(t('error'), t('errorGuardarCambios'));
     } finally {
       setGuardando(false);
     }
@@ -186,9 +188,9 @@ export default function EditarPerfilScreen() {
 
         <View style={styles.switchContainer}>
           <View style={styles.switchTextos}>
-            <Text style={styles.switchTitulo}>Perfil Visible</Text>
+            <Text style={styles.switchTitulo}>{t('perfilVisible')}</Text>
             <Text style={styles.switchSubtitulo}>
-              {isActive ? "Los clientes pueden encontrarte" : "Tu perfil esta oculto (Modo pausa)"}
+              {isActive ? t('clientesPuedenEncontrarte') : t('perfilOculto')}
             </Text>
           </View>
           <Switch
@@ -199,13 +201,13 @@ export default function EditarPerfilScreen() {
           />
         </View>
 
-        <Text style={styles.label}>Nombre Completo</Text>
+        <Text style={styles.label}>{t('nombreCompletoLabel')}</Text>
         <TextInput style={styles.input} value={fullName} onChangeText={setFullName} maxLength={100} />
 
-        <Text style={styles.label}>Nombre de Usuario</Text>
+        <Text style={styles.label}>{t('nombreUsuarioLabel')}</Text>
         <TextInput style={styles.input} value={username} onChangeText={setUsername} autoCapitalize="none" maxLength={50} />
 
-        <Text style={styles.label}>Telefono</Text>
+        <Text style={styles.label}>{t('telefonoLabel')}</Text>
         <TextInput 
           style={styles.input} 
           value={phone} 
@@ -214,10 +216,10 @@ export default function EditarPerfilScreen() {
           maxLength={10} 
         />
 
-        <Text style={styles.label}>Descripcion Profesional</Text>
-        <TextInput style={[styles.input, styles.textArea]} value={description} onChangeText={setDescription} multiline numberOfLines={4} maxLength={500} placeholder="Cuentale a tus clientes sobre tu experiencia..." />
+        <Text style={styles.label}>{t('descripcionProfesionalLabel')}</Text>
+        <TextInput style={[styles.input, styles.textArea]} value={description} onChangeText={setDescription} multiline numberOfLines={4} maxLength={500} placeholder={t('cuentaleATusClientes')} />
 
-        <Text style={[styles.label, { marginTop: 25 }]}>Mis Trabajos (Fotos)</Text>
+        <Text style={[styles.label, { marginTop: 25 }]}>{t('misTrabajosFotos')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carrusel}>
           {portafolio.map((item) => (
             <View key={item.image_id} style={styles.fotoTrabajoBox}>
@@ -228,17 +230,17 @@ export default function EditarPerfilScreen() {
             </View>
           ))}
           <TouchableOpacity style={styles.btnAgregarFoto} onPress={agregarFotoPortafolio} disabled={subiendoTrabajo}>
-            {subiendoTrabajo ? <ActivityIndicator color="#5c4b8a" /> : <Text style={styles.txtAgregarFoto}>+ Anadir</Text>}
+            {subiendoTrabajo ? <ActivityIndicator color="#5c4b8a" /> : <Text style={styles.txtAgregarFoto}>{t('anadirTrabajo')}</Text>}
           </TouchableOpacity>
         </ScrollView>
 
         <View style={styles.contenedorBotonesAccion}>
           <TouchableOpacity style={styles.botonCancelar} onPress={() => router.replace('/(profesionista)/perfil')} disabled={guardando}>
-            <Text style={styles.textoBotonCancelar}>Cancelar</Text>
+            <Text style={styles.textoBotonCancelar}>{t('cancelar')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={[styles.botonGuardar, guardando && styles.botonDeshabilitado]} onPress={handleGuardar} disabled={guardando}>
-            {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoBotonGuardar}>Guardar</Text>}
+            {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoBotonGuardar}>{t('guardar')}</Text>}
           </TouchableOpacity>
         </View>
 

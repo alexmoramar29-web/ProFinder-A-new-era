@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 // 1. La "receta" de nuestra reseña ahora usa date_posted como tu tabla
@@ -12,6 +13,7 @@ interface Reseña {
 }
 
 export default function ResenasScreen() {
+  const { t } = useTranslation();
   const [reseñas, setReseñas] = useState<Reseña[]>([]);
   const [promedio, setPromedio] = useState<number>(0);
   const [cargando, setCargando] = useState(true);
@@ -44,16 +46,16 @@ export default function ResenasScreen() {
           {
             review_id: 'test-1',
             rating: 5,
-            comment: 'Excelente servicio, muy puntual y profesional. Totalmente recomendado para futuros trabajos.',
+            comment: t('reseñaPrueba1'),
             date_posted: new Date().toISOString(),
-            client_name: 'Cliente de Prueba A'
+            client_name: t('clientePruebaA')
           },
           {
             review_id: 'test-2',
             rating: 4,
-            comment: 'Hizo un buen trabajo. El detalle quedó muy limpio, aunque tardó un poco más de lo esperado.',
+            comment: t('reseñaPrueba2'),
             date_posted: new Date(Date.now() - 86400000).toISOString(),
-            client_name: 'Cliente de Prueba B'
+            client_name: t('clientePruebaB')
           }
         ];
         calcularPromedio(reseñasDePrueba);
@@ -91,17 +93,17 @@ export default function ResenasScreen() {
     <ScrollView style={styles.contenedorFondo} contentContainerStyle={styles.scroll}>
       
       <View style={styles.tarjetaResumen}>
-        <Text style={styles.textoResumenTitulo}>Calificación General</Text>
+        <Text style={styles.textoResumenTitulo}>{t('calificacionGeneral')}</Text>
         <Text style={styles.textoPromedioGrande}>{promedio}</Text>
-        <Text style={styles.textoTotalReseñas}>Basado en {reseñas.length} evaluaciones</Text>
+        <Text style={styles.textoTotalReseñas}>{t('basadoEn')}{reseñas.length}{t('evaluaciones')}</Text>
       </View>
 
-      <Text style={styles.tituloSeccion}>Comentarios de Clientes</Text>
+      <Text style={styles.tituloSeccion}>{t('comentariosClientes')}</Text>
 
       {reseñas.map((reseña) => (
         <View key={reseña.review_id} style={styles.tarjetaComentario}>
           <View style={styles.cabeceraComentario}>
-            <Text style={styles.nombreCliente}>{reseña.client_name || 'Cliente Verificado'}</Text>
+            <Text style={styles.nombreCliente}>{reseña.client_name || t('clienteVerificado')}</Text>
             <View style={styles.contenedorCalificacion}>
               <Text style={styles.textoCalificacionPuntaje}>{reseña.rating} / 5</Text>
             </View>

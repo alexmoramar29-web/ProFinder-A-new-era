@@ -2,11 +2,13 @@
   "name": "foodordering",
   "main": "expo-router/entry",
   "version": "1.0.0",
-  "scripts": {
+"scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "i18n": "i18next-scanner --config i18next-scanner.config.js",
+    "traducir": "i18next-scanner --config i18next-scanner.config.js && node translate.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -26,13 +28,16 @@
     "expo-font": "~55.0.8",
     "expo-image-picker": "~55.0.20",
     "expo-linking": "~55.0.15",
+    "expo-localization": "^56.0.6",
     "expo-router": "~55.0.16",
     "expo-secure-store": "~55.0.14",
     "expo-splash-screen": "~55.0.21",
     "expo-status-bar": "~55.0.6",
     "expo-web-browser": "~55.0.16",
+    "i18next": "^26.3.2",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "react-i18next": "^17.0.8",
     "react-native": "0.83.6",
     "react-native-gesture-handler": "~2.30.0",
     "react-native-pager-view": "8.0.0",
@@ -45,8 +50,12 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.10",
+    "i18next-scanner": "^4.6.0",
     "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
   },
   "private": true
+
 }
+
+

@@ -3,10 +3,12 @@ import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function PerfilScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [perfil, setPerfil] = useState<any>(null);
   const [portafolio, setPortafolio] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -47,20 +49,20 @@ export default function PerfilScreen() {
   const perfilPausado = perfil?.is_active === false;
 
   let colorEtiqueta = '#6c757d'; 
-  let textoEtiqueta = 'Documentos sin revisar';
+  let textoEtiqueta = t('documentosSinRevisar');
   
   const estadoLimpio = estadoVerificacion.toLowerCase();
   const esAprobado = estadoLimpio === 'verificado' || estadoLimpio === 'aprobado' || estadoLimpio === 'perfil aprobado';
 
   if (esAprobado) {
     colorEtiqueta = '#28a745'; 
-    textoEtiqueta = 'Perfil Aprobado';
+    textoEtiqueta = t('perfilAprobado');
   } else if (estadoLimpio === 'en revision' || estadoLimpio === 'en revisión') {
     colorEtiqueta = '#ffc107'; 
-    textoEtiqueta = 'Documentos en revision';
+    textoEtiqueta = t('documentosEnRevision');
   } else if (estadoLimpio === 'rechazado') {
     colorEtiqueta = '#dc3545'; 
-    textoEtiqueta = 'Documentos rechazados';
+    textoEtiqueta = t('documentosRechazados');
   }
 
   return (
@@ -70,7 +72,7 @@ export default function PerfilScreen() {
         {perfilPausado && (
           <View style={styles.bannerPausado}>
             <Text style={styles.textoBannerPausado}>
-              TU PERFIL ESTA PAUSADO. LOS CLIENTES NO PUEDEN VERTE.
+              {t('perfilPausadoMensaje')}
             </Text>
           </View>
         )}
@@ -84,7 +86,7 @@ export default function PerfilScreen() {
                 <Image source={{ uri: fotoGrandeMostrar }} style={styles.foto} />
               ) : (
                 <View style={styles.fotoVacia}>
-                  <Text style={styles.textoFotoVacia}>Sin Foto</Text>
+                  <Text style={styles.textoFotoVacia}>{t('sinFoto')}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -99,7 +101,7 @@ export default function PerfilScreen() {
 
           {/* El nombre vuelve a quedar limpio y centrado */}
           <View style={styles.nombreContainer}>
-            <Text style={styles.nombreTexto}>{perfil?.full_name || 'Nombre no disponible'}</Text>
+            <Text style={styles.nombreTexto}>{perfil?.full_name || t('nombreNoDisponible')}</Text>
           </View>
 
           <View style={[styles.etiquetaVerificacion, { backgroundColor: colorEtiqueta }]}>
@@ -107,26 +109,26 @@ export default function PerfilScreen() {
           </View>
 
           <View style={styles.datosCard}>
-            <Text style={styles.datoTitulo}>Nombre de usuario</Text>
+            <Text style={styles.datoTitulo}>{t('nombreUsuarioDato')}</Text>
             <Text style={styles.datoValor}>@{perfil?.username}</Text>
 
-            <Text style={styles.datoTitulo}>Profesion</Text>
+            <Text style={styles.datoTitulo}>{t('profesionDato')}</Text>
             <Text style={styles.datoValor}>{perfil?.speciality}</Text>
 
-            <Text style={styles.datoTitulo}>Telefono de contacto</Text>
-            <Text style={styles.datoValor}>{perfil?.phone || 'Sin telefono'}</Text>
+            <Text style={styles.datoTitulo}>{t('telefonoDato')}</Text>
+            <Text style={styles.datoValor}>{perfil?.phone || t('sinTelefono')}</Text>
 
-            <Text style={styles.datoTitulo}>Descripcion</Text>
-            <Text style={styles.datoValor}>{perfil?.profile_description || 'Sin descripcion'}</Text>
+            <Text style={styles.datoTitulo}>{t('descripcionDato')}</Text>
+            <Text style={styles.datoValor}>{perfil?.profile_description || t('sinDescripcion')}</Text>
           </View>
 
           <View style={styles.mapaPlaceholder}>
-            <Text style={styles.textoMapa}>Aqui ira el mapa de ubicacion</Text>
+            <Text style={styles.textoMapa}>{t('mapaPlaceholder')}</Text>
           </View>
 
           {portafolio.length > 0 && (
             <View style={styles.portafolioContenedor}>
-              <Text style={styles.tituloSeccion}>Mis Trabajos</Text>
+              <Text style={styles.tituloSeccion}>{t('misTrabajos')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carrusel}>
                 {portafolio.map((item) => (
                   <TouchableOpacity key={item.image_id} onPress={() => setFotoAmpliada(item.image_url)}>
@@ -139,22 +141,22 @@ export default function PerfilScreen() {
 
           <View style={styles.contenedorBotones}>
             <TouchableOpacity style={styles.botonSecundario} onPress={() => router.push('/(profesionista)/perfil/editar')}>
-              <Text style={styles.textoBoton}>Editar Perfil</Text>
+              <Text style={styles.textoBoton}>{t('editarPerfil')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.botonPrimario} onPress={() => router.push('/(profesionista)/completar-registro')}>
-              <Text style={styles.textoBoton}>Documentos</Text>
+              <Text style={styles.textoBoton}>{t('documentosBoton')}</Text>
             </TouchableOpacity>
           </View>
 
         </View>
       </ScrollView>
 
-     <Modal visible={fotoAmpliada !== null} transparent={true} animationType="fade">
+      <Modal visible={fotoAmpliada !== null} transparent={true} animationType="fade">
         
         <View style={styles.modalFondoOscuro}>
           <TouchableOpacity style={styles.botonCerrarModal} onPress={() => setFotoAmpliada(null)}>
-            <Text style={styles.textoCerrarModal}>Cerrar X</Text>
+            <Text style={styles.textoCerrarModal}>{t('cerrarModal')}</Text>
           </TouchableOpacity>
           
           {fotoAmpliada && (

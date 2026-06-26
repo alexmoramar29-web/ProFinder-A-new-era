@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface Cita {
@@ -12,6 +13,7 @@ interface Cita {
 }
 
 export default function CalendarioScreen() {
+  const { t } = useTranslation();
   const [citas, setCitas] = useState<Cita[]>([]);
   const [cargando, setCargando] = useState(true);
   const [pestañaActiva, setPestañaActiva] = useState<'pendientes' | 'aceptadas'>('pendientes');
@@ -53,10 +55,10 @@ export default function CalendarioScreen() {
 
       if (error) throw error;
 
-      Alert.alert('Completado', nuevoEstado === 2 ? 'Cita aceptada correctamente.' : 'Cita rechazada.');
+      Alert.alert(t('completado'), nuevoEstado === 2 ? t('citaAceptadaExito') : t('citaRechazada'));
       obtenerCitas();
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      Alert.alert(t('error'), error.message);
     }
   };
 
@@ -69,7 +71,7 @@ export default function CalendarioScreen() {
           onPress={() => setPestañaActiva('pendientes')}
         >
           <Text style={[styles.textoPestaña, pestañaActiva === 'pendientes' && styles.textoPestañaActiva]}>
-            Pendientes
+            {t('pendientes')}
           </Text>
         </TouchableOpacity>
 
@@ -78,7 +80,7 @@ export default function CalendarioScreen() {
           onPress={() => setPestañaActiva('aceptadas')}
         >
           <Text style={[styles.textoPestaña, pestañaActiva === 'aceptadas' && styles.textoPestañaActiva]}>
-            Próximos Trabajos
+            {t('proximosTrabajos')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -89,15 +91,15 @@ export default function CalendarioScreen() {
         <ScrollView contentContainerStyle={styles.scroll}>
           {citas.length === 0 ? (
             <Text style={styles.textoVacio}>
-              No tienes citas {pestañaActiva === 'pendientes' ? 'pendientes por revisar' : 'agendadas'} por ahora.
+              {t('noTienesCitas')}{pestañaActiva === 'pendientes' ? t('pendientesPorRevisar') : t('agendadas')}{t('porAhora')}
             </Text>
           ) : (
             citas.map((cita) => (
               <View key={cita.appointment_id} style={styles.tarjetaCita}>
                 <View style={styles.infoCita}>
-                  <Text style={styles.fechaTexto}>Fecha: {cita.appointment_date}</Text>
-                  <Text style={styles.horaTexto}>Hora: {cita.appointment_time.slice(0,5)}</Text>
-                  {cita.notes && <Text style={styles.notasTexto}>Nota del cliente: {cita.notes}</Text>}
+                  <Text style={styles.fechaTexto}>{t('fechaLabel')}{cita.appointment_date}</Text>
+                  <Text style={styles.horaTexto}>{t('horaLabel')}{cita.appointment_time.slice(0,5)}</Text>
+                  {cita.notes && <Text style={styles.notasTexto}>{t('notaClienteLabel')}{cita.notes}</Text>}
                 </View>
 
                 {pestañaActiva === 'pendientes' && (
@@ -106,14 +108,14 @@ export default function CalendarioScreen() {
                       style={styles.botonRechazar} 
                       onPress={() => actualizarEstadoCita(cita.appointment_id, 3)}
                     >
-                      <Text style={styles.textoBotonRechazar}>Rechazar</Text>
+                      <Text style={styles.textoBotonRechazar}>{t('rechazar')}</Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity 
                       style={styles.botonAceptar} 
                       onPress={() => actualizarEstadoCita(cita.appointment_id, 2)}
                     >
-                      <Text style={styles.textoBotonAceptar}>Aceptar Trabajo</Text>
+                      <Text style={styles.textoBotonAceptar}>{t('aceptarTrabajo')}</Text>
                     </TouchableOpacity>
                   </View>
                 )}

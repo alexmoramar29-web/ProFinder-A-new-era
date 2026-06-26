@@ -1,117 +1,175 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Button, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const { t } = useTranslation();
+  
+  // Atrapamos el correo que nos mandó la pantalla anterior
+  const params = useLocalSearchParams();
+  const [correo, setCorreo] = useState((params.correoParam as string) || '');
+  
+  const [codigoOtp, setCodigoOtp] = useState('');
+  const [contraseña, setContraseña] = useState('');
+  const [confirmarContraseña, setConfirmarContraseña] = useState('');
   const [cargando, setCargando] = useState(false);
-  const [mensajeError, setMensajeError] = useState('');
-  const [mensajeExito, setMensajeExito] = useState('');
+  
+  const [mensaje, setMensaje] = useState('');
+  const [tipoMensaje, setTipoMensaje] = useState<'info' | 'error' | 'exito' | ''>('');
 
-  const handleActualizarContrasena = async () => {
-    setMensajeError('');
-    setMensajeExito('');
-
-    if (!password || !confirmPassword) {
-      return setMensajeError('Por favor, llena ambos campos.');
+  const handleActualizarContraseña = async () => {
+    setMensaje('');
+    
+    if (!correo || !codigoOtp || !contraseña || !confirmarContraseña) {
+      setMensaje('Por favor, llena todos los campos.');
+      setTipoMensaje('error');
+      return;
     }
 
-    if (password.length < 8) {
-      return setMensajeError('Contrasena debil: Debe tener minimo 8 caracteres.');
+    if (codigoOtp.length !== 8) {
+      setMensaje('El código debe tener exactamente 8 números.');
+      setTipoMensaje('error');
+      return;
     }
 
-    if (password !== confirmPassword) {
-      return setMensajeError('Las contrasenas no coinciden.');
+    if (contraseña.length < 8) {
+      setMensaje('La contraseña debe tener mínimo 8 caracteres.');
+      setTipoMensaje('error');
+      return;
+    }
+
+    if (contraseña !== confirmarContraseña) {
+      setMensaje('Las contraseñas no coinciden.');
+      setTipoMensaje('error');
+      return;
     }
 
     setCargando(true);
+    setMensaje('Verificando código de seguridad...');
+    setTipoMensaje('info');
 
     try {
-      // Esta es la instruccion de Supabase para cambiar la contrasena del usuario activo
-      const { error } = await supabase.auth.updateUser({
-        password: password
+      // 1. Primero verificamos que los 8 números sean correctos
+      const { error: errorVerificacion } = await supabase.auth.verifyOtp({
+        email: correo,
+        token: codigoOtp,
+        type: 'recovery'
       });
 
-      if (error) throw error;
+      if (errorVerificacion) throw new Error('El código es incorrecto o ya expiró.');
 
-      setMensajeExito('Contrasena actualizada con exito. Redirigiendo...');
+      // 2. Si el código es correcto, guardamos la nueva contraseña
+      const { error: errorClave } = await supabase.auth.updateUser({
+        password: contraseña
+      });
+
+      if (errorClave) throw errorClave;
+
+      setMensaje('Contraseña actualizada con éxito. Llevándote al inicio...');
+      setTipoMensaje('exito');
       
-      // Cerramos la sesion temporal por seguridad y lo mandamos al Sign-In limpio
       await supabase.auth.signOut();
       setTimeout(() => {
         router.replace('/(auth)/sign-in');
       }, 3000);
 
     } catch (error: any) {
-      setMensajeError(error.message || 'No se pudo actualizar la contrasena.');
+      setMensaje('Error: ' + (error.message || 'No se pudo actualizar la contraseña.'));
+      setTipoMensaje('error');
     } finally {
       setCargando(false);
     }
   };
 
+  const obtenerColorMensaje = () => {
+    if (tipoMensaje === 'error') return '#D32F2F';
+    if (tipoMensaje === 'exito') return '#388E3C';
+    return '#8E8E93';
+  };
+
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Nueva Contrasena</Text>
-        <Text style={styles.subtitle}>Escribe tu nueva clave de acceso de forma segura</Text>
+    <ScrollView contentContainerStyle={styles.contenedorScroll} style={styles.fondo}>
+      <View style={styles.contenedor}>
+        <Text style={styles.titulo}>{t('nuevaContrasenaTitle')}</Text>
+        <Text style={styles.subtitulo}>{t('escribeCodigo')}</Text>
 
+        <Text style={styles.etiquetaInput}>{t('correoLabel')}</Text>
         <TextInput 
           style={styles.input} 
-          placeholder="Nueva contrasena (minimo 8 caracteres)" 
-          value={password} 
-          onChangeText={setPassword} 
+          placeholder={t('correoPlaceholder')} 
+          value={correo} 
+          onChangeText={setCorreo} 
+          editable={!cargando} 
+          autoCapitalize="none"
+        />
+
+        <Text style={styles.etiquetaInput}>{t('codigoLabel')}</Text>
+        <TextInput 
+          style={styles.input} 
+          placeholder="12345678" 
+          value={codigoOtp} 
+          onChangeText={setCodigoOtp} 
+          keyboardType="number-pad"
+          maxLength={8}
+          editable={!cargando} 
+        />
+
+        <Text style={styles.etiquetaInput}>{t('nuevaContrasenaLabel')}</Text>
+        <TextInput 
+          style={styles.input} 
+          placeholder={t('minimo8')} 
+          value={contraseña} 
+          onChangeText={setContraseña} 
           secureTextEntry 
           maxLength={50}
           editable={!cargando} 
         />
 
+        <Text style={styles.etiquetaInput}>{t('confirmarContrasenaLabel')}</Text>
         <TextInput 
           style={styles.input} 
-          placeholder="Confirmar nueva contrasena" 
-          value={confirmPassword} 
-          onChangeText={setConfirmPassword} 
+          placeholder={t('repiteClave')} 
+          value={confirmarContraseña} 
+          onChangeText={setConfirmarContraseña} 
           secureTextEntry 
           maxLength={50}
           editable={!cargando} 
         />
 
-        {mensajeError !== '' && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{mensajeError}</Text>
-          </View>
-        )}
+        <TouchableOpacity 
+          style={styles.boton} 
+          onPress={handleActualizarContraseña} 
+          disabled={cargando}
+        >
+          {cargando ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.textoBoton}>{t('btnGuardarContrasena')}</Text>
+          )}
+        </TouchableOpacity>
 
-        {mensajeExito !== '' && (
-          <View style={styles.successBox}>
-            <Text style={styles.successText}>{mensajeExito}</Text>
-          </View>
+        {mensaje !== '' && (
+          <Text style={[styles.textoMensaje, { color: obtenerColorMensaje() }]}>
+            {mensaje}
+          </Text>
         )}
-
-        <View style={styles.buttonContainer}>
-          <Button 
-            title={cargando ? "Actualizando..." : "Cambiar Contrasena"} 
-            onPress={handleActualizarContrasena} 
-            disabled={cargando}
-            color="#007bff"
-          />
-        </View>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: { flexGrow: 1, backgroundColor: '#fff' },
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#333' },
-  subtitle: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 25, marginTop: 5 },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 12, marginBottom: 15, borderRadius: 5, backgroundColor: '#f9f9f9', fontSize: 15 },
-  buttonContainer: { marginTop: 10, borderRadius: 5, overflow: 'hidden' },
-  errorBox: { backgroundColor: '#ffe6e6', padding: 12, borderRadius: 5, marginBottom: 15, borderWidth: 1, borderColor: '#ff4d4d' },
-  errorText: { color: '#d9534f', textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
-  successBox: { backgroundColor: '#e6ffe6', padding: 10, borderRadius: 5, marginBottom: 15, borderWidth: 1, borderColor: '#28a745' },
-  successText: { color: '#28a745', textAlign: 'center', fontWeight: 'bold' }
+  fondo: { flex: 1, backgroundColor: '#FAFAFC' },
+  contenedorScroll: { flexGrow: 1, justifyContent: 'center', padding: 20 },
+  contenedor: { backgroundColor: '#FFFFFF', padding: 25, borderRadius: 12, borderWidth: 1, borderColor: '#E5E5EA', elevation: 2 },
+  titulo: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#1C1C1E', marginBottom: 5 },
+  subtitulo: { fontSize: 14, color: '#8E8E93', textAlign: 'center', marginBottom: 25 },
+  etiquetaInput: { fontSize: 14, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 8, marginLeft: 5 },
+  input: { backgroundColor: '#F2F2F7', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 14, fontSize: 16, marginBottom: 20, color: '#1C1C1E' },
+  boton: { backgroundColor: '#5c4b8a', paddingVertical: 15, borderRadius: 8, alignItems: 'center', marginTop: 10 },
+  textoBoton: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
+  textoMensaje: { marginTop: 20, textAlign: 'center', fontSize: 14, fontWeight: '600' }
 });

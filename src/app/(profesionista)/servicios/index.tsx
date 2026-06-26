@@ -1,10 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ServiciosScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [servicios, setServicios] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -29,7 +31,7 @@ export default function ServiciosScreen() {
       if (error) throw error;
       setServicios(data || []);
     } catch (error: any) {
-      Alert.alert('Chisme de Supabase', error.message);
+      Alert.alert(t('error'), error.message);
     } finally {
       setCargando(false);
     }
@@ -42,7 +44,7 @@ export default function ServiciosScreen() {
       if (error) throw error;
       setServicios((prev) => prev.filter(s => s.service_id !== id));
     } catch (error) {
-      Alert.alert('Error', 'No se pudo borrar el servicio.');
+      Alert.alert(t('error'), t('errorBorrarServicio'));
     }
   };
 
@@ -50,18 +52,18 @@ export default function ServiciosScreen() {
   const handleBorrar = (id: number) => {
     if (Platform.OS === 'web') {
       // Si estás en tu compu, usa la alerta nativa de internet
-      const seguro = confirm('¿Estás seguro de que quieres eliminar este servicio?');
+      const seguro = confirm(t('seguroEliminarServicio'));
       if (seguro) {
         ejecutarBorrado(id);
       }
     } else {
       // Si estás en un celular, usa la alerta bonita de la aplicación
       Alert.alert(
-        'Borrar Servicio',
-        '¿Estás seguro de que quieres eliminar este servicio?',
+        t('borrarServicioTitulo'),
+        t('seguroEliminarServicio'),
         [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Sí, borrar', style: 'destructive', onPress: () => ejecutarBorrado(id) }
+          { text: t('cancelar'), style: 'cancel' },
+          { text: t('siBorrar'), style: 'destructive', onPress: () => ejecutarBorrado(id) }
         ]
       );
     }
@@ -75,12 +77,12 @@ export default function ServiciosScreen() {
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.container}>
-          <Text style={styles.titulo}>Mis Servicios</Text>
-          <Text style={styles.subtitulo}>Administra lo que ofreces a tus clientes y el costo de tu trabajo.</Text>
+          <Text style={styles.titulo}>{t('misServiciosTitulo')}</Text>
+          <Text style={styles.subtitulo}>{t('administraServiciosSubtitulo')}</Text>
 
           {servicios.length === 0 ? (
             <View style={styles.cajaVacia}>
-              <Text style={styles.textoVacio}>Aún no tienes servicios publicados.</Text>
+              <Text style={styles.textoVacio}>{t('sinServicios')}</Text>
             </View>
           ) : (
             servicios.map((servicio) => {
@@ -105,11 +107,11 @@ export default function ServiciosScreen() {
                         {/* NUEVO: Etiqueta roja si está pausado */}
                         {estaPausado && (
                           <View style={styles.etiquetaPausado}>
-                            <Text style={styles.textoPausado}>Pausado</Text>
+                            <Text style={styles.textoPausado}>{t('pausado')}</Text>
                           </View>
                         )}
                         <View style={styles.etiquetaModalidad}>
-                          <Text style={styles.textoModalidad}>{servicio.modality || 'Presencial'}</Text>
+                          <Text style={styles.textoModalidad}>{servicio.modality || t('presencial')}</Text>
                         </View>
                       </View>
 
@@ -121,7 +123,7 @@ export default function ServiciosScreen() {
                     
                     <View style={styles.filaDatos}>
                       <Text style={[styles.precioTexto, estaPausado && styles.textoGris]}>${servicio.base_price}</Text>
-                      <Text style={styles.tiempoTexto}>{servicio.duration_minutes} minutos</Text>
+                      <Text style={styles.tiempoTexto}>{servicio.duration_minutes} {t('minutos')}</Text>
                     </View>
 
                     <View style={styles.filaBotones}>
@@ -129,11 +131,11 @@ export default function ServiciosScreen() {
                         style={styles.botonEditar} 
                         onPress={() => router.push(`/(profesionista)/servicios/editar?id=${servicio.service_id}` as any)}
                       >
-                        <Text style={styles.textoEditar}>Editar</Text>
+                        <Text style={styles.textoEditar}>{t('editar')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity style={styles.botonBorrar} onPress={() => handleBorrar(servicio.service_id)}>
-                        <Text style={styles.textoBorrar}>Borrar</Text>
+                        <Text style={styles.textoBorrar}>{t('borrar')}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -146,7 +148,7 @@ export default function ServiciosScreen() {
 
       <View style={styles.contenedorFijoAbajo}>
         <TouchableOpacity style={styles.botonPrimario} onPress={() => router.push('/(profesionista)/servicios/agregar')}>
-          <Text style={styles.textoBotonPrimario}>+ Crear Nuevo Servicio</Text>
+          <Text style={styles.textoBotonPrimario}>{t('crearNuevoServicio')}</Text>
         </TouchableOpacity>
       </View>
     </View>

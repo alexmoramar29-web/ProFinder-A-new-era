@@ -1,103 +1,120 @@
-import { supabase } from '@/lib/supabase';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { supabase } from '../../../lib/supabase';
 
-export default function PerfilClienteScreen() {
+export default function PerfilScreen() {
   const router = useRouter();
-  const [perfil, setPerfil] = useState<any>(null);
-  const [correo, setCorreo] = useState<string>('');
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [zoomVisible, setZoomVisible] = useState(false); // Estado para el zoom
   const [cargando, setCargando] = useState(true);
+  const [datos, setDatos] = useState<any>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  const cargarPerfil = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCorreo(user.email || '');
-        
-        // Consulta segura estructurada en arreglos para evitar caídas del componente
-        const { data, error } = await supabase
-          .from('clientes')
-          .select('*')
-          .eq('id', user.id);
-          
-        if (!error && data && data.length > 0) {
-          setPerfil(data[0]);
-        }
-      }
-    } catch (error) {
-      console.log("Error cargando vista de perfil:", error);
-    } finally {
-      setCargando(false);
+  const cargarDatos = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data } = await supabase.from('clientes').select('*').eq('id', user.id).single();
+      setDatos(data);
+      setAvatarUrl(data?.avatar_url);
     }
+    setCargando(false);
   };
 
-  useFocusEffect(useCallback(() => { cargarPerfil(); }, []));
+  useFocusEffect(useCallback(() => { cargarDatos(); }, []));
 
-  if (cargando) {
-    return (
-      <View style={styles.cargandoContainer}>
-        <ActivityIndicator size="large" color="#5c4b8a" />
-      </View>
-    );
-  }
+  const fotoPerfil = avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
-  const fotoAMostrar = perfil?.avatar_url || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+  const menuItems = [
+    { title: 'Inicio', route: '/(cliente)' },
+    { title: 'Chat', route: '/(cliente)/chat' },
+    { title: 'Mi Perfil', route: '/(cliente)/perfil' },
+    { title: 'Configuración', route: '/(cliente)/configuracion' },
+    { title: 'Ayuda', route: '/(cliente)/ayuda' },
+  ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.container}>
-          
-          <View style={styles.fotoContainer}>
-            <Image source={{ uri: fotoAMostrar }} style={styles.foto} />
-          </View>
-
-          <View style={styles.nombreContainer}>
-            <Text style={styles.nombreTexto}>{perfil?.full_name || 'Agrega tu nombre en Editar'}</Text>
-          </View>
-
-          <View style={styles.datosCard}>
-            <Text style={styles.datoTitulo}>Nombre de usuario</Text>
-            <Text style={styles.datoValor}>{perfil?.username ? `@${perfil.username}` : 'Sin usuario asignado'}</Text>
-
-            <Text style={styles.datoTitulo}>Correo Electrónico</Text>
-            <Text style={styles.datoValor}>{correo}</Text>
-
-            <Text style={styles.datoTitulo}>Teléfono de contacto</Text>
-            <Text style={styles.datoValor}>{perfil?.phone || 'Sin teléfono registrado'}</Text>
-          </View>
-
-          <View style={styles.contenedorBotones}>
-            <TouchableOpacity style={styles.botonVolver} onPress={() => router.replace('/(cliente)')}>
-              <Text style={styles.textoBotonVolver}>Volver al Inicio</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.botonEditar} onPress={() => router.push('/perfil/editar')}>
-              <Text style={styles.textoBotonEditar}>Editar Perfil</Text>
-            </TouchableOpacity>
-          </View>
-
+    <View style={styles.container}>
+      {/* NAVBAR */}
+      <View style={styles.navbar}>
+        <Text style={styles.navbarTitle}>Mi Perfil</Text>
+        <View style={styles.rightHeaderContainer}>
+          <TouchableOpacity onPress={() => router.push('/(cliente)/perfil')}>
+            <Image source={{ uri: fotoPerfil }} style={styles.profileCircle} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setMenuVisible(true)} style={{ marginLeft: 15 }}>
+            <Text style={{ fontSize: 24 }}>☰</Text>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+      </View>
+
+      {/* MODAL MENÚ */}
+      <Modal visible={menuVisible} transparent={true} animationType="fade">
+        <View style={styles.modalContainer}>
+          <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}><View style={styles.overlay} /></TouchableWithoutFeedback>
+          <View style={styles.sideMenu}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {menuItems.map((item, index) => (
+                <TouchableOpacity key={index} style={[styles.menuItem, item.title === 'Configuración' && { marginTop: 30 }]} onPress={() => { setMenuVisible(false); router.push(item.route as any); }}>
+                  <Text style={styles.menuText}>{item.title}</Text>
+                </TouchableOpacity>
+              ))}
+              <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 20 }} />
+              <TouchableOpacity onPress={async () => { await supabase.auth.signOut(); router.replace('/(auth)/sign-in'); }} style={styles.menuItem}>
+                <Text style={{ color: 'red', fontWeight: 'bold' }}>Cerrar Sesión</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+ {/* ZOOM IMAGEN */}
+{/* Cambiamos animationType a 'fade' para evitar el error de TypeScript */}
+<Modal visible={zoomVisible} transparent={true} animationType="fade">
+  <TouchableWithoutFeedback onPress={() => setZoomVisible(false)}>
+    <View style={styles.zoomBackground}>
+      {/* Puedes agregar un transform: [{scale: 1}] si quieres animar la entrada */}
+      <Image source={{ uri: fotoPerfil }} style={styles.fotoZoom} />
+    </View>
+  </TouchableWithoutFeedback>
+</Modal>
+
+      {/* CONTENIDO */}
+      {cargando ? (
+        <ActivityIndicator size="large" style={{ marginTop: 50 }} />
+      ) : (
+        <ScrollView contentContainerStyle={styles.content}>
+          <TouchableOpacity onPress={() => setZoomVisible(true)}>
+            <Image source={{ uri: fotoPerfil }} style={styles.fotoGrande} />
+          </TouchableOpacity>
+          <Text style={styles.label}>Nombre: {datos?.full_name}</Text>
+          <Text style={styles.label}>Usuario: {datos?.username}</Text>
+          <Text style={styles.label}>Teléfono: {datos?.phone}</Text>
+          
+          <TouchableOpacity style={styles.botonEditar} onPress={() => router.push('/(cliente)/perfil/editar')}>
+            <Text style={{ color: '#fff' }}>Editar Perfil</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  cargandoContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
-  scrollContainer: { flexGrow: 1, backgroundColor: '#f4f4f4' },
-  container: { flex: 1, padding: 20, alignItems: 'center', paddingTop: 40 },
-  fotoContainer: { marginBottom: 20 },
-  foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#ddd', borderWidth: 2, borderColor: '#fff' },
-  nombreContainer: { marginBottom: 25 },
-  nombreTexto: { fontSize: 24, fontWeight: 'bold', color: '#333', textAlign: 'center' },
-  datosCard: { width: '100%', backgroundColor: '#fff', padding: 20, borderRadius: 10, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3, marginBottom: 30 },
-  datoTitulo: { fontSize: 12, color: '#888', marginTop: 12, fontWeight: 'bold' },
-  datoValor: { fontSize: 16, color: '#333', marginBottom: 5 },
-  contenedorBotones: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
-  botonVolver: { flex: 1, backgroundColor: '#6c757d', padding: 15, borderRadius: 8, alignItems: 'center', marginRight: 8 },
-  textoBotonVolver: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-  botonEditar: { flex: 1, backgroundColor: '#007bff', padding: 15, borderRadius: 8, alignItems: 'center', marginLeft: 8 },
-  textoBotonEditar: { color: '#fff', fontWeight: 'bold', fontSize: 15 }
+  container: { flex: 1, backgroundColor: '#fff' },
+  navbar: { height: 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, borderBottomWidth: 1, borderColor: '#eee' },
+  navbarTitle: { fontSize: 18, fontWeight: 'bold' },
+  rightHeaderContainer: { flexDirection: 'row', alignItems: 'center' },
+  profileCircle: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#eee', borderWidth: 1, borderColor: '#ccc' },
+  modalContainer: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' },
+  sideMenu: { width: 220, backgroundColor: '#fff', padding: 20, paddingTop: 60, elevation: 10 },
+  menuItem: { paddingVertical: 10 },
+  menuText: { fontSize: 16, color: '#333' },
+  content: { padding: 20, alignItems: 'center' },
+  fotoGrande: { width: 150, height: 150, borderRadius: 75, marginBottom: 20 },
+  label: { fontSize: 16, marginBottom: 10 },
+  botonEditar: { backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, marginTop: 20, width: '100%', alignItems: 'center' },
+  zoomBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  fotoZoom: { width: 300, height: 300, borderRadius: 150 }
 });
