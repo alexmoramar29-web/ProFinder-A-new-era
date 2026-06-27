@@ -5,6 +5,7 @@ import { Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpac
 import * as Location from 'expo-location';
 import { supabase } from '../../../lib/supabase'; // <-- Tu conexión a la base de datos
 import MapaWeb from '../../../components/shared/MapaWeb'; // <-- El mapa universal (Web + Móvil)
+import { NominatimService } from '../../../utils/geocodingService'; // <-- Servicio de geolocalización extraído
 
 export default function UbicacionServiciosScreen() {
   const router = useRouter();
@@ -34,14 +35,31 @@ export default function UbicacionServiciosScreen() {
         
         const { data, error } = await supabase
           .from('professionals')
-          .select('latitude, longitude')
+          .select('latitude, longitude, address')
           .eq('prof_id', user.id)
           .single();
           
         if (data && data.latitude && data.longitude) {
           setCoordenadas({ latitude: data.latitude, longitude: data.longitude });
-          // Autocompletamos los campos basándonos en el pin guardado
-          obtenerDireccionPorCoordenadas(data.latitude, data.longitude);
+          
+          if (data.address) {
+            if (data.address.includes('|||')) {
+              // Formato nuevo con delimitadores para no perder campos
+              const partes = data.address.split('|||');
+              setCalle(partes[0] || '');
+              setNumExt(partes[1] || '');
+              setNumInt(partes[2] || '');
+              setColonia(partes[3] || '');
+              setCp(partes[4] || '');
+              setReferencias(partes[5] || '');
+            } else {
+              // Formato antiguo (texto puro) o guardado desde otra parte
+              obtenerDireccionPorCoordenadas(data.latitude, data.longitude);
+            }
+          } else {
+            // Autocompletamos los campos basándonos en el pin guardado si no hay dirección guardada
+            obtenerDireccionPorCoordenadas(data.latitude, data.longitude);
+          }
         }
       } catch (error) {
         console.log('Error cargando ubicación:', error);
@@ -51,193 +69,39 @@ export default function UbicacionServiciosScreen() {
     cargarUbicacionGuardada();
   }, []);
 
-  // Freno anti-spam: Nominatim solo permite 1 petición por segundo
-  const ultimaPeticion = React.useRef(0);
-
-  // Función mágica: Traduce las coordenadas a una dirección de texto
+  // Función mágica: Traduce las coordenadas a una dirección de texto delegada al servicio externo
   const obtenerDireccionPorCoordenadas = async (lat: number, lon: number) => {
-    // Evitar mandar demasiadas peticiones a Nominatim (mínimo 2 segundos entre cada una)
-    const ahora = Date.now();
-    if (Platform.OS === 'web' && ahora - ultimaPeticion.current < 2000) {
-      console.log('[ProFinder] Esperando cooldown de Nominatim...');
-      return;
-    }
-    ultimaPeticion.current = ahora;
-
-    try {
-      if (Platform.OS === 'web') {
-        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&email=alexmoramar29@gmail.com`;
-        const response = await fetch(url);
-        const data = await response.json();
-
-        console.log('[ProFinder] Reverse geocode completa:', JSON.stringify(data.address));
-        console.log('[ProFinder] display_name:', data.display_name);
-
-        if (data && data.address) {
-          const a = data.address;
-          setCalle(a.road || a.pedestrian || a.street || '');
-          setNumExt(a.house_number || '');
-          
-          // Colonia: buscar en todos los campos posibles de Nominatim para México
-          const coloniaEncontrada = a.neighbourhood || a.suburb || a.quarter || a.city_district || a.hamlet || a.village || a.town || '';
-          
-          // Si Nominatim no devolvió colonia en campos individuales, la sacamos del display_name
-          // display_name siempre viene completo, ej: "Calle X, Colonia Y, Chihuahua, 31064, México"
-          if (!coloniaEncontrada && data.display_name) {
-            const partes = data.display_name.split(',').map((p: string) => p.trim());
-            // La colonia suele ser el 2do o 3er elemento del display_name
-            if (partes.length >= 3) {
-              setColonia(partes[1] || '');
-            }
-          } else {
-            setColonia(coloniaEncontrada);
-          }
-          
-          // CP: si no viene en postcode, buscarlo en el display_name (es un número de 5 dígitos)
-          if (a.postcode) {
-            setCp(a.postcode);
-          } else if (data.display_name) {
-            const matchCP = data.display_name.match(/\b(\d{5})\b/);
-            if (matchCP) {
-              setCp(matchCP[1]);
-            }
-          }
-        }
-      } else {
-        const ubicaciones = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
-        if (ubicaciones && ubicaciones.length > 0) {
-          const u = ubicaciones[0];
-          setCalle(u.street || '');
-          setNumExt(u.streetNumber || '');
-          setColonia(u.district || u.city || u.subregion || '');
-          setCp(u.postalCode || '');
-        }
-      }
-    } catch (error) {
-      console.log('Error al traducir las coordenadas:', error);
+    const direccion = await NominatimService.obtenerDireccion(lat, lon);
+    if (direccion) {
+      setCalle(direccion.calle);
+      setNumExt(direccion.numExt);
+      setColonia(direccion.colonia);
+      setCp(direccion.cp);
     }
   };
 
-  // Función para buscar latitud/longitud a partir del texto escrito a mano
+  // Función para buscar latitud/longitud delegada al servicio
   const buscarCoordenadasPorDireccion = async () => {
     if (!calle || !colonia) {
-      Alert.alert('Faltan datos', 'Por favor ingresa al menos la calle y la colonia para buscar en el mapa.');
+      Alert.alert(t('faltanDatosTitulo', 'Faltan datos'), t('faltanDatosDesc', 'Por favor ingresa al menos la calle y la colonia para buscar en el mapa.'));
       return;
     }
     setCargando(true);
-    try {
-      if (Platform.OS === 'web') {
-        // LÓGICA WEB: Nominatim optimizado para direcciones mexicanas
-        let data: any = null;
-        let intentoUsado = '';
-
-        // Limpiamos los datos: si el usuario ya escribió el número en el campo de calle, no lo duplicamos
-        let calleClean = calle.trim();
-        let numClean = numExt.trim();
-        if (numClean && calleClean.includes(numClean)) {
-          // El número ya está dentro del campo de calle, lo quitamos para no duplicar
-          numClean = '';
-        }
-
-        // INTENTO 1: Búsqueda estructurada (street + CP + país, SIN colonia como ciudad)
-        // En México las colonias NO son ciudades, así que no usamos el parámetro city=colonia
-        const streetParam = numClean ? `${numClean} ${calleClean}` : calleClean;
-        const urlEstructurada = `https://nominatim.openstreetmap.org/search?format=json&street=${encodeURIComponent(streetParam)}&postalcode=${encodeURIComponent(cp || '')}&country=Mexico&limit=1&addressdetails=1&email=alexmoramar29@gmail.com`;
-        console.log('[ProFinder] Intento 1 - Estructurada:', streetParam, '| CP:', cp);
-        
-        try {
-          const res1 = await fetch(urlEstructurada);
-          if (res1.status !== 429) {
-            const data1 = await res1.json();
-            console.log('[ProFinder] Resultado estructurada:', JSON.stringify(data1));
-            if (data1 && data1.length > 0) { data = data1; intentoUsado = 'estructurada'; }
-          }
-        } catch (e) { console.log('[ProFinder] Error intento 1:', e); }
-
-        // INTENTO 2: Búsqueda libre con calle + número + colonia + CP + México
-        if (!data) {
-          const query2 = `${calleClean} ${numClean}, ${colonia}, ${cp || ''}, México`;
-          const url2 = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query2)}&limit=1&countrycodes=mx&email=alexmoramar29@gmail.com`;
-          console.log('[ProFinder] Intento 2 - Libre completa:', query2);
-          try {
-            const res2 = await fetch(url2);
-            if (res2.status !== 429) {
-              const data2 = await res2.json();
-              console.log('[ProFinder] Resultado libre:', JSON.stringify(data2));
-              if (data2 && data2.length > 0) { data = data2; intentoUsado = 'libre'; }
-            }
-          } catch (e) { console.log('[ProFinder] Error intento 2:', e); }
-        }
-
-        // INTENTO 3: Solo calle + CP + México (sin colonia, que a veces confunde)
-        if (!data) {
-          const query3 = `${calleClean}, ${cp || ''}, México`;
-          const url3 = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query3)}&limit=1&countrycodes=mx&email=alexmoramar29@gmail.com`;
-          console.log('[ProFinder] Intento 3 - Calle + CP:', query3);
-          try {
-            const res3 = await fetch(url3);
-            if (res3.status !== 429) {
-              const data3 = await res3.json();
-              console.log('[ProFinder] Resultado intento 3:', JSON.stringify(data3));
-              if (data3 && data3.length > 0) { data = data3; intentoUsado = 'calle_cp'; }
-            }
-          } catch (e) { console.log('[ProFinder] Error intento 3:', e); }
-        }
-
-        // INTENTO 4: Solo colonia + CP + México
-        if (!data) {
-          const query4 = `${colonia}, ${cp || ''}, México`;
-          const url4 = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query4)}&limit=1&countrycodes=mx&email=alexmoramar29@gmail.com`;
-          console.log('[ProFinder] Intento 4 - Solo colonia:', query4);
-          try {
-            const res4 = await fetch(url4);
-            if (res4.status !== 429) {
-              const data4 = await res4.json();
-              console.log('[ProFinder] Resultado intento 4:', JSON.stringify(data4));
-              if (data4 && data4.length > 0) { data = data4; intentoUsado = 'solo_colonia'; }
-            }
-          } catch (e) { console.log('[ProFinder] Error intento 4:', e); }
-        }
-        
-        if (data && data.length > 0) {
-          const lat = parseFloat(data[0].lat);
-          const lon = parseFloat(data[0].lon);
-          console.log('[ProFinder] ¡ENCONTRADO! (intento:', intentoUsado, ') Moviendo mapa a:', lat, lon);
-          setCoordenadas({ latitude: lat, longitude: lon });
-          if (intentoUsado === 'estructurada' || intentoUsado === 'libre') {
-            Alert.alert('¡Calle encontrada!', 'Te hemos llevado a tu calle. Ahora toca el mapa EXACTAMENTE en tu casa para colocar el pin ahí.');
-          } else {
-            Alert.alert('Zona encontrada', 'Te hemos acercado a tu zona. Ahora toca el mapa EXACTAMENTE en tu casa para colocar el pin ahí.');
-          }
-        } else {
-          Alert.alert('No encontrado', 'No se encontró esa dirección. Usa el botón "📡 Usar mi ubicación actual" o toca el mapa directamente.');
-        }
+    
+    const res = await NominatimService.buscarCoordenadas(calle, numExt, colonia, cp);
+    
+    if (res) {
+      setCoordenadas({ latitude: res.latitude, longitude: res.longitude });
+      if (res.intentoUsado === 'estructurada' || res.intentoUsado === 'libre' || res.intentoUsado === 'nativa_exacta') {
+        Alert.alert(t('calleEncontradaTitulo', '¡Calle encontrada!'), t('calleEncontradaDesc', 'Te hemos llevado a tu calle. Ahora toca el mapa EXACTAMENTE en tu casa para colocar el pin ahí.'));
       } else {
-        // LÓGICA MÓVIL: Expo Location (Nativo de Google/Apple)
-        await Location.requestForegroundPermissionsAsync();
-        const direccionCompleta = `${calle} ${numExt ? numExt : ''}, ${colonia}${cp ? `, ${cp}` : ''}, México`;
-        const resultados = await Location.geocodeAsync(direccionCompleta);
-        
-        if (resultados && resultados.length > 0) {
-          setCoordenadas({ latitude: resultados[0].latitude, longitude: resultados[0].longitude });
-          Alert.alert('¡Encontrado!', 'El mapa se ha centrado en tu dirección.');
-        } else {
-          const fallback = `${calle}, ${colonia}, México`;
-          const res2 = await Location.geocodeAsync(fallback);
-          if (res2 && res2.length > 0) {
-            setCoordenadas({ latitude: res2[0].latitude, longitude: res2[0].longitude });
-            Alert.alert('Aproximación', 'Centramos el mapa en tu zona. Mueve el pin para mayor exactitud.');
-          } else {
-            Alert.alert('No encontrado', 'Usa el botón "📡 Usar mi ubicación actual" para que el GPS te lleve directo.');
-          }
-        }
+        Alert.alert(t('zonaEncontradaTitulo', 'Zona encontrada'), t('zonaEncontradaDesc', 'Te hemos acercado a tu zona. Ahora toca el mapa EXACTAMENTE en tu casa para colocar el pin ahí.'));
       }
-    } catch (error) {
-      console.log('Error al buscar dirección:', error);
-      Alert.alert('Error', 'Hubo un problema. Usa el botón de "📡 Usar mi ubicación actual".');
-    } finally {
-      setCargando(false);
+    } else {
+      Alert.alert(t('noEncontradoTitulo', 'No encontrado'), t('noEncontradoDesc', 'No se encontró esa dirección. Usa el botón "📡 Usar mi ubicación actual" o toca el mapa directamente.'));
     }
+    
+    setCargando(false);
   };
 
   // ★ NUEVA FUNCIÓN ESTRELLA: Usar el GPS real del dispositivo (funciona en Web Y Móvil)
@@ -261,10 +125,10 @@ export default function UbicacionServiciosScreen() {
       // Autocompletar los campos de texto con la dirección que encontró el GPS
       obtenerDireccionPorCoordenadas(latitude, longitude);
       
-      Alert.alert('¡Ubicación detectada!', 'El mapa se ha centrado en tu ubicación actual. Si necesitas ajustar, toca el mapa para mover el pin.');
+      Alert.alert(t('ubicacionDetectadaTitulo', '¡Ubicación detectada!'), t('ubicacionDetectadaDesc', 'El mapa se ha centrado en tu ubicación actual. Si necesitas ajustar, toca el mapa para mover el pin.'));
     } catch (error) {
       console.log('Error al obtener ubicación GPS:', error);
-      Alert.alert('Error de GPS', 'No se pudo obtener tu ubicación. Asegúrate de tener el GPS activado y de haber dado permiso en tu navegador.');
+      Alert.alert(t('errorGpsTitulo', 'Error de GPS'), t('errorGpsDesc', 'No se pudo obtener tu ubicación. Asegúrate de tener el GPS activado y de haber dado permiso en tu navegador.'));
     } finally {
       setCargando(false);
     }
@@ -278,8 +142,8 @@ export default function UbicacionServiciosScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No hay sesión activa');
 
-      // 2. Unimos la dirección en un solo texto limpio
-      const direccionCompleta = `${calle} ${numExt} ${numInt ? `Int ${numInt}` : ''}, ${colonia}, CP ${cp}. Ref: ${referencias}`;
+      // 2. Unimos la dirección con delimitadores para no perder ningún campo al recargar y no exceder límite de texto en BD
+      const direccionCompleta = `${calle}|||${numExt}|||${numInt}|||${colonia}|||${cp}|||${referencias}`;
 
       // 3. Guardamos en tu tabla professionals (minúsculas)
       const { error } = await supabase
@@ -293,11 +157,11 @@ export default function UbicacionServiciosScreen() {
 
       if (error) throw error;
 
-      Alert.alert('¡Éxito!', 'Tu ubicación de trabajo se guardó correctamente.');
+      Alert.alert(t('exitoUbicacionTitulo', '¡Éxito!'), t('exitoUbicacionDesc', 'Tu ubicación de trabajo se guardó correctamente.'));
       router.replace('/(profesionista)/servicios'); // Regresamos a servicios
 
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      Alert.alert(t('error'), error.message);
     } finally {
       setCargando(false);
     }
@@ -322,7 +186,7 @@ export default function UbicacionServiciosScreen() {
             onPress={usarMiUbicacion}
             disabled={cargando}
           >
-            <Text style={styles.textoBotonGPS}>📡 Usar mi ubicación actual</Text>
+            <Text style={styles.textoBotonGPS}>{t('usarMiUbicacionBoton', '📡 Usar mi ubicación actual')}</Text>
           </TouchableOpacity>
 
           {/* EL MAPA UNIVERSAL (Web y Móvil) */}
@@ -335,6 +199,11 @@ export default function UbicacionServiciosScreen() {
               }} 
             />
             <Text style={styles.textoMapaSub}>{t('mapaIndicacion', 'Toca el mapa para mover el pin a tu ubicación exacta')}</Text>
+            {Platform.OS === 'web' && (
+              <Text style={{ fontSize: 12, color: '#ff9800', textAlign: 'center', marginTop: 8, fontStyle: 'italic', paddingHorizontal: 15 }}>
+                {t('notaMapaWeb', 'Nota: El mapa visual puede no mostrar las calles con exactitud, pero no te preocupes, los datos que escribas abajo se conectarán a la perfección con Google Maps.')}
+              </Text>
+            )}
           </View>
 
           {/* Formulario de Dirección */}
@@ -378,7 +247,7 @@ export default function UbicacionServiciosScreen() {
             onPress={buscarCoordenadasPorDireccion}
             disabled={cargando}
           >
-            <Text style={styles.textoBotonSecundarioLleno}>📍 Alinear mapa con lo escrito</Text>
+            <Text style={styles.textoBotonSecundarioLleno}>{t('alinearMapaBoton', '📍 Alinear mapa con lo escrito')}</Text>
           </TouchableOpacity>
 
         </View>

@@ -2,9 +2,16 @@ import { supabase } from '@/lib/supabase';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next'; // Herramienta de traducción
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform } from 'react-native';
+import ConfirmHcaptcha from '@hcaptcha/react-native-hcaptcha';
+
+let HCaptchaWeb: any;
+if (Platform.OS === 'web') {
+  HCaptchaWeb = require('@hcaptcha/react-hcaptcha').default;
+}
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -24,6 +31,34 @@ export default function SignInScreen() {
   
   const [modoRecuperar, setModoRecuperar] = useState(false);
 
+  // Estados de Captcha
+  const captchaRef = useRef<any>(null);
+  const [tokenWeb, setTokenWeb] = useState('');
+  type AccionPendiente = { tipo: 'login', identificador: string, pass: string } | { tipo: 'social', proveedor: 'google' | 'github' } | null;
+  const [accionPendiente, setAccionPendiente] = useState<AccionPendiente>(null);
+  const SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001';
+
+  // Revisar si regresamos de un OAuth en Web
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const revisarSesionWeb = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
+          const pendingPortal = await AsyncStorage.getItem('pending_oauth_portal');
+          const pendingProvider = await AsyncStorage.getItem('pending_oauth_provider');
+          
+          if (pendingPortal && pendingProvider) {
+            setCargando(true);
+            await AsyncStorage.removeItem('pending_oauth_portal');
+            await AsyncStorage.removeItem('pending_oauth_provider');
+            await procesarUsuarioAutenticado(session.user, pendingPortal, pendingProvider);
+          }
+        }
+      };
+      revisarSesionWeb();
+    }
+  }, []);
+
   // Función para alternar el idioma
   const cambiarIdioma = () => {
     const idiomaActual = i18n.language;
@@ -38,14 +73,86 @@ export default function SignInScreen() {
     setPassword('');
   };
 
-  const manejarLoginSocial = async (proveedor: 'google' | 'github') => {
+  const procesarUsuarioAutenticado = async (usuarioRedSocial: any, portalElegido: string, proveedor: string) => {
+    if (!usuarioRedSocial) throw new Error('Error al leer el perfil.');
+
+    const idDelUsuario = usuarioRedSocial.id;
+    const correo = usuarioRedSocial.email || '';
+    const nombreCompleto = usuarioRedSocial.user_metadata?.full_name || usuarioRedSocial.user_metadata?.name || 'Usuario';
+    const nombreUsuarioGenerado = correo.split('@')[0] + Math.floor(Math.random() * 100);
+
+    setMensaje('Preparando tu espacio de trabajo...');
+
+    if (portalElegido === 'cliente') {
+      const { data: existeCliente } = await supabase.from('users').select('user_id').eq('user_id', idDelUsuario).maybeSingle();
+      
+      if (!existeCliente) {
+        await supabase.from('users').insert([{
+          user_id: idDelUsuario,
+          username: nombreUsuarioGenerado,
+          full_name: nombreCompleto,
+          email: correo,
+          password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
+        }]);
+
+        await supabase.from('social_logins').insert([{
+          user_id: idDelUsuario,
+          provider: proveedor,
+          provider_id: idDelUsuario
+        }]);
+      }
+      router.replace('/(cliente)');
+    } else {
+      const { data: existeProf } = await supabase.from('professionals').select('prof_id').eq('prof_id', idDelUsuario).maybeSingle();
+      
+      if (!existeProf) {
+        await supabase.from('professionals').insert([{
+          prof_id: idDelUsuario,
+          username: nombreUsuarioGenerado,
+          full_name: nombreCompleto,
+          email: correo,
+          speciality: 'Por definir', 
+          experience_years: 0,
+          password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
+        }]);
+
+        await supabase.from('social_logins').insert([{
+          prof_id: idDelUsuario,
+          provider: proveedor,
+          provider_id: idDelUsuario
+        }]);
+
+        router.replace('/(profesionista)/perfil/editar');
+        return; 
+      }
+      router.replace('/(profesionista)');
+    }
+  };
+
+  const ejecutarLoginSocial = async (proveedor: 'google' | 'github') => {
     setMensaje('');
     setCargando(true);
     setMensaje('Conectando con ' + proveedor + '...');
     setTipoMensaje('info');
 
     try {
-      const urlDeRegreso = Linking.createURL('');
+      if (Platform.OS === 'web') {
+        await AsyncStorage.setItem('pending_oauth_portal', portal);
+        await AsyncStorage.setItem('pending_oauth_provider', proveedor);
+
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: proveedor,
+          options: {
+            redirectTo: window.location.href, // Mismo tab en web
+            skipBrowserRedirect: false, 
+          },
+        });
+        if (error) throw error;
+        return; 
+      }
+
+      // Flujo para Móvil
+      const urlDeRegreso = Linking.createURL('/(auth)/sign-in');
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: proveedor,
@@ -59,6 +166,10 @@ export default function SignInScreen() {
 
       if (data?.url) {
         const resultado = await WebBrowser.openAuthSessionAsync(data.url, urlDeRegreso);
+        
+        if (Platform.OS === 'android') {
+          WebBrowser.dismissBrowser();
+        }
         
         if (resultado.type === 'success' && resultado.url) {
           setMensaje('Verificando llaves de seguridad...');
@@ -84,63 +195,7 @@ export default function SignInScreen() {
 
           if (sessionError) throw sessionError;
 
-          const usuarioRedSocial = sessionData.user;
-          if (!usuarioRedSocial) throw new Error('Error al leer el perfil.');
-
-          const idDelUsuario = usuarioRedSocial.id;
-          const correo = usuarioRedSocial.email || '';
-          const nombreCompleto = usuarioRedSocial.user_metadata?.full_name || usuarioRedSocial.user_metadata?.name || 'Usuario';
-          const nombreUsuarioGenerado = correo.split('@')[0] + Math.floor(Math.random() * 100);
-
-          setMensaje('Preparando tu espacio de trabajo...');
-
-          if (portal === 'cliente') {
-            const { data: existeCliente } = await supabase.from('users').select('user_id').eq('user_id', idDelUsuario).maybeSingle();
-            
-            if (!existeCliente) {
-              await supabase.from('users').insert([{
-                user_id: idDelUsuario,
-                username: nombreUsuarioGenerado,
-                full_name: nombreCompleto,
-                email: correo,
-                password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
-              }]);
-
-              await supabase.from('social_logins').insert([{
-                user_id: idDelUsuario,
-                provider: proveedor,
-                provider_id: idDelUsuario
-              }]);
-            }
-            router.replace('/(cliente)');
-          } 
-          
-          else {
-            const { data: existeProf } = await supabase.from('professionals').select('prof_id').eq('prof_id', idDelUsuario).maybeSingle();
-            
-            if (!existeProf) {
-              await supabase.from('professionals').insert([{
-                prof_id: idDelUsuario,
-                username: nombreUsuarioGenerado,
-                full_name: nombreCompleto,
-                email: correo,
-                speciality: 'Por definir', 
-                profile_picture: usuarioRedSocial.user_metadata?.avatar_url || null, 
-                password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
-              }]);
-
-              await supabase.from('social_logins').insert([{
-                prof_id: idDelUsuario,
-                provider: proveedor,
-                provider_id: idDelUsuario
-              }]);
-
-              router.replace('/(profesionista)/perfil/editar');
-              return; 
-            }
-
-            router.replace('/(profesionista)');
-          }
+          await procesarUsuarioAutenticado(sessionData.user, portal, proveedor);
         }
       }
     } catch (error: any) {
@@ -151,7 +206,36 @@ export default function SignInScreen() {
     }
   };
 
-  const handleLogin = async () => {
+  const ejecutarAccion = (accion: AccionPendiente, token: string) => {
+    if (!accion) return;
+    if (accion.tipo === 'login') {
+      ejecutarLoginPassword(accion.identificador, accion.pass, token);
+    } else if (accion.tipo === 'social') {
+      ejecutarLoginSocial(accion.proveedor);
+    }
+    setAccionPendiente(null);
+  };
+
+  const procesarAccionConCaptcha = (accion: AccionPendiente) => {
+    if (Platform.OS === 'web') {
+      if (!tokenWeb) {
+        setMensaje('Por favor, completa el Captcha de seguridad antes de continuar.');
+        setTipoMensaje('error');
+        setAccionPendiente(accion);
+        return;
+      }
+      ejecutarAccion(accion, tokenWeb);
+    } else {
+      setAccionPendiente(accion);
+      captchaRef.current?.show();
+    }
+  };
+
+  const manejarLoginSocial = (proveedor: 'google' | 'github') => {
+    procesarAccionConCaptcha({ tipo: 'social', proveedor });
+  };
+
+  const handleLogin = () => {
     setMensaje('');
     const entradaLimpia = identificador.trim();
 
@@ -160,7 +244,10 @@ export default function SignInScreen() {
       setTipoMensaje('error');
       return;
     }
+    procesarAccionConCaptcha({ tipo: 'login', identificador: entradaLimpia, pass: password });
+  };
 
+  const ejecutarLoginPassword = async (entradaLimpia: string, pass: string, tokenCaptcha: string) => {
     setCargando(true);
     setMensaje('Iniciando sesión...');
     setTipoMensaje('info');
@@ -183,7 +270,8 @@ export default function SignInScreen() {
 
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: correoFinal,
-        password: password,
+        password: pass,
+        options: { captchaToken: tokenCaptcha }
       });
 
       if (authError) throw new Error('Acceso denegado. Revisa tu contraseña o intenta recuperar tu cuenta.');
@@ -361,6 +449,42 @@ export default function SignInScreen() {
           />
         )}
 
+        {!modoRecuperar && Platform.OS === 'web' && (
+          <View style={styles.captchaWebContainer}>
+            <HCaptchaWeb
+              sitekey={SITE_KEY}
+              size="compact"
+              onVerify={(token: string) => {
+                setTokenWeb(token);
+                setMensaje(''); 
+              }}
+            />
+          </View>
+        )}
+
+        {!modoRecuperar && Platform.OS !== 'web' && (
+          <ConfirmHcaptcha
+            ref={captchaRef}
+            siteKey={SITE_KEY}
+            size="invisible"
+            baseUrl="https://profinder-a-new-era-1.onrender.com"
+            languageCode={i18n.language || 'es'}
+            onMessage={(event: any) => {
+              if (event && event.nativeEvent.data) {
+                const msj = event.nativeEvent.data;
+                if (['cancel', 'error', 'expired'].includes(msj)) {
+                  setMensaje(`Captcha ${msj}.`);
+                  setTipoMensaje('error');
+                } else if (msj.length > 20) { // Los tokens de hCaptcha son muy largos, evitamos eventos internos como 'open'
+                  if (accionPendiente) {
+                    ejecutarAccion(accionPendiente, msj);
+                  }
+                }
+              }
+            }}
+          />
+        )}
+
         <TouchableOpacity 
           style={[styles.botonPrincipal, { backgroundColor: portal === 'cliente' ? '#007bff' : '#28a745' }]} 
           onPress={modoRecuperar ? handleRecuperarPassword : handleLogin} 
@@ -443,6 +567,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: 'bold', textAlign: 'center', color: '#1C1C1E', marginTop: 20 },
   subtitle: { fontSize: 14, color: '#8E8E93', textAlign: 'center', marginBottom: 25, marginTop: 5 },
   input: { borderWidth: 1, borderColor: '#E5E5EA', padding: 14, marginBottom: 15, borderRadius: 8, backgroundColor: '#FFFFFF', fontSize: 16, color: '#1C1C1E' },
+  captchaWebContainer: { alignItems: 'center', marginBottom: 15 },
   
   tabContainer: { flexDirection: 'row', backgroundColor: '#E5E5EA', borderRadius: 8, padding: 4, marginBottom: 25 },
   tabButton: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 6 },

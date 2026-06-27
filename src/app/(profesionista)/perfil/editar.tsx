@@ -185,6 +185,8 @@ export default function EditarPerfilScreen() {
           <Text style={styles.textoAtrasInline}>{t('atras')}</Text>
         </TouchableOpacity>
         
+        <Text style={styles.tituloPrincipal}>{t('editarPerfil')}</Text>
+        
         <TouchableOpacity style={styles.fotoContainer} onPress={seleccionarImagen}>
           {/* Ahora siempre se dibujará una imagen redonda, ya sea la tuya o el avatar base */}
           <Image source={{ uri: imagenAMostrar }} style={styles.foto} />
@@ -260,6 +262,7 @@ const styles = StyleSheet.create({
   botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
   flechaAtras: { fontSize: 20, color: '#5c4b8a', fontWeight: 'bold', marginRight: 5 },
   textoAtrasInline: { fontSize: 16, color: '#5c4b8a', fontWeight: 'bold' },
+  tituloPrincipal: { fontSize: 26, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 20 },
   fotoContainer: { alignSelf: 'center', marginBottom: 25 },
   foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#e9ecef', borderWidth: 2, borderColor: '#e0e0e0' },
   switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f4f1fa', padding: 15, borderRadius: 8, marginBottom: 20, borderWidth: 1, borderColor: '#ddd' },

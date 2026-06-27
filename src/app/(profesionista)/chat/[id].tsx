@@ -11,7 +11,7 @@ export default function ChatIndividualScreen() {
   const [mensaje, setMensaje] = useState('');
 
   useEffect(() => {
-    navigation.setOptions({ headerTitle: nombre || t('chatConCliente') });
+    navigation.setOptions({ headerTitle: '' });
   }, [nombre]);
 
   const MENSAJES_PRUEBA = [

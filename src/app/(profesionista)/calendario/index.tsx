@@ -64,6 +64,9 @@ export default function CalendarioScreen() {
 
   return (
     <View style={styles.contenedorFondo}>
+      <View style={styles.cabecera}>
+        <Text style={styles.tituloSeccion}>{t('Citas')}</Text>
+      </View>
       
       <View style={styles.contenedorPestañas}>
         <TouchableOpacity 
@@ -129,8 +132,10 @@ export default function CalendarioScreen() {
 }
 
 const styles = StyleSheet.create({
-  contenedorFondo: { flex: 1, backgroundColor: '#FAFAFC' },
+  contenedorFondo: { flex: 1, backgroundColor: '#FAFAFC', padding: 20 },
   centro: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  cabecera: { marginBottom: 15 },
+  tituloSeccion: { fontSize: 26, fontWeight: 'bold', color: '#1C1C1E' },
   
   contenedorPestañas: { flexDirection: 'row', backgroundColor: '#FFFFFF', padding: 10, borderBottomWidth: 1, borderBottomColor: '#E5E5EA' },
   pestaña: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 8, marginHorizontal: 5, backgroundColor: '#F2F2F7' },

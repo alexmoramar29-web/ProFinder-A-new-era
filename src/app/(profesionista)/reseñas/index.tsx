@@ -91,7 +91,10 @@ export default function ResenasScreen() {
 
   return (
     <ScrollView style={styles.contenedorFondo} contentContainerStyle={styles.scroll}>
-      
+      <View style={styles.cabecera}>
+        <Text style={styles.tituloPrincipal}>{t('resenasMenu')}</Text>
+      </View>
+
       <View style={styles.tarjetaResumen}>
         <Text style={styles.textoResumenTitulo}>{t('calificacionGeneral')}</Text>
         <Text style={styles.textoPromedioGrande}>{promedio}</Text>
@@ -123,6 +126,8 @@ const styles = StyleSheet.create({
   centro: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFAFC' },
   contenedorFondo: { flex: 1, backgroundColor: '#FAFAFC' },
   scroll: { padding: 20, paddingBottom: 50 },
+  cabecera: { marginBottom: 20 },
+  tituloPrincipal: { fontSize: 26, fontWeight: 'bold', color: '#1C1C1E' },
   tarjetaResumen: { backgroundColor: '#5c4b8a', borderRadius: 16, padding: 30, alignItems: 'center', marginBottom: 30, elevation: 4, shadowColor: '#5c4b8a', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6 },
   textoResumenTitulo: { color: '#E8E0FF', fontSize: 16, fontWeight: '600', marginBottom: 10 },
   textoPromedioGrande: { color: '#FFFFFF', fontSize: 64, fontWeight: 'bold', marginBottom: 5 },

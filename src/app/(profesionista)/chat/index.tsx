@@ -19,6 +19,9 @@ export default function BandejaChatScreen() {
 
   return (
     <View style={styles.contenedorFondo}>
+      <View style={styles.cabecera}>
+        <Text style={styles.tituloSeccion}>{t('chatMenu')}</Text>
+      </View>
       <View style={styles.barraBusqueda}>
         <TextInput 
           style={styles.inputBusqueda} 
@@ -59,8 +62,10 @@ export default function BandejaChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  contenedorFondo: { flex: 1, backgroundColor: '#FAFAFC' },
-  barraBusqueda: { padding: 15, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E5E5EA' },
+  contenedorFondo: { flex: 1, backgroundColor: '#FAFAFC', padding: 20 },
+  cabecera: { marginBottom: 15 },
+  tituloSeccion: { fontSize: 26, fontWeight: 'bold', color: '#1C1C1E' },
+  barraBusqueda: { paddingVertical: 10, backgroundColor: 'transparent', borderBottomWidth: 0 },
   inputBusqueda: { backgroundColor: '#F2F2F7', borderRadius: 10, paddingHorizontal: 15, paddingVertical: 10, fontSize: 16, color: '#1C1C1E' },
   chatFila: { flexDirection: 'row', padding: 15, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F2F2F7', alignItems: 'center' },
   avatar: { width: 50, height: 50, borderRadius: 25, marginRight: 15, backgroundColor: '#E5E5EA' },

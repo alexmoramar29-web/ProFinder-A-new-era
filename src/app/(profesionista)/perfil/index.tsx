@@ -67,7 +67,28 @@ export default function PerfilScreen() {
   }
 
   const abrirGoogleMaps = () => {
-    if (perfil?.latitude && perfil?.longitude) {
+    if (perfil?.address && perfil.address.includes('|||')) {
+      // Usar la dirección de texto para que Google Maps use su buscador hiper-preciso
+      const partes = perfil.address.split('|||');
+      const calle = partes[0] || '';
+      const numExt = partes[1] || '';
+      const colonia = partes[3] || '';
+      const cp = partes[4] || '';
+      
+      // Creamos una búsqueda ultra limpia para Google.
+      // Si tenemos CP, OMITIMOS la colonia. Los nombres de colonias muy raros o largos 
+      // confunden a Google Maps. El CP + Calle + Número es exacto.
+      let searchQuery = '';
+      if (cp) {
+        searchQuery = `${calle} ${numExt}, ${cp}, México`;
+      } else {
+        searchQuery = `${calle} ${numExt}, ${colonia}, México`;
+      }
+      
+      const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(searchQuery)}`;
+      Linking.openURL(url);
+    } else if (perfil?.latitude && perfil?.longitude) {
+      // Fallback a las coordenadas si no hay dirección estructurada
       const url = `https://www.google.com/maps/search/?api=1&query=${perfil.latitude},${perfil.longitude}`;
       Linking.openURL(url);
     }
@@ -130,19 +151,40 @@ export default function PerfilScreen() {
           {perfil?.address ? (
             <View style={styles.mapaContenedor}>
               <Text style={[styles.datoTitulo, { marginTop: 0 }]}>{t('ubicacionTitulo', '📍 Ubicación de Trabajo')}</Text>
-              <Text style={styles.datoValor}>{perfil.address}</Text>
+              <Text style={styles.datoValor}>
+                {(() => {
+                  if (perfil.address.includes('|||')) {
+                    const partes = perfil.address.split('|||');
+                    const c = partes[0] || '';
+                    const ne = partes[1] || '';
+                    const ni = partes[2] || '';
+                    const co = partes[3] || '';
+                    const cp = partes[4] || '';
+                    const r = partes[5] || '';
+                    return `${c} ${ne} ${ni ? `Int ${ni}` : ''}, ${co}, CP ${cp}${r ? `. Ref: ${r}` : ''}`;
+                  }
+                  return perfil.address;
+                })()}
+              </Text>
 
               {perfil?.latitude && perfil?.longitude && (
-                <TouchableOpacity onPress={abrirGoogleMaps} style={styles.mapaPequeno} activeOpacity={0.8}>
-                  <MapaWeb 
-                    coordenadas={{ latitude: perfil.latitude, longitude: perfil.longitude }} 
-                    height={150} 
-                    readOnly={true}
-                  />
-                  <View style={styles.etiquetaAbrirMapa}>
-                    <Text style={styles.textoAbrirMapa}>{t('abrirEnGoogleMaps', 'Abrir en Google Maps')}</Text>
-                  </View>
-                </TouchableOpacity>
+                <>
+                  <TouchableOpacity onPress={abrirGoogleMaps} style={styles.mapaPequeno} activeOpacity={0.8}>
+                    <MapaWeb 
+                      coordenadas={{ latitude: perfil.latitude, longitude: perfil.longitude }} 
+                      height={150} 
+                      readOnly={true}
+                    />
+                    <View style={styles.etiquetaAbrirMapa}>
+                      <Text style={styles.textoAbrirMapa}>{t('abrirEnGoogleMaps', 'Abrir en Google Maps')}</Text>
+                    </View>
+                  </TouchableOpacity>
+                  {Platform.OS === 'web' && (
+                    <Text style={{ fontSize: 11, color: '#888', textAlign: 'center', marginTop: 4, fontStyle: 'italic' }}>
+                      Al hacer clic se abrirá Google Maps con la ubicación exacta.
+                    </Text>
+                  )}
+                </>
               )}
             </View>
           ) : (
