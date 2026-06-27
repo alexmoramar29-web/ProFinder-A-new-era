@@ -50,7 +50,13 @@ export default function SignInScreen() {
             setCargando(true);
             await AsyncStorage.removeItem('pending_oauth_portal');
             await AsyncStorage.removeItem('pending_oauth_provider');
-            await procesarUsuarioAutenticado(session.user, pendingPortal, pendingProvider);
+            try {
+              await procesarUsuarioAutenticado(session.user, pendingPortal, pendingProvider);
+            } catch (err: any) {
+              setMensaje('Error de sincronización: ' + err.message);
+              setTipoMensaje('error');
+              setCargando(false);
+            }
           }
         }
       });
@@ -78,9 +84,9 @@ export default function SignInScreen() {
     if (!usuarioRedSocial) throw new Error('Error al leer el perfil.');
 
     const idDelUsuario = usuarioRedSocial.id;
-    const correo = usuarioRedSocial.email || '';
+    const correo = usuarioRedSocial.email || `${idDelUsuario}@${proveedor}.com`; // Fallback si Github oculta el correo
     const nombreCompleto = usuarioRedSocial.user_metadata?.full_name || usuarioRedSocial.user_metadata?.name || 'Usuario';
-    const nombreUsuarioGenerado = correo.split('@')[0] + Math.floor(Math.random() * 100);
+    const nombreUsuarioGenerado = (correo.split('@')[0] || 'user') + Math.floor(Math.random() * 100);
 
     setMensaje('Preparando tu espacio de trabajo...');
 
@@ -88,13 +94,15 @@ export default function SignInScreen() {
       const { data: existeCliente } = await supabase.from('users').select('user_id').eq('user_id', idDelUsuario).maybeSingle();
       
       if (!existeCliente) {
-        await supabase.from('users').insert([{
+        const { error: insertError } = await supabase.from('users').insert([{
           user_id: idDelUsuario,
           username: nombreUsuarioGenerado,
           full_name: nombreCompleto,
           email: correo,
           password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
         }]);
+
+        if (insertError) throw new Error('No se pudo crear la cuenta de cliente: ' + insertError.message);
 
         await supabase.from('social_logins').insert([{
           user_id: idDelUsuario,
@@ -107,7 +115,7 @@ export default function SignInScreen() {
       const { data: existeProf } = await supabase.from('professionals').select('prof_id').eq('prof_id', idDelUsuario).maybeSingle();
       
       if (!existeProf) {
-        await supabase.from('professionals').insert([{
+        const { error: insertError } = await supabase.from('professionals').insert([{
           prof_id: idDelUsuario,
           username: nombreUsuarioGenerado,
           full_name: nombreCompleto,
@@ -117,8 +125,10 @@ export default function SignInScreen() {
           password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
         }]);
 
+        if (insertError) throw new Error('No se pudo crear la cuenta de profesionista: ' + insertError.message);
+
         await supabase.from('social_logins').insert([{
-          prof_id: idDelUsuario,
+          user_id: idDelUsuario,
           provider: proveedor,
           provider_id: idDelUsuario
         }]);
@@ -196,7 +206,13 @@ export default function SignInScreen() {
 
           if (sessionError) throw sessionError;
 
-          await procesarUsuarioAutenticado(sessionData.user, portal, proveedor);
+          try {
+            await procesarUsuarioAutenticado(sessionData.user, portal, proveedor);
+          } catch (err: any) {
+            setMensaje('Error de sincronización: ' + err.message);
+            setTipoMensaje('error');
+            setCargando(false);
+          }
         }
       }
     } catch (error: any) {
