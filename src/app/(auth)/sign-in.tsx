@@ -121,7 +121,7 @@ export default function SignInScreen() {
           full_name: nombreCompleto,
           email: correo,
           speciality: 'Por definir', 
-          experience_years: 0,
+          year_experience: 0,
           password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
         }]);
 
