@@ -93,6 +93,11 @@ export default function ResetPasswordScreen() {
   return (
     <ScrollView contentContainerStyle={styles.contenedorScroll} style={styles.fondo}>
       <View style={styles.contenedor}>
+        <TouchableOpacity onPress={() => router.replace('/(auth)/sign-in')} style={styles.botonAtrasInline}>
+          <Text style={styles.flechaAtras}>❮</Text>
+          <Text style={styles.textoAtrasInline}>{t('atras')}</Text>
+        </TouchableOpacity>
+
         <Text style={styles.titulo}>{t('nuevaContrasenaTitle')}</Text>
         <Text style={styles.subtitulo}>{t('escribeCodigo')}</Text>
 
@@ -165,6 +170,9 @@ const styles = StyleSheet.create({
   fondo: { flex: 1, backgroundColor: '#FAFAFC' },
   contenedorScroll: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   contenedor: { backgroundColor: '#FFFFFF', padding: 25, borderRadius: 12, borderWidth: 1, borderColor: '#E5E5EA', elevation: 2 },
+  botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: 15, paddingVertical: 5 },
+  flechaAtras: { fontSize: 20, color: '#5c4b8a', fontWeight: 'bold', marginRight: 5 },
+  textoAtrasInline: { fontSize: 16, color: '#5c4b8a', fontWeight: 'bold' },
   titulo: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#1C1C1E', marginBottom: 5 },
   subtitulo: { fontSize: 14, color: '#8E8E93', textAlign: 'center', marginBottom: 25 },
   etiquetaInput: { fontSize: 14, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 8, marginLeft: 5 },

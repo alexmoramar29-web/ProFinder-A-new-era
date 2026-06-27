@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
+import MapaWeb from '@/components/shared/MapaWeb';
 
 export default function PerfilScreen() {
   const router = useRouter();
@@ -65,6 +66,13 @@ export default function PerfilScreen() {
     textoEtiqueta = t('documentosRechazados');
   }
 
+  const abrirGoogleMaps = () => {
+    if (perfil?.latitude && perfil?.longitude) {
+      const url = `https://www.google.com/maps/search/?api=1&query=${perfil.latitude},${perfil.longitude}`;
+      Linking.openURL(url);
+    }
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -79,7 +87,6 @@ export default function PerfilScreen() {
 
         <View style={styles.container}>
           
-          {/* PASO 1: Metemos la palomita aquí adentro para que flote sobre la foto */}
           <View style={styles.fotoContainer}>
             <TouchableOpacity onPress={() => { if (fotoGrandeMostrar) setFotoAmpliada(fotoGrandeMostrar); }}>
               {fotoGrandeMostrar ? (
@@ -91,7 +98,6 @@ export default function PerfilScreen() {
               )}
             </TouchableOpacity>
 
-            {/* El circulo morado con tu palomita blanca flotando abajo a la derecha */}
             {esAprobado && (
               <View style={styles.circuloVerificado}>
                 <Ionicons name="checkmark" size={16} color="#fff" />
@@ -99,7 +105,6 @@ export default function PerfilScreen() {
             )}
           </View>
 
-          {/* El nombre vuelve a quedar limpio y centrado */}
           <View style={styles.nombreContainer}>
             <Text style={styles.nombreTexto}>{perfil?.full_name || t('nombreNoDisponible')}</Text>
           </View>
@@ -122,9 +127,29 @@ export default function PerfilScreen() {
             <Text style={styles.datoValor}>{perfil?.profile_description || t('sinDescripcion')}</Text>
           </View>
 
-          <View style={styles.mapaPlaceholder}>
-            <Text style={styles.textoMapa}>{t('mapaPlaceholder')}</Text>
-          </View>
+          {perfil?.address ? (
+            <View style={styles.mapaContenedor}>
+              <Text style={[styles.datoTitulo, { marginTop: 0 }]}>{t('ubicacionTitulo', '📍 Ubicación de Trabajo')}</Text>
+              <Text style={styles.datoValor}>{perfil.address}</Text>
+
+              {perfil?.latitude && perfil?.longitude && (
+                <TouchableOpacity onPress={abrirGoogleMaps} style={styles.mapaPequeno} activeOpacity={0.8}>
+                  <MapaWeb 
+                    coordenadas={{ latitude: perfil.latitude, longitude: perfil.longitude }} 
+                    height={150} 
+                    readOnly={true}
+                  />
+                  <View style={styles.etiquetaAbrirMapa}>
+                    <Text style={styles.textoAbrirMapa}>{t('abrirEnGoogleMaps', 'Abrir en Google Maps')}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            <View style={styles.mapaPlaceholder}>
+              <Text style={styles.textoMapa}>{t('ubicacionNoConfigurada', 'Ubicación no configurada')}</Text>
+            </View>
+          )}
 
           {portafolio.length > 0 && (
             <View style={styles.portafolioContenedor}>
@@ -205,8 +230,15 @@ const styles = StyleSheet.create({
   datosCard: { width: '100%', backgroundColor: '#fff', padding: 20, borderRadius: 10, elevation: 3, marginBottom: 20 },
   datoTitulo: { fontSize: 12, color: '#888', marginTop: 10, fontWeight: 'bold' },
   datoValor: { fontSize: 16, color: '#333', marginBottom: 5 },
-  mapaPlaceholder: { width: '100%', height: 150, backgroundColor: '#e9ecef', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderWidth: 2, borderColor: '#ccc', borderStyle: 'dashed' },
-  textoMapa: { color: '#6c757d', fontWeight: 'bold', fontSize: 16 },
+  
+  mapaContenedor: { width: '100%', backgroundColor: '#fff', padding: 20, borderRadius: 10, elevation: 3, marginBottom: 20 },
+  mapaPequeno: { height: 150, width: '100%', borderRadius: 12, overflow: 'hidden', marginTop: 15 },
+  mapa: { flex: 1 },
+  mapaPlaceholder: { width: '100%', height: 100, backgroundColor: '#e9ecef', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderWidth: 2, borderColor: '#ccc', borderStyle: 'dashed' },
+  textoMapa: { color: '#6c757d', fontWeight: 'bold', fontSize: 14 },
+  etiquetaAbrirMapa: { position: 'absolute', bottom: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 15 },
+  textoAbrirMapa: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  
   portafolioContenedor: { width: '100%', marginBottom: 20 },
   tituloSeccion: { fontSize: 16, fontWeight: 'bold', color: '#5c4b8a', marginBottom: 10, alignSelf: 'flex-start' },
   carrusel: { flexDirection: 'row' },

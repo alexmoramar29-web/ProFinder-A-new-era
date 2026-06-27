@@ -1,15 +1,21 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function PrivacidadScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
 
   return (
     <View style={styles.contenedorFondo}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.tarjeta}>
+          <TouchableOpacity onPress={() => router.replace('/(profesionista)/configuracion')} style={styles.botonAtrasInline}>
+            <Text style={styles.flechaAtras}>❮</Text>
+            <Text style={styles.textoAtrasInline}>{t('atras')}</Text>
+          </TouchableOpacity>
+
           <Text style={styles.titulo}>{t('privacidadTituloPrincipal')}</Text>
           <Text style={styles.fechaActualizacion}>{t('privacidadFecha')}</Text>
           
@@ -51,6 +57,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4, 
     elevation: 2 
   },
+  botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+  flechaAtras: { fontSize: 20, color: '#5c4b8a', fontWeight: 'bold', marginRight: 5 },
+  textoAtrasInline: { fontSize: 16, color: '#5c4b8a', fontWeight: 'bold' },
   titulo: { fontSize: 24, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 5, textAlign: 'center' },
   fechaActualizacion: { fontSize: 13, color: '#8E8E93', textAlign: 'center', marginBottom: 25, fontStyle: 'italic' },
   seccionTitulo: { fontSize: 16, fontWeight: 'bold', color: '#5c4b8a', marginTop: 15, marginBottom: 8 },

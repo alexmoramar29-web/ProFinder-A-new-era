@@ -1,5 +1,5 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -7,7 +7,12 @@ export default function ChatIndividualScreen() {
   const { t } = useTranslation();
   const { id, nombre } = useLocalSearchParams();
   const router = useRouter();
+  const navigation = useNavigation();
   const [mensaje, setMensaje] = useState('');
+
+  useEffect(() => {
+    navigation.setOptions({ headerTitle: nombre || t('chatConCliente') });
+  }, [nombre]);
 
   const MENSAJES_PRUEBA = [
     { id: '1', texto: 'Hola, disculpa las molestias.', deMi: false, hora: '10:15 AM' },
@@ -22,8 +27,9 @@ export default function ChatIndividualScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <View style={styles.cabeceraChat}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.botonAtras}>
-          <Text style={styles.textoAtras}>❮</Text>
+        <TouchableOpacity onPress={() => router.replace('/(profesionista)/chat')} style={styles.botonAtrasInline}>
+          <Text style={styles.flechaAtras}>❮</Text>
+          <Text style={styles.textoAtrasInline}>{t('atras')}</Text>
         </TouchableOpacity>
         <Text style={styles.nombreCabecera}>{nombre || t('chatConCliente')}</Text>
       </View>
@@ -64,9 +70,10 @@ export default function ChatIndividualScreen() {
 
 const styles = StyleSheet.create({
   contenedorFondo: { flex: 1, backgroundColor: '#FAFAFC' },
-  cabeceraChat: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 15, borderBottomWidth: 1, borderBottomColor: '#E5E5EA' },
-  botonAtras: { padding: 5, paddingRight: 15 },
-  textoAtras: { fontSize: 20, color: '#5c4b8a', fontWeight: 'bold' },
+  cabeceraChat: { backgroundColor: '#FFFFFF', padding: 15, borderBottomWidth: 1, borderBottomColor: '#E5E5EA' },
+  botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  flechaAtras: { fontSize: 20, color: '#5c4b8a', fontWeight: 'bold', marginRight: 5 },
+  textoAtrasInline: { fontSize: 16, color: '#5c4b8a', fontWeight: 'bold' },
   nombreCabecera: { fontSize: 18, fontWeight: 'bold', color: '#1C1C1E' },
   
   scrollMensajes: { padding: 15, paddingBottom: 20 },

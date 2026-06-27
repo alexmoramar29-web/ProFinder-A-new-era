@@ -293,6 +293,7 @@
     "escribeMensaje": "Type a message...",
     "hoy": "Today",
     "ayer": "Yesterday",
-    "enviar": "Send"
+    "enviar": "Send",
+    "atras": "Back"
   }
 }

@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PerfilProvider, usePerfil } from '../../context/PerfilContext';
 import { supabase } from '../../lib/supabase';
@@ -150,8 +150,8 @@ function EnrutadorProfesionista() {
         <Drawer.Screen name="servicios/editar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('editarServicioHeader') }} />
         <Drawer.Screen name="perfil/editar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('editarPerfil') }} />
         <Drawer.Screen name="completar-registro" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('verificacionProfesional') }} />
-        <Drawer.Screen name="chat/[id]" options={{ drawerItemStyle: { display: 'none' } }} />
-        <Drawer.Screen name="configuracion/cambiar-contrasena" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('cambiarContrasenaHeader')  }} />
+        <Drawer.Screen name="chat/[id]" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('chatMenu') }} />
+        <Drawer.Screen name="configuracion/cambiar-contrasena" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('cambiarContrasenaHeader') }} />
         <Drawer.Screen name="configuracion/privacidad" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('privacidad') }} />
         <Drawer.Screen name="configuracion/index" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('configuracionMenu') }} />
         <Drawer.Screen name="ayuda/index" options={{ drawerItemStyle: { display: 'none' }, headerTitle: t('centroAyudaHeader') }} />

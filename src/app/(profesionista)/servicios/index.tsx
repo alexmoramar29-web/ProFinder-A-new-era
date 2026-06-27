@@ -146,9 +146,12 @@ export default function ServiciosScreen() {
         </View>
       </ScrollView>
 
-      <View style={styles.contenedorFijoAbajo}>
-        <TouchableOpacity style={styles.botonPrimario} onPress={() => router.push('/(profesionista)/servicios/agregar')}>
-          <Text style={styles.textoBotonPrimario}>{t('crearNuevoServicio')}</Text>
+      <View style={styles.contenedorFijoAbajoDosBotones}>
+        <TouchableOpacity style={styles.botonPrimarioMitad} onPress={() => router.push('/(profesionista)/servicios/agregar')}>
+          <Text style={styles.textoBotonPrimarioMitad}>{t('crearNuevoServicio')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.botonSecundarioMitad} onPress={() => router.push('/(profesionista)/servicios/ubicacion' as any)}>
+          <Text style={styles.textoBotonSecundarioMitad}>{t('ubicacionLocal', '📍 Ubicación')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -204,5 +207,11 @@ const styles = StyleSheet.create({
   
   contenedorFijoAbajo: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: '#fcfcfc', borderTopWidth: 1, borderTopColor: '#e0e0e0' },
   botonPrimario: { backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center' },
-  textoBotonPrimario: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
+  textoBotonPrimario: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  
+  contenedorFijoAbajoDosBotones: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: '#fcfcfc', borderTopWidth: 1, borderTopColor: '#e0e0e0', flexDirection: 'row', justifyContent: 'space-between' },
+  botonPrimarioMitad: { backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center', width: '48%' },
+  textoBotonPrimarioMitad: { color: '#fff', fontWeight: 'bold', fontSize: 13, textAlign: 'center' },
+  botonSecundarioMitad: { backgroundColor: '#f4f1fa', padding: 15, borderRadius: 8, alignItems: 'center', width: '48%', borderWidth: 1, borderColor: '#5c4b8a' },
+  textoBotonSecundarioMitad: { color: '#5c4b8a', fontWeight: 'bold', fontSize: 13, textAlign: 'center' }
 });

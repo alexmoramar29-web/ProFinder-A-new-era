@@ -103,7 +103,7 @@ export default function CambiarContrasenaScreen() {
       
       // Te regresamos automáticamente al menú anterior después de 2 segundos
       setTimeout(() => {
-         router.back();
+         router.replace('/(profesionista)/configuracion');
       }, 2000);
 
     } catch (error: any) {
@@ -123,6 +123,10 @@ export default function CambiarContrasenaScreen() {
   return (
     <View style={styles.contenedorFondo}>
       <View style={styles.tarjeta}>
+        <TouchableOpacity onPress={() => router.replace('/(profesionista)/configuracion')} style={styles.botonAtrasInline}>
+          <Text style={styles.flechaAtras}>❮</Text>
+          <Text style={styles.textoAtrasInline}>{t('atras')}</Text>
+        </TouchableOpacity>
         
         {paso === 1 ? (
           <>
@@ -203,6 +207,9 @@ export default function CambiarContrasenaScreen() {
 const styles = StyleSheet.create({
   contenedorFondo: { flex: 1, backgroundColor: '#FAFAFC', padding: 20, justifyContent: 'center' },
   tarjeta: { backgroundColor: '#FFFFFF', padding: 25, borderRadius: 12, borderWidth: 1, borderColor: '#E5E5EA', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+  flechaAtras: { fontSize: 20, color: '#5c4b8a', fontWeight: 'bold', marginRight: 5 },
+  textoAtrasInline: { fontSize: 16, color: '#5c4b8a', fontWeight: 'bold' },
   titulo: { fontSize: 22, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 10, textAlign: 'center' },
   subtitulo: { fontSize: 14, color: '#8E8E93', textAlign: 'center', marginBottom: 25, lineHeight: 20 },
   cajaCorreo: { backgroundColor: '#F2F2F7', borderRadius: 8, paddingVertical: 14, paddingHorizontal: 15, marginBottom: 25, alignItems: 'center', borderWidth: 1, borderColor: '#E5E5EA' },

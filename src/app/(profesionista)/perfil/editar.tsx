@@ -180,6 +180,10 @@ export default function EditarPerfilScreen() {
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.container}>
+        <TouchableOpacity onPress={() => router.replace('/(profesionista)/perfil')} style={styles.botonAtrasInline}>
+          <Text style={styles.flechaAtras}>❮</Text>
+          <Text style={styles.textoAtrasInline}>{t('atras')}</Text>
+        </TouchableOpacity>
         
         <TouchableOpacity style={styles.fotoContainer} onPress={seleccionarImagen}>
           {/* Ahora siempre se dibujará una imagen redonda, ya sea la tuya o el avatar base */}
@@ -253,6 +257,9 @@ const styles = StyleSheet.create({
   centro: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scroll: { flexGrow: 1, backgroundColor: '#fff' },
   container: { padding: 20 },
+  botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+  flechaAtras: { fontSize: 20, color: '#5c4b8a', fontWeight: 'bold', marginRight: 5 },
+  textoAtrasInline: { fontSize: 16, color: '#5c4b8a', fontWeight: 'bold' },
   fotoContainer: { alignSelf: 'center', marginBottom: 25 },
   foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#e9ecef', borderWidth: 2, borderColor: '#e0e0e0' },
   switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f4f1fa', padding: 15, borderRadius: 8, marginBottom: 20, borderWidth: 1, borderColor: '#ddd' },

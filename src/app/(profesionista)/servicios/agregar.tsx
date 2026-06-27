@@ -131,6 +131,11 @@ export default function AgregarServicioScreen() {
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.container}>
+        <TouchableOpacity onPress={() => router.replace('/(profesionista)/servicios')} style={styles.botonAtrasInline}>
+          <Text style={styles.flechaAtras}>❮</Text>
+          <Text style={styles.textoAtrasInline}>{t('atras')}</Text>
+        </TouchableOpacity>
+
         <Text style={styles.titulo}>{t('crearNuevoServicioTitulo')}</Text>
         <Text style={styles.subtitulo}>{t('crearServicioSubtitulo')}</Text>
 
@@ -224,6 +229,9 @@ const styles = StyleSheet.create({
   centro: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
   scroll: { flexGrow: 1, backgroundColor: '#fff', paddingBottom: 40 },
   container: { padding: 20 },
+  botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+  flechaAtras: { fontSize: 20, color: '#5c4b8a', fontWeight: 'bold', marginRight: 5 },
+  textoAtrasInline: { fontSize: 16, color: '#5c4b8a', fontWeight: 'bold' },
   titulo: { fontSize: 24, fontWeight: 'bold', color: '#5c4b8a', textAlign: 'center' },
   subtitulo: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20, marginTop: 5 },
   
