@@ -41,9 +41,8 @@ export default function SignInScreen() {
   // Revisar si regresamos de un OAuth en Web
   useEffect(() => {
     if (Platform.OS === 'web') {
-      const revisarSesionWeb = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session && session.user) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
           const pendingPortal = await AsyncStorage.getItem('pending_oauth_portal');
           const pendingProvider = await AsyncStorage.getItem('pending_oauth_provider');
           
@@ -54,8 +53,10 @@ export default function SignInScreen() {
             await procesarUsuarioAutenticado(session.user, pendingPortal, pendingProvider);
           }
         }
+      });
+      return () => {
+        subscription.unsubscribe();
       };
-      revisarSesionWeb();
     }
   }, []);
 
@@ -143,7 +144,7 @@ export default function SignInScreen() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: proveedor,
           options: {
-            redirectTo: window.location.href, // Mismo tab en web
+            redirectTo: window.location.origin + '/(auth)/sign-in', // Redirige explícitamente a sign-in
             skipBrowserRedirect: false, 
           },
         });
