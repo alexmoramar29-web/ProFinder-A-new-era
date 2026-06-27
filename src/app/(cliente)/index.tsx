@@ -11,14 +11,14 @@ export default function ClienteDashboard() {
   const cargarFotoPerfil = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data } = await supabase.from('clientes').select('avatar_url').eq('id', user.id).single();
-      if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+      const { data } = await supabase.from('users').select('profile_picture').eq('user_id', user.id).maybeSingle();
+      if (data?.profile_picture) setAvatarUrl(data.profile_picture);
     }
   };
 
   useFocusEffect(useCallback(() => { cargarFotoPerfil(); }, []));
 
-  const fotoNavbar = avatarUrl ? `${avatarUrl}?t=${new Date().getTime()}` : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+  const fotoNavbar = avatarUrl ? `${avatarUrl}?t=${new Date().getTime()}` : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
 
   // Menú simplificado
   const menuItems = [
