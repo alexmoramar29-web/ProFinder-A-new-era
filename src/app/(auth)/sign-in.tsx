@@ -92,7 +92,7 @@ export default function SignInScreen() {
     setMensaje('Preparando tu espacio de trabajo...');
 
     if (portalElegido === 'cliente') {
-      const { data: existeCliente } = await supabase.from('users').select('user_id').eq('user_id', idDelUsuario).maybeSingle();
+      const { data: existeCliente } = await supabase.from('users').select('user_id, profile_picture').eq('user_id', idDelUsuario).maybeSingle();
       
       if (!existeCliente) {
         const { error: insertError } = await supabase.from('users').insert([{
@@ -111,10 +111,13 @@ export default function SignInScreen() {
           provider: proveedor,
           provider_id: idDelUsuario
         }]);
+      } else if (!existeCliente.profile_picture && fotoDePerfil) {
+        // Actualizar foto si el cliente ya existía pero no tenía foto
+        await supabase.from('users').update({ profile_picture: fotoDePerfil }).eq('user_id', idDelUsuario);
       }
       router.replace('/(cliente)');
     } else {
-      const { data: existeProf } = await supabase.from('professionals').select('prof_id').eq('prof_id', idDelUsuario).maybeSingle();
+      const { data: existeProf } = await supabase.from('professionals').select('prof_id, profile_picture').eq('prof_id', idDelUsuario).maybeSingle();
       
       if (!existeProf) {
         const { error: insertError } = await supabase.from('professionals').insert([{
@@ -138,6 +141,9 @@ export default function SignInScreen() {
 
         router.replace('/(profesionista)/perfil/editar');
         return; 
+      } else if (!existeProf.profile_picture && fotoDePerfil) {
+        // Actualizar foto si el profesionista ya existía pero no tenía foto
+        await supabase.from('professionals').update({ profile_picture: fotoDePerfil }).eq('prof_id', idDelUsuario);
       }
       router.replace('/(profesionista)');
     }
