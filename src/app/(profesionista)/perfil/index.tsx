@@ -45,7 +45,7 @@ export default function PerfilScreen() {
     );
   }
 
-  const fotoGrandeMostrar = fotoGlobal || perfil?.profile_picture;
+  const fotoGrandeMostrar = fotoGlobal || perfil?.profile_picture || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
   const estadoVerificacion = perfil?.verification_status || 'Pendiente';
   const perfilPausado = perfil?.is_active === false;
 

@@ -100,7 +100,7 @@ function EnrutadorProfesionista() {
     return null; 
   }
 
-  const fotoMostrar = fotoGlobal || 'https://st3.depositphotos.com/15648834/17930/v/600/depositphotos_179308454-stock-illustration-unknown-person-silhouette-glasses-profile.jpg';
+  const fotoMostrar = fotoGlobal || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
   const logoProfinder = require('../../../assets/images/logo.png');
 
   return (

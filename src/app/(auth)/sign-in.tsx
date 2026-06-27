@@ -86,6 +86,7 @@ export default function SignInScreen() {
     const idDelUsuario = usuarioRedSocial.id;
     const correo = usuarioRedSocial.email || `${idDelUsuario}@${proveedor}.com`; // Fallback si Github oculta el correo
     const nombreCompleto = usuarioRedSocial.user_metadata?.full_name || usuarioRedSocial.user_metadata?.name || 'Usuario';
+    const fotoDePerfil = usuarioRedSocial.user_metadata?.avatar_url || usuarioRedSocial.user_metadata?.picture || null;
     const nombreUsuarioGenerado = (correo.split('@')[0] || 'user') + Math.floor(Math.random() * 100);
 
     setMensaje('Preparando tu espacio de trabajo...');
@@ -99,6 +100,7 @@ export default function SignInScreen() {
           username: nombreUsuarioGenerado,
           full_name: nombreCompleto,
           email: correo,
+          profile_picture: fotoDePerfil,
           password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
         }]);
 
@@ -120,6 +122,7 @@ export default function SignInScreen() {
           username: nombreUsuarioGenerado,
           full_name: nombreCompleto,
           email: correo,
+          profile_picture: fotoDePerfil,
           speciality: 'Por definir', 
           year_experience: 0,
           password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
