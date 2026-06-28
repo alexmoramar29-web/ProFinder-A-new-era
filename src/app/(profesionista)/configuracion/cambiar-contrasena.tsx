@@ -1,8 +1,14 @@
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform } from 'react-native';
 import { supabase } from '../../../lib/supabase';
+import ConfirmHcaptcha from '@hcaptcha/react-native-hcaptcha';
+
+let HCaptchaWeb: any;
+if (Platform.OS === 'web') {
+  HCaptchaWeb = require('@hcaptcha/react-hcaptcha').default;
+}
 
 export default function CambiarContrasenaScreen() {
   const { t } = useTranslation();
@@ -19,6 +25,9 @@ export default function CambiarContrasenaScreen() {
   const [tipoMensaje, setTipoMensaje] = useState<'info' | 'error' | 'exito' | ''>('');
   
   const router = useRouter();
+  
+  const captchaRef = useRef<any>(null);
+  const SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001';
 
   useEffect(() => {
     const obtenerUsuario = async () => {
@@ -30,15 +39,22 @@ export default function CambiarContrasenaScreen() {
     obtenerUsuario();
   }, []);
 
-  const enviarCodigoAlCorreo = async () => {
+  const enviarCodigoAlCorreo = () => {
     if (!correoUsuario) return;
-    
+    if (Platform.OS === 'web') {
+      captchaRef.current?.execute();
+    } else {
+      captchaRef.current?.show();
+    }
+  };
+
+  const ejecutarEnvio = async (tokenCaptcha: string) => {
     setCargando(true);
     setMensaje(t('enviandoSolicitud'));
     setTipoMensaje('info');
     
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(correoUsuario);
+      const { error } = await supabase.auth.resetPasswordForEmail(correoUsuario, { captchaToken: tokenCaptcha });
       if (error) throw error;
 
       setMensaje(t('codigoEnviado'));
@@ -197,6 +213,43 @@ export default function CambiarContrasenaScreen() {
           <Text style={[styles.textoMensaje, { color: obtenerColorMensaje() }]}>
             {mensaje}
           </Text>
+        )}
+
+        {Platform.OS === 'web' && (
+          <HCaptchaWeb
+            ref={captchaRef}
+            sitekey={SITE_KEY}
+            size="invisible"
+            onVerify={(token: string) => {
+              ejecutarEnvio(token);
+            }}
+            onError={() => {
+              setCargando(false);
+              setMensaje('Falló la verificación de seguridad. Intenta nuevamente.');
+              setTipoMensaje('error');
+            }}
+          />
+        )}
+
+        {Platform.OS !== 'web' && (
+          <ConfirmHcaptcha
+            ref={captchaRef}
+            siteKey={SITE_KEY}
+            baseUrl="https://hcaptcha.com"
+            languageCode="es"
+            size="invisible"
+            onMessage={(event: any) => {
+              if (event && event.nativeEvent.data) {
+                if (['cancel', 'error', 'expired'].includes(event.nativeEvent.data)) {
+                  setCargando(false);
+                  setMensaje('Falló la verificación de seguridad. Intenta nuevamente.');
+                  setTipoMensaje('error');
+                  return;
+                }
+                ejecutarEnvio(event.nativeEvent.data);
+              }
+            }}
+          />
         )}
 
       </View>

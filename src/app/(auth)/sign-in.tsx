@@ -34,7 +34,7 @@ export default function SignInScreen() {
   // Estados de Captcha
   const captchaRef = useRef<any>(null);
   const [tokenWeb, setTokenWeb] = useState('');
-  type AccionPendiente = { tipo: 'login', identificador: string, pass: string } | { tipo: 'social', proveedor: 'google' | 'github' } | null;
+  type AccionPendiente = { tipo: 'login', identificador: string, pass: string } | { tipo: 'social', proveedor: 'google' | 'github' } | { tipo: 'recovery', identificador: string } | null;
   const [accionPendiente, setAccionPendiente] = useState<AccionPendiente>(null);
   const SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001';
 
@@ -236,29 +236,28 @@ export default function SignInScreen() {
     if (!accion) return;
     if (accion.tipo === 'login') {
       ejecutarLoginPassword(accion.identificador, accion.pass, token);
-    } else if (accion.tipo === 'social') {
-      ejecutarLoginSocial(accion.proveedor);
+    } else if (accion.tipo === 'recovery') {
+      ejecutarRecuperarPassword(accion.identificador, token);
     }
     setAccionPendiente(null);
+    setTokenWeb('');
   };
 
   const procesarAccionConCaptcha = (accion: AccionPendiente) => {
+    setAccionPendiente(accion);
     if (Platform.OS === 'web') {
-      if (!tokenWeb) {
-        setMensaje('Por favor, completa el Captcha de seguridad antes de continuar.');
-        setTipoMensaje('error');
-        setAccionPendiente(accion);
-        return;
+      if (tokenWeb) {
+        ejecutarAccion(accion, tokenWeb);
+      } else {
+        captchaRef.current?.execute();
       }
-      ejecutarAccion(accion, tokenWeb);
     } else {
-      setAccionPendiente(accion);
       captchaRef.current?.show();
     }
   };
 
   const manejarLoginSocial = (proveedor: 'google' | 'github') => {
-    procesarAccionConCaptcha({ tipo: 'social', proveedor });
+    ejecutarLoginSocial(proveedor);
   };
 
   const handleLogin = () => {
@@ -367,7 +366,7 @@ export default function SignInScreen() {
     }
   };
 
-  const handleRecuperarPassword = async () => {
+  const handleSolicitarRecuperacion = () => {
     setMensaje('');
     const entradaLimpia = identificador.trim();
 
@@ -376,7 +375,10 @@ export default function SignInScreen() {
       setTipoMensaje('error');
       return;
     }
+    procesarAccionConCaptcha({ tipo: 'recovery', identificador: entradaLimpia });
+  };
 
+  const ejecutarRecuperarPassword = async (entradaLimpia: string, tokenCaptcha: string) => {
     setCargando(true);
     setMensaje('Enviando código de recuperación...');
     setTipoMensaje('info');
@@ -392,7 +394,7 @@ export default function SignInScreen() {
         else throw new Error('No encontramos una cuenta con ese nombre de usuario.');
       }
 
-      const { error } = await supabase.auth.resetPasswordForEmail(correoFinal);
+      const { error } = await supabase.auth.resetPasswordForEmail(correoFinal, { captchaToken: tokenCaptcha });
       if (error) throw error;
 
       setMensaje('¡Listo! Revisa tu correo, te hemos enviado un código.');
@@ -475,18 +477,25 @@ export default function SignInScreen() {
           />
         )}
 
-        {!modoRecuperar && Platform.OS === 'web' && (
-          <View style={styles.captchaWebContainer}>
+          {Platform.OS === 'web' && (
             <HCaptchaWeb
+              ref={captchaRef}
               sitekey={SITE_KEY}
-              size="compact"
+              size="invisible"
               onVerify={(token: string) => {
                 setTokenWeb(token);
-                setMensaje(''); 
+                setMensaje('');
+                if (accionPendiente) {
+                  ejecutarAccion(accionPendiente, token);
+                }
+              }}
+              onError={() => {
+                setCargando(false);
+                setMensaje('Falló la verificación de seguridad. Intenta nuevamente.');
+                setTipoMensaje('error');
               }}
             />
-          </View>
-        )}
+          )}
 
         {!modoRecuperar && Platform.OS !== 'web' && (
           <ConfirmHcaptcha
@@ -513,7 +522,7 @@ export default function SignInScreen() {
 
         <TouchableOpacity 
           style={[styles.botonPrincipal, { backgroundColor: portal === 'cliente' ? '#007bff' : '#28a745' }]} 
-          onPress={modoRecuperar ? handleRecuperarPassword : handleLogin} 
+          onPress={modoRecuperar ? handleSolicitarRecuperacion : handleLogin} 
           disabled={cargando}
         >
           {cargando ? (
