@@ -1,6 +1,7 @@
 // ============================================================
-// ProFinder — Dashboard Cliente
-// La pantalla de búsqueda ES el dashboard principal
+// ProFinder — Search Results
+// Fiel al mockup: navbar morada con logo, filtros izquierda,
+// cards centro, mapa derecha
 // ============================================================
 
 import { Ionicons } from '@expo/vector-icons';
@@ -16,14 +17,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { supabase } from '../../lib/supabase';
 import { Colors } from '../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../theme/Spacing';
 import { Typography } from '../../theme/Typography';
 
-const { width: SCREEN_W } = Dimensions.get('window');
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const IS_MOBILE = SCREEN_W < 768;
 
+// ── Datos de ejemplo ─────────────────────────────────────────
 const PROFESIONISTAS = [
   {
     id: '1',
@@ -40,7 +41,7 @@ const PROFESIONISTAS = [
     rol: 'Full Stack Developer',
     rating: 4.8,
     precio: 95,
-    descripcion: 'Building high-performance React applications.',
+    descripcion: 'Building high-performance React...',
     habilidades: ['React', 'Node.js', 'Next.js', 'AWS'],
   },
   {
@@ -67,7 +68,7 @@ const EXPERIENCIAS = ['Junior (0-2 yrs)', 'Mid-Level (3-5 yrs)', 'Senior (6+ yrs
 const RATINGS_OPTS = ['3+', '4+', '4.5+'];
 const CERTS_OPTS   = ['Google UX Design', 'NN/g Certified'];
 
-export default function ClienteDashboard() {
+export default function BuscarScreen() {
   const router = useRouter();
 
   const [busqueda,     setBusqueda]     = useState('');
@@ -79,11 +80,6 @@ export default function ClienteDashboard() {
     setExperiencias(p => p.includes(v) ? p.filter(x => x !== v) : [...p, v]);
   const toggleCert = (v: string) =>
     setCerts(p => p.includes(v) ? p.filter(x => x !== v) : [...p, v]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.replace('/(auth)/sign-in');
-  };
 
   const resultados = PROFESIONISTAS.filter(p => {
     if (!busqueda) return true;
@@ -100,7 +96,8 @@ export default function ClienteDashboard() {
           NAVBAR MORADA
       ══════════════════════════════════════ */}
       <View style={styles.navbar}>
-        <Pressable style={styles.navBrand}>
+        {/* Logo */}
+        <Pressable style={styles.navBrand} onPress={() => router.replace('/(cliente)')}>
           <Image
             source={require('../../../assets/images/logo.png')}
             style={styles.navLogo}
@@ -109,11 +106,15 @@ export default function ClienteDashboard() {
           <Text style={styles.navLogoText}>ProFinder</Text>
         </Pressable>
 
+        {/* Links centrales (solo desktop) */}
         {!IS_MOBILE && (
           <View style={styles.navLinks}>
             {['Find Professionals', 'How it works', 'Messages', 'Appointments'].map(l => (
               <Pressable key={l}>
-                <Text style={[styles.navLink, l === 'Find Professionals' && styles.navLinkActive]}>
+                <Text style={[
+                  styles.navLink,
+                  l === 'Find Professionals' && styles.navLinkActive,
+                ]}>
                   {l}
                 </Text>
               </Pressable>
@@ -121,6 +122,7 @@ export default function ClienteDashboard() {
           </View>
         )}
 
+        {/* Derecha */}
         <View style={styles.navRight}>
           <Pressable style={styles.navIconBtn}>
             <Ionicons name="notifications-outline" size={20} color="#fff" />
@@ -129,42 +131,20 @@ export default function ClienteDashboard() {
             <Ionicons name="person" size={16} color={Colors.primary[300]} />
           </View>
           {!IS_MOBILE && (
-            <Pressable onPress={handleLogout} style={styles.navUserRow}>
-              <Text style={styles.navUserName}>Mi cuenta</Text>
+            <View style={styles.navUserRow}>
+              <Text style={styles.navUserName}>Jordan S.</Text>
               <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.7)" />
-            </Pressable>
+            </View>
           )}
         </View>
-      </View>
-
-      {/* ── Search bar debajo de la navbar ── */}
-      <View style={styles.searchBarWrap}>
-        <View style={styles.searchInputRow}>
-          <Ionicons name="search-outline" size={18} color={Colors.text.disabled} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Busca profesionistas, habilidades, categorías..."
-            placeholderTextColor={Colors.text.disabled}
-            value={busqueda}
-            onChangeText={setBusqueda}
-          />
-          {busqueda.length > 0 && (
-            <Pressable onPress={() => setBusqueda('')}>
-              <Ionicons name="close-circle" size={18} color={Colors.text.disabled} />
-            </Pressable>
-          )}
-        </View>
-        <Pressable style={styles.searchBtn}>
-          <Text style={styles.searchBtnTxt}>Buscar</Text>
-        </Pressable>
       </View>
 
       {/* ══════════════════════════════════════
-          CUERPO
+          CUERPO: filtros | cards | mapa
       ══════════════════════════════════════ */}
       <View style={styles.body}>
 
-        {/* ── FILTROS ── */}
+        {/* ── PANEL FILTROS ── */}
         {!IS_MOBILE && (
           <View style={styles.filtersPanel}>
             <View style={styles.filterHeader}>
@@ -174,6 +154,7 @@ export default function ClienteDashboard() {
               </Pressable>
             </View>
 
+            {/* Experiencia */}
             <View style={styles.filterGroup}>
               <Text style={styles.filterLabel}>EXPERIENCE</Text>
               {EXPERIENCIAS.map(exp => (
@@ -186,6 +167,7 @@ export default function ClienteDashboard() {
               ))}
             </View>
 
+            {/* Grado */}
             <View style={styles.filterGroup}>
               <Text style={styles.filterLabel}>DEGREE</Text>
               <View style={styles.selectBox}>
@@ -194,6 +176,7 @@ export default function ClienteDashboard() {
               </View>
             </View>
 
+            {/* Ubicación */}
             <View style={styles.filterGroup}>
               <Text style={styles.filterLabel}>LOCATION</Text>
               <View style={styles.locBox}>
@@ -206,6 +189,7 @@ export default function ClienteDashboard() {
               </View>
             </View>
 
+            {/* Rating */}
             <View style={styles.filterGroup}>
               <Text style={styles.filterLabel}>MINIMUM RATING</Text>
               <View style={styles.ratingRow}>
@@ -223,6 +207,7 @@ export default function ClienteDashboard() {
               </View>
             </View>
 
+            {/* Certificaciones */}
             <View style={styles.filterGroup}>
               <Text style={styles.filterLabel}>CERTIFICATIONS</Text>
               {CERTS_OPTS.map(c => (
@@ -234,28 +219,21 @@ export default function ClienteDashboard() {
                 </Pressable>
               ))}
             </View>
-
-            {/* Botón cerrar sesión al fondo */}
-            <Pressable style={styles.logoutBtn} onPress={handleLogout}>
-              <Ionicons name="log-out-outline" size={15} color={Colors.error.main} />
-              <Text style={styles.logoutTxt}>Cerrar sesión</Text>
-            </Pressable>
           </View>
         )}
 
         {/* ── CARDS ── */}
         <View style={styles.cardsCol}>
-          <View style={styles.resultsHeader}>
-            <Text style={styles.resultsTitle}>Top Rated Near You</Text>
-            <Text style={styles.resultsCount}>
-              Showing {resultados.length} high-performance professionals
-            </Text>
-          </View>
+          <Text style={styles.resultsTitle}>Top Rated Near You</Text>
+          <Text style={styles.resultsCount}>
+            Showing {resultados.length} high-performance professionals
+          </Text>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: Spacing[4] }}>
             <View style={styles.cardsGrid}>
               {resultados.map(prof => (
                 <View key={prof.id} style={styles.card}>
+                  {/* Header: avatar + badge */}
                   <View style={styles.cardTop}>
                     <View style={styles.avatar}>
                       <Ionicons name="person" size={26} color={Colors.primary[400]} />
@@ -270,6 +248,7 @@ export default function ClienteDashboard() {
                   <Text style={styles.cardRol}>{prof.rol}</Text>
                   <Text style={styles.cardDesc} numberOfLines={2}>{prof.descripcion}</Text>
 
+                  {/* Chips */}
                   <View style={styles.chips}>
                     {prof.habilidades.map(h => (
                       <View key={h} style={styles.chip}>
@@ -278,12 +257,13 @@ export default function ClienteDashboard() {
                     ))}
                   </View>
 
+                  {/* Footer */}
                   <View style={styles.cardFooter}>
                     <View>
                       <Text style={styles.startingAt}>STARTING AT</Text>
                       <Text style={styles.precio}>${prof.precio}/hr</Text>
                     </View>
-                    <Pressable style={styles.viewBtn}>
+                    <Pressable style={styles.viewBtn} onPress={() => {}}>
                       <Text style={styles.viewBtnTxt}>View{'\n'}Profile</Text>
                     </Pressable>
                   </View>
@@ -293,10 +273,11 @@ export default function ClienteDashboard() {
           </ScrollView>
         </View>
 
-        {/* ── MAPA ── */}
+        {/* ── MAPA (placeholder) ── */}
         {!IS_MOBILE && (
           <View style={styles.mapCol}>
             <View style={styles.mapPlaceholder}>
+              {/* Pins simulados */}
               {[
                 { top: '30%', left: '60%' },
                 { top: '55%', left: '20%' },
@@ -306,6 +287,8 @@ export default function ClienteDashboard() {
                   <Ionicons name="location" size={28} color={Colors.primary[600]} />
                 </View>
               ))}
+
+              {/* Controles del mapa */}
               <View style={styles.mapControls}>
                 <Pressable style={styles.mapControlBtn}>
                   <Text style={styles.mapControlTxt}>+</Text>
@@ -338,185 +321,210 @@ export default function ClienteDashboard() {
 }
 
 // ── Estilos ──────────────────────────────────────────────────
-const FILTER_W = 185;
-const MAP_W    = SCREEN_W * 0.28;
+const FILTER_W = 180;
+const MAP_W    = SCREEN_W * 0.30;
 const CARDS_W  = IS_MOBILE ? SCREEN_W : SCREEN_W - FILTER_W - MAP_W;
-const CARD_W   = IS_MOBILE ? ('100%' as any) : (CARDS_W - Spacing[4] * 3) / 2;
+const CARD_W   = IS_MOBILE ? '100%' : (CARDS_W - Spacing[4] * 3) / 2;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.neutral[100] },
 
-  // Navbar
+  // ── Navbar morada ──
   navbar: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: Colors.primary[600],
-    paddingHorizontal: Spacing[5], paddingVertical: Spacing[3], height: 56,
+    paddingHorizontal: Spacing[5],
+    paddingVertical: Spacing[3],
+    height: 56,
   },
   navBrand:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  navLogo:     { width: 44, height: 44 },
+  navLogo:     { width: 28, height: 28 },
   navLogoText: { ...Typography.styles.h5, color: '#fff', letterSpacing: 0.3 },
-  navLinks:    { flexDirection: 'row', gap: Spacing[5] },
-  navLink:     { ...Typography.styles.body, color: 'rgba(255,255,255,0.75)' },
+
+  navLinks: { flexDirection: 'row', gap: Spacing[5] },
+  navLink:  { ...Typography.styles.body, color: 'rgba(255,255,255,0.75)' },
   navLinkActive: { color: '#fff', fontWeight: '600' },
-  navRight:    { flexDirection: 'row', alignItems: 'center', gap: Spacing[3] },
-  navIconBtn:  { padding: 4 },
-  navAvatar:   {
+
+  navRight:   { flexDirection: 'row', alignItems: 'center', gap: Spacing[3] },
+  navIconBtn: { padding: 4 },
+  navAvatar:  {
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: Colors.primary[200],
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)',
   },
-  navUserRow:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  navUserName: { ...Typography.styles.body, color: '#fff', fontWeight: '600' },
+  navUserRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  navUserName:{ ...Typography.styles.body, color: '#fff', fontWeight: '600' },
 
-  // Search bar
-  searchBarWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing[2],
-    backgroundColor: Colors.background.card,
-    paddingHorizontal: Spacing[4], paddingVertical: Spacing[3],
-    borderBottomWidth: 1, borderBottomColor: Colors.border.default,
-    ...Shadow.xs,
-  },
-  searchInputRow: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing[2],
-    backgroundColor: Colors.neutral[100],
-    borderRadius: Radius.input,
-    paddingHorizontal: Spacing[3], height: 42,
-    borderWidth: 1.5, borderColor: Colors.border.default,
-  },
-  searchInput: { flex: 1, ...Typography.styles.body, color: Colors.text.primary },
-  searchBtn: {
-    backgroundColor: Colors.primary[600],
-    paddingHorizontal: Spacing[4], paddingVertical: 10,
-    borderRadius: Radius.button,
-    ...Shadow.brand,
-  },
-  searchBtnTxt: { ...Typography.styles.btn, color: '#fff' },
-
-  // Body
+  // ── Body ──
   body: { flex: 1, flexDirection: 'row' },
 
-  // Filtros
+  // ── Filtros ──
   filtersPanel: {
     width: FILTER_W,
     backgroundColor: Colors.background.card,
-    borderRightWidth: 1, borderRightColor: Colors.border.default,
-    paddingHorizontal: Spacing[4], paddingVertical: Spacing[4],
+    borderRightWidth: 1,
+    borderRightColor: Colors.border.default,
+    paddingHorizontal: Spacing[4],
+    paddingVertical: Spacing[4],
   },
   filterHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: Spacing[4],
   },
   filterTitle: { ...Typography.styles.h5, color: Colors.text.primary },
   filterReset: { ...Typography.styles.bodySm, color: Colors.primary[600] },
+
   filterGroup: { marginBottom: Spacing[4] },
   filterLabel: { ...Typography.styles.overline, color: Colors.text.secondary, marginBottom: Spacing[2] },
+
   checkRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   checkbox:    {
     width: 15, height: 15, borderRadius: 3,
     borderWidth: 1.5, borderColor: Colors.border.default,
-    backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#fff',
+    alignItems: 'center', justifyContent: 'center',
   },
   checkboxOn:  { backgroundColor: Colors.primary[600], borderColor: Colors.primary[600] },
   checkText:   { ...Typography.styles.bodySm, color: Colors.text.primary },
-  selectBox:   {
+
+  selectBox: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderWidth: 1.5, borderColor: Colors.border.default,
     borderRadius: Radius.input, paddingHorizontal: 10, paddingVertical: 7,
   },
-  selectText:  { ...Typography.styles.bodySm, color: Colors.text.primary },
-  locBox:      {
+  selectText: { ...Typography.styles.bodySm, color: Colors.text.primary },
+
+  locBox: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     borderWidth: 1.5, borderColor: Colors.border.default,
     borderRadius: Radius.input, paddingHorizontal: 10, paddingVertical: 7,
   },
-  locInput:    { flex: 1, ...Typography.styles.bodySm, color: Colors.text.primary },
-  ratingRow:   { flexDirection: 'row', gap: 6 },
-  ratingChip:  {
+  locInput: { flex: 1, ...Typography.styles.bodySm, color: Colors.text.primary },
+
+  ratingRow: { flexDirection: 'row', gap: 6 },
+  ratingChip: {
     paddingHorizontal: 10, paddingVertical: 5,
-    borderRadius: Radius.full, borderWidth: 1.5,
-    borderColor: Colors.border.default, backgroundColor: '#fff',
+    borderRadius: Radius.full,
+    borderWidth: 1.5, borderColor: Colors.border.default,
+    backgroundColor: '#fff',
   },
   ratingChipOn:    { backgroundColor: Colors.primary[600], borderColor: Colors.primary[600] },
   ratingChipTxt:   { ...Typography.styles.label, color: Colors.text.secondary, fontSize: 11 },
   ratingChipTxtOn: { color: '#fff' },
-  logoutBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    marginTop: 'auto' as any, paddingTop: Spacing[4],
-    borderTopWidth: 1, borderTopColor: Colors.border.default,
-  },
-  logoutTxt: { ...Typography.styles.bodySm, color: Colors.error.main },
 
-  // Cards
-  cardsCol: { width: IS_MOBILE ? '100%' : CARDS_W, padding: Spacing[4] },
-  resultsHeader: { marginBottom: Spacing[4] },
-  resultsTitle:  { ...Typography.styles.h3, color: Colors.text.primary },
-  resultsCount:  { ...Typography.styles.body, color: Colors.text.secondary, marginTop: 2 },
-  cardsGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing[3] },
+  // ── Cards ──
+  cardsCol: {
+    width: IS_MOBILE ? '100%' : CARDS_W,
+    padding: Spacing[4],
+  },
+  resultsTitle: { ...Typography.styles.h3, color: Colors.text.primary },
+  resultsCount: { ...Typography.styles.body, color: Colors.text.secondary, marginTop: 2 },
+
+  cardsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing[3],
+  },
 
   card: {
-    width: CARD_W,
+    width: CARD_W as any,
     backgroundColor: Colors.background.card,
-    borderRadius: Radius.card, padding: Spacing[4],
-    ...Shadow.sm, borderWidth: 1, borderColor: Colors.border.default, gap: Spacing[2],
+    borderRadius: Radius.card,
+    padding: Spacing[4],
+    ...Shadow.sm,
+    borderWidth: 1,
+    borderColor: Colors.border.default,
+    gap: Spacing[2],
   },
-  cardTop:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  avatar:     {
+  cardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+  },
+  avatar: {
     width: 52, height: 52, borderRadius: Radius.full,
-    backgroundColor: Colors.primary[50], alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.primary[50],
+    alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: Colors.primary[100],
   },
   ratingBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
     backgroundColor: Colors.primary[600],
-    borderRadius: Radius.full, paddingHorizontal: 8, paddingVertical: 4,
+    borderRadius: Radius.full,
+    paddingHorizontal: 8, paddingVertical: 4,
   },
   ratingStar:  { color: '#FCD34D', fontSize: 11 },
   ratingNum:   { ...Typography.styles.label, color: '#fff', fontSize: 12 },
-  cardNombre:  { ...Typography.styles.h5, color: Colors.text.primary, fontSize: 15 },
-  cardRol:     { ...Typography.styles.label, color: Colors.primary[600], fontSize: 12 },
-  cardDesc:    { ...Typography.styles.bodySm, color: Colors.text.secondary, lineHeight: 18 },
-  chips:       { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
-  chip:        {
-    backgroundColor: Colors.primary[50], borderRadius: Radius.full,
+
+  cardNombre: { ...Typography.styles.h5, color: Colors.text.primary, fontSize: 15 },
+  cardRol:    { ...Typography.styles.label, color: Colors.primary[600], fontSize: 12 },
+  cardDesc:   { ...Typography.styles.bodySm, color: Colors.text.secondary, lineHeight: 18 },
+
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
+  chip:  {
+    backgroundColor: Colors.primary[50],
+    borderRadius: Radius.full,
     paddingHorizontal: 8, paddingVertical: 3,
     borderWidth: 1, borderColor: Colors.primary[100],
   },
-  chipTxt:     { ...Typography.styles.caption, color: Colors.primary[700], fontWeight: '600' },
-  cardFooter:  {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    marginTop: Spacing[2], paddingTop: Spacing[2],
-    borderTopWidth: 1, borderTopColor: Colors.border.default,
-  },
-  startingAt:  { ...Typography.styles.overline, color: Colors.text.disabled, fontSize: 8 },
-  precio:      { ...Typography.styles.h4, color: Colors.text.primary, fontSize: 18 },
-  viewBtn:     {
-    backgroundColor: Colors.primary[600],
-    paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: Radius.button, ...Shadow.brand,
-  },
-  viewBtnTxt:  { ...Typography.styles.btn, color: '#fff', textAlign: 'center', fontSize: 12 },
+  chipTxt: { ...Typography.styles.caption, color: Colors.primary[700], fontWeight: '600' },
 
-  // Mapa
-  mapCol:         { width: MAP_W, backgroundColor: Colors.neutral[200] },
-  mapPlaceholder: { flex: 1, position: 'relative', backgroundColor: '#e8eaed' },
-  mapPin:         { position: 'absolute' },
-  mapControls:    {
-    position: 'absolute', right: 12, bottom: 80,
-    backgroundColor: '#fff', borderRadius: Radius.md, ...Shadow.sm, overflow: 'hidden',
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: Spacing[2],
+    paddingTop: Spacing[2],
+    borderTopWidth: 1,
+    borderTopColor: Colors.border.default,
   },
-  mapControlBtn:  {
-    width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
+  startingAt: { ...Typography.styles.overline, color: Colors.text.disabled, fontSize: 8 },
+  precio:     { ...Typography.styles.h4, color: Colors.text.primary, fontSize: 18 },
+
+  viewBtn: {
+    backgroundColor: Colors.primary[600],
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: Radius.button,
+    ...Shadow.brand,
+  },
+  viewBtnTxt: { ...Typography.styles.btn, color: '#fff', textAlign: 'center', fontSize: 12 },
+
+  // ── Mapa ──
+  mapCol: { width: MAP_W, backgroundColor: Colors.neutral[200] },
+  mapPlaceholder: { flex: 1, position: 'relative', backgroundColor: '#e8eaed' },
+  mapPin: { position: 'absolute' },
+  mapControls: {
+    position: 'absolute',
+    right: 12, bottom: 80,
+    backgroundColor: '#fff',
+    borderRadius: Radius.md,
+    ...Shadow.sm,
+    overflow: 'hidden',
+  },
+  mapControlBtn: {
+    width: 36, height: 36,
+    alignItems: 'center', justifyContent: 'center',
     borderBottomWidth: 1, borderBottomColor: Colors.border.default,
   },
-  mapControlTxt:  { fontSize: 18, color: Colors.text.secondary, fontWeight: '300' },
+  mapControlTxt: { fontSize: 18, color: Colors.text.secondary, fontWeight: '300' },
 
-  // Footer
+  // ── Footer ──
   footer: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing[4],
-    paddingHorizontal: Spacing[5], paddingVertical: Spacing[3],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing[4],
+    paddingHorizontal: Spacing[5],
+    paddingVertical: Spacing[3],
     backgroundColor: Colors.background.card,
-    borderTopWidth: 1, borderTopColor: Colors.border.default,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border.default,
   },
   footerLogo: { ...Typography.styles.label, color: Colors.text.primary, fontSize: 13 },
   footerTag:  { ...Typography.styles.caption, color: Colors.text.secondary, flex: 1 },
