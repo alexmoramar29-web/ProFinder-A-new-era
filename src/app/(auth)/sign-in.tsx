@@ -2,39 +2,177 @@ import { supabase } from '@/lib/supabase';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import React, { useState } from 'react';
-import { Button, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next'; // Herramienta de traducción
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform } from 'react-native';
+import ConfirmHcaptcha from '@hcaptcha/react-native-hcaptcha';
+
+let HCaptchaWeb: any;
+if (Platform.OS === 'web') {
+  HCaptchaWeb = require('@hcaptcha/react-hcaptcha').default;
+}
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function SignInScreen() {
   const router = useRouter();
   
+  // Encendemos el traductor
+  const { t, i18n } = useTranslation();
+  
   const [portal, setPortal] = useState<'cliente' | 'profesionista'>('cliente');
   const [identificador, setIdentificador] = useState(''); 
   const [password, setPassword] = useState('');
   const [cargando, setCargando] = useState(false);
-  const [mensajeError, setMensajeError] = useState('');
-  const [mensajeEstado, setMensajeEstado] = useState('');
   
-  // Nuevo interruptor para cambiar la pantalla al modo de recuperación
+  const [mensaje, setMensaje] = useState('');
+  const [tipoMensaje, setTipoMensaje] = useState<'info' | 'error' | 'exito' | ''>('');
+  
   const [modoRecuperar, setModoRecuperar] = useState(false);
+
+  // Estados de Captcha
+  const captchaRef = useRef<any>(null);
+  const [tokenWeb, setTokenWeb] = useState('');
+  type AccionPendiente = { tipo: 'login', identificador: string, pass: string } | { tipo: 'social', proveedor: 'google' | 'github' } | { tipo: 'recovery', identificador: string } | null;
+  const [accionPendiente, setAccionPendiente] = useState<AccionPendiente>(null);
+  const SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001';
+
+  // Revisar si regresamos de un OAuth en Web
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+          const pendingPortal = await AsyncStorage.getItem('pending_oauth_portal');
+          const pendingProvider = await AsyncStorage.getItem('pending_oauth_provider');
+          
+          if (pendingPortal && pendingProvider) {
+            setCargando(true);
+            await AsyncStorage.removeItem('pending_oauth_portal');
+            await AsyncStorage.removeItem('pending_oauth_provider');
+            try {
+              await procesarUsuarioAutenticado(session.user, pendingPortal, pendingProvider);
+            } catch (err: any) {
+              setMensaje('Error de sincronización: ' + err.message);
+              setTipoMensaje('error');
+              setCargando(false);
+            }
+          }
+        }
+      });
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, []);
+
+  // Función para alternar el idioma
+  const cambiarIdioma = () => {
+    const idiomaActual = i18n.language;
+    i18n.changeLanguage(idiomaActual === 'es' ? 'en' : 'es');
+  };
 
   const cambiarDePortal = (tipo: 'cliente' | 'profesionista') => {
     setPortal(tipo);
-    setMensajeError('');
-    setMensajeEstado('');
+    setMensaje('');
+    setTipoMensaje('');
     setIdentificador('');
     setPassword('');
-    setModoRecuperar(false);
   };
 
-  const manejarLoginSocial = async (proveedor: 'google' | 'github') => {
-    setMensajeError('');
+  const procesarUsuarioAutenticado = async (usuarioRedSocial: any, portalElegido: string, proveedor: string) => {
+    if (!usuarioRedSocial) throw new Error('Error al leer el perfil.');
+
+    const idDelUsuario = usuarioRedSocial.id;
+    const correo = usuarioRedSocial.email || `${idDelUsuario}@${proveedor}.com`; // Fallback si Github oculta el correo
+    const nombreCompleto = usuarioRedSocial.user_metadata?.full_name || usuarioRedSocial.user_metadata?.name || 'Usuario';
+    const fotoDePerfil = usuarioRedSocial.user_metadata?.avatar_url || usuarioRedSocial.user_metadata?.picture || null;
+    const nombreUsuarioGenerado = (correo.split('@')[0] || 'user') + Math.floor(Math.random() * 100);
+
+    setMensaje('Preparando tu espacio de trabajo...');
+
+    if (portalElegido === 'cliente') {
+      const { data: existeCliente } = await supabase.from('users').select('user_id, profile_picture').eq('user_id', idDelUsuario).maybeSingle();
+      
+      if (!existeCliente) {
+        const { error: insertError } = await supabase.from('users').insert([{
+          user_id: idDelUsuario,
+          username: nombreUsuarioGenerado,
+          full_name: nombreCompleto,
+          email: correo,
+          profile_picture: fotoDePerfil,
+          password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
+        }]);
+
+        if (insertError) throw new Error('No se pudo crear la cuenta de cliente: ' + insertError.message);
+
+        await supabase.from('social_logins').insert([{
+          user_id: idDelUsuario,
+          provider: proveedor,
+          provider_id: idDelUsuario
+        }]);
+      } else if (!existeCliente.profile_picture && fotoDePerfil) {
+        // Actualizar foto si el cliente ya existía pero no tenía foto
+        await supabase.from('users').update({ profile_picture: fotoDePerfil }).eq('user_id', idDelUsuario);
+      }
+      router.replace('/(cliente)');
+    } else {
+      const { data: existeProf } = await supabase.from('professionals').select('prof_id, profile_picture').eq('prof_id', idDelUsuario).maybeSingle();
+      
+      if (!existeProf) {
+        const { error: insertError } = await supabase.from('professionals').insert([{
+          prof_id: idDelUsuario,
+          username: nombreUsuarioGenerado,
+          full_name: nombreCompleto,
+          email: correo,
+          profile_picture: fotoDePerfil,
+          speciality: 'Por definir', 
+          year_experience: 0,
+          password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
+        }]);
+
+        if (insertError) throw new Error('No se pudo crear la cuenta de profesionista: ' + insertError.message);
+
+        await supabase.from('social_logins').insert([{
+          user_id: idDelUsuario,
+          provider: proveedor,
+          provider_id: idDelUsuario
+        }]);
+
+        router.replace('/(profesionista)/perfil/editar');
+        return; 
+      } else if (!existeProf.profile_picture && fotoDePerfil) {
+        // Actualizar foto si el profesionista ya existía pero no tenía foto
+        await supabase.from('professionals').update({ profile_picture: fotoDePerfil }).eq('prof_id', idDelUsuario);
+      }
+      router.replace('/(profesionista)');
+    }
+  };
+
+  const ejecutarLoginSocial = async (proveedor: 'google' | 'github') => {
+    setMensaje('');
     setCargando(true);
+    setMensaje('Conectando con ' + proveedor + '...');
+    setTipoMensaje('info');
 
     try {
-      const urlDeRegreso = Linking.createURL('');
+      if (Platform.OS === 'web') {
+        await AsyncStorage.setItem('pending_oauth_portal', portal);
+        await AsyncStorage.setItem('pending_oauth_provider', proveedor);
+
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: proveedor,
+          options: {
+            redirectTo: window.location.origin + '/(auth)/sign-in', // Redirige explícitamente a sign-in
+            skipBrowserRedirect: false, 
+          },
+        });
+        if (error) throw error;
+        return; 
+      }
+
+      // Flujo para Móvil
+      const urlDeRegreso = Linking.createURL('/(auth)/sign-in');
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: proveedor,
@@ -49,8 +187,12 @@ export default function SignInScreen() {
       if (data?.url) {
         const resultado = await WebBrowser.openAuthSessionAsync(data.url, urlDeRegreso);
         
+        if (Platform.OS === 'android') {
+          WebBrowser.dismissBrowser();
+        }
+        
         if (resultado.type === 'success' && resultado.url) {
-          setMensajeEstado('Verificando llaves de seguridad...');
+          setMensaje('Verificando llaves de seguridad...');
           
           const stringParametros = resultado.url.split('#')[1] || resultado.url.split('?')[1];
           if (!stringParametros) throw new Error('No se recibieron credenciales de la red social.');
@@ -73,82 +215,67 @@ export default function SignInScreen() {
 
           if (sessionError) throw sessionError;
 
-          const usuarioRedSocial = sessionData.user;
-          if (!usuarioRedSocial) throw new Error('Error al leer el perfil.');
-
-          const idDelUsuario = usuarioRedSocial.id;
-          const correo = usuarioRedSocial.email || '';
-          const nombreCompleto = usuarioRedSocial.user_metadata?.full_name || usuarioRedSocial.user_metadata?.name || 'Usuario';
-          const nombreUsuarioGenerado = correo.split('@')[0] + Math.floor(Math.random() * 100);
-
-          setMensajeEstado('Preparando tu espacio de trabajo...');
-
-          if (portal === 'cliente') {
-            const { data: existeCliente } = await supabase.from('users').select('user_id').eq('user_id', idDelUsuario).maybeSingle();
-            
-            if (!existeCliente) {
-              await supabase.from('users').insert([{
-                user_id: idDelUsuario,
-                username: nombreUsuarioGenerado,
-                full_name: nombreCompleto,
-                email: correo,
-                password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
-              }]);
-
-              await supabase.from('social_logins').insert([{
-                user_id: idDelUsuario,
-                provider: proveedor,
-                provider_id: idDelUsuario
-              }]);
-            }
-            router.replace('/(cliente)');
-          } 
-          
-          else {
-            const { data: existeProf } = await supabase.from('professionals').select('prof_id').eq('prof_id', idDelUsuario).maybeSingle();
-            
-            if (!existeProf) {
-              await supabase.from('professionals').insert([{
-                prof_id: idDelUsuario,
-                username: nombreUsuarioGenerado,
-                full_name: nombreCompleto,
-                email: correo,
-                speciality: 'Por definir', 
-                profile_picture: usuarioRedSocial.user_metadata?.avatar_url || null, 
-                password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
-              }]);
-
-              await supabase.from('social_logins').insert([{
-                prof_id: idDelUsuario,
-                provider: proveedor,
-                provider_id: idDelUsuario
-              }]);
-
-              router.replace('/(profesionista)/perfil/editar');
-              return; 
-            }
-
-            router.replace('/(profesionista)');
+          try {
+            await procesarUsuarioAutenticado(sessionData.user, portal, proveedor);
+          } catch (err: any) {
+            setMensaje('Error de sincronización: ' + err.message);
+            setTipoMensaje('error');
+            setCargando(false);
           }
         }
       }
     } catch (error: any) {
-      setMensajeError(error.message || `No se pudo iniciar sesion con ${proveedor}`);
+      setMensaje('Error: ' + (error.message || `No se pudo iniciar sesión con ${proveedor}`));
+      setTipoMensaje('error');
     } finally {
       setCargando(false);
     }
   };
 
-  const handleLogin = async () => {
-    setMensajeError('');
-    setMensajeEstado('');
+  const ejecutarAccion = (accion: AccionPendiente, token: string) => {
+    if (!accion) return;
+    if (accion.tipo === 'login') {
+      ejecutarLoginPassword(accion.identificador, accion.pass, token);
+    } else if (accion.tipo === 'recovery') {
+      ejecutarRecuperarPassword(accion.identificador, token);
+    }
+    setAccionPendiente(null);
+    setTokenWeb('');
+  };
+
+  const procesarAccionConCaptcha = (accion: AccionPendiente) => {
+    setAccionPendiente(accion);
+    if (Platform.OS === 'web') {
+      if (tokenWeb) {
+        ejecutarAccion(accion, tokenWeb);
+      } else {
+        captchaRef.current?.execute();
+      }
+    } else {
+      captchaRef.current?.show();
+    }
+  };
+
+  const manejarLoginSocial = (proveedor: 'google' | 'github') => {
+    ejecutarLoginSocial(proveedor);
+  };
+
+  const handleLogin = () => {
+    setMensaje('');
     const entradaLimpia = identificador.trim();
 
     if (!entradaLimpia || !password) {
-      return setMensajeError('Faltan datos: Por favor, escribe tu correo/usuario y contrasena.');
+      setMensaje('Faltan datos: Escribe tu correo/usuario y contraseña.');
+      setTipoMensaje('error');
+      return;
     }
+    procesarAccionConCaptcha({ tipo: 'login', identificador: entradaLimpia, pass: password });
+  };
 
+  const ejecutarLoginPassword = async (entradaLimpia: string, pass: string, tokenCaptcha: string) => {
     setCargando(true);
+    setMensaje('Iniciando sesión...');
+    setTipoMensaje('info');
 
     try {
       let correoFinal = entradaLimpia;
@@ -168,10 +295,11 @@ export default function SignInScreen() {
 
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: correoFinal,
-        password: password,
+        password: pass,
+        options: { captchaToken: tokenCaptcha }
       });
 
-      if (authError) throw new Error('Acceso denegado: Revisa tu contrasena. Si es correcta, es posible que tu cuenta este bloqueada, intenta registrarte de nuevo.');
+      if (authError) throw new Error('Acceso denegado. Revisa tu contraseña o intenta recuperar tu cuenta.');
 
       const idDelUsuario = authData.user.id;
       const metadatos = authData.user.user_metadata;
@@ -179,14 +307,14 @@ export default function SignInScreen() {
 
       if (rolOriginal && rolOriginal !== portal) {
         await supabase.auth.signOut();
-        throw new Error(`Esta cuenta no esta disponible, haz el intento en el otro portal`);
+        throw new Error(`Esta cuenta no está disponible, haz el intento en el otro portal.`);
       }
 
       if (portal === 'cliente') {
         const { data: existeCliente } = await supabase.from('users').select('user_id').eq('user_id', idDelUsuario).maybeSingle();
         
         if (!existeCliente && metadatos.rol_temporal === 'cliente') {
-          setMensajeEstado('Configurando tu nuevo perfil de cliente...');
+          setMensaje('Configurando tu nuevo perfil de cliente...');
           const { error: dbError } = await supabase.from('users').insert([{
             user_id: idDelUsuario,
             username: metadatos.username_temporal,
@@ -204,7 +332,7 @@ export default function SignInScreen() {
         const { data: existeProf } = await supabase.from('professionals').select('prof_id').eq('prof_id', idDelUsuario).maybeSingle();
         
         if (!existeProf && metadatos.rol_temporal === 'profesionista') {
-          setMensajeEstado('Configurando tu nuevo perfil profesional...');
+          setMensaje('Configurando tu nuevo perfil profesional...');
           
           const { error: profError } = await supabase.from('professionals').insert([{
             prof_id: idDelUsuario,
@@ -218,7 +346,7 @@ export default function SignInScreen() {
           
           if (profError) throw new Error('No se pudo guardar tus datos.');
 
-          setMensajeEstado('Vinculando documentos de seguridad...');
+          setMensaje('Vinculando documentos de seguridad...');
           const { error: docsError } = await supabase.from('professional_documents').insert([
             { prof_id: idDelUsuario, document_type: 'INE', file_url: metadatos.ine_temporal },
             { prof_id: idDelUsuario, document_type: 'Cédula Profesional', file_url: metadatos.cedula_temporal },
@@ -231,23 +359,30 @@ export default function SignInScreen() {
       }
 
     } catch (error: any) {
-      setMensajeError(error.message || 'Ocurrio un error inesperado al entrar.');
+      setMensaje(error.message || 'Ocurrió un error inesperado al entrar.');
+      setTipoMensaje('error');
     } finally {
       setCargando(false);
     }
   };
 
-  // NUENA FUNCIÓN: Lógica para enviar el correo de recuperación
-  const handleRecuperarPassword = async () => {
-    setMensajeError('');
-    setMensajeEstado('');
+  const handleSolicitarRecuperacion = () => {
+    setMensaje('');
     const entradaLimpia = identificador.trim();
 
     if (!entradaLimpia) {
-      return setMensajeError('Escribe tu correo o usuario para enviarte el enlace de recuperación.');
+      setMensaje('Escribe tu correo o usuario para enviarte el código.');
+      setTipoMensaje('error');
+      return;
     }
+    procesarAccionConCaptcha({ tipo: 'recovery', identificador: entradaLimpia });
+  };
 
+  const ejecutarRecuperarPassword = async (entradaLimpia: string, tokenCaptcha: string) => {
     setCargando(true);
+    setMensaje('Enviando código de recuperación...');
+    setTipoMensaje('info');
+    
     try {
       let correoFinal = entradaLimpia;
       const esCorreo = entradaLimpia.includes('@');
@@ -259,26 +394,49 @@ export default function SignInScreen() {
         else throw new Error('No encontramos una cuenta con ese nombre de usuario.');
       }
 
-      const { error } = await supabase.auth.resetPasswordForEmail(correoFinal);
+      const { error } = await supabase.auth.resetPasswordForEmail(correoFinal, { captchaToken: tokenCaptcha });
       if (error) throw error;
 
-      setMensajeEstado('Revisa tu bandeja de entrada. Te hemos enviado un enlace para crear una contraseña nueva.');
+      setMensaje('¡Listo! Revisa tu correo, te hemos enviado un código.');
+      setTipoMensaje('exito');
+      
+      setTimeout(() => {
+        router.push({
+          pathname: '/(auth)/reset-password',
+          params: { correoParam: correoFinal } 
+        });
+      }, 2000);
+      
     } catch (error: any) {
-      setMensajeError(error.message || 'No se pudo enviar el correo de recuperación.');
+      setMensaje('Error: ' + (error.message || 'No se pudo enviar el correo de recuperación.'));
+      setTipoMensaje('error');
     } finally {
       setCargando(false);
     }
   };
 
+  const obtenerColorMensaje = () => {
+    if (tipoMensaje === 'error') return '#D32F2F'; 
+    if (tipoMensaje === 'exito') return '#388E3C'; 
+    return '#8E8E93'; 
+  };
+
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
+    <ScrollView contentContainerStyle={styles.scrollContainer} style={styles.fondo}>
       <View style={styles.container}>
         
+        {/* BOTÓN LIMPIO PARA CAMBIAR IDIOMA */}
+        <TouchableOpacity style={styles.botonIdioma} onPress={cambiarIdioma}>
+          <Text style={styles.textoIdioma}>
+            {i18n.language === 'es' ? 'EN' : 'ES'}
+          </Text>
+        </TouchableOpacity>
+
         <Text style={styles.title}>
-          {portal === 'cliente' ? 'Portal Clientes' : 'Portal Profesionistas'}
+          {portal === 'cliente' ? t('portalClientes') : t('portalProfesionistas')}
         </Text>
         <Text style={styles.subtitle}>
-          {modoRecuperar ? 'Recupera el acceso a tu cuenta' : 'Inicia sesion para continuar'}
+          {modoRecuperar ? t('recuperaAcceso') : t('iniciaSesion')}
         </Text>
 
         <View style={styles.tabContainer}>
@@ -287,7 +445,7 @@ export default function SignInScreen() {
             onPress={() => cambiarDePortal('cliente')}
             disabled={cargando}
           >
-            <Text style={portal === 'cliente' ? styles.textActive : styles.textInactive}>Soy Cliente</Text>
+            <Text style={portal === 'cliente' ? styles.textActive : styles.textInactive}>{t('soyCliente')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -295,24 +453,23 @@ export default function SignInScreen() {
             onPress={() => cambiarDePortal('profesionista')}
             disabled={cargando}
           >
-            <Text style={portal === 'profesionista' ? styles.textActive : styles.textInactive}>Soy Profesionista</Text>
+            <Text style={portal === 'profesionista' ? styles.textActive : styles.textInactive}>{t('soyProfesionista')}</Text>
           </TouchableOpacity>
         </View>
 
         <TextInput 
           style={styles.input} 
-          placeholder="Correo electronico o Usuario" 
+          placeholder={t('placeholderCorreo')} 
           value={identificador} 
           onChangeText={setIdentificador} 
           autoCapitalize="none" 
           editable={!cargando} 
         />
         
-        {/* Si NO estamos en modo recuperar, mostramos la caja de contraseña */}
         {!modoRecuperar && (
           <TextInput 
             style={styles.input} 
-            placeholder="Contrasena" 
+            placeholder={t('placeholderContrasena')} 
             value={password} 
             onChangeText={setPassword} 
             secureTextEntry 
@@ -320,34 +477,78 @@ export default function SignInScreen() {
           />
         )}
 
-        {mensajeError !== '' && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{mensajeError}</Text>
-          </View>
-        )}
+          {Platform.OS === 'web' && (
+            <HCaptchaWeb
+              ref={captchaRef}
+              sitekey={SITE_KEY}
+              size="invisible"
+              onVerify={(token: string) => {
+                setTokenWeb(token);
+                setMensaje('');
+                if (accionPendiente) {
+                  ejecutarAccion(accionPendiente, token);
+                }
+              }}
+              onError={() => {
+                setCargando(false);
+                setMensaje('Falló la verificación de seguridad. Intenta nuevamente.');
+                setTipoMensaje('error');
+              }}
+            />
+          )}
 
-        {mensajeEstado !== '' && (
-          <View style={styles.infoBox}>
-            <Text style={styles.infoText}>{mensajeEstado}</Text>
-          </View>
-        )}
-
-        <View style={styles.buttonContainer}>
-          <Button 
-            title={cargando ? "Procesando..." : (modoRecuperar ? "Enviar enlace de recuperacion" : "Entrar a mi Cuenta")} 
-            onPress={modoRecuperar ? handleRecuperarPassword : handleLogin} 
-            disabled={cargando}
-            color={portal === 'cliente' ? '#007bff' : '#28a745'}
+        {!modoRecuperar && Platform.OS !== 'web' && (
+          <ConfirmHcaptcha
+            ref={captchaRef}
+            siteKey={SITE_KEY}
+            size="invisible"
+            baseUrl="https://profinder-a-new-era-1.onrender.com"
+            languageCode={i18n.language || 'es'}
+            onMessage={(event: any) => {
+              if (event && event.nativeEvent.data) {
+                const msj = event.nativeEvent.data;
+                if (['cancel', 'error', 'expired'].includes(msj)) {
+                  setMensaje(`Captcha ${msj}.`);
+                  setTipoMensaje('error');
+                } else if (msj.length > 20) { // Los tokens de hCaptcha son muy largos, evitamos eventos internos como 'open'
+                  if (accionPendiente) {
+                    ejecutarAccion(accionPendiente, msj);
+                  }
+                }
+              }
+            }}
           />
-        </View>
+        )}
 
-        <TouchableOpacity onPress={() => setModoRecuperar(!modoRecuperar)}>
+        <TouchableOpacity 
+          style={[styles.botonPrincipal, { backgroundColor: portal === 'cliente' ? '#007bff' : '#28a745' }]} 
+          onPress={modoRecuperar ? handleSolicitarRecuperacion : handleLogin} 
+          disabled={cargando}
+        >
+          {cargando ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.textoBoton}>
+              {modoRecuperar ? t('btnEnviarCodigo') : t('btnEntrar')}
+            </Text>
+          )}
+        </TouchableOpacity>
+
+        {mensaje !== '' && (
+          <Text style={[styles.textoMensaje, { color: obtenerColorMensaje() }]}>
+            {mensaje}
+          </Text>
+        )}
+
+        <TouchableOpacity onPress={() => {
+          setModoRecuperar(!modoRecuperar);
+          setMensaje('');
+        }}>
           <Text style={styles.linkRecuperar}>
-            {modoRecuperar ? 'Cancelar y volver a iniciar sesion' : 'Olvide mi contrasena'}
+            {modoRecuperar ? t('btnCancelarRecuperar') : t('btnOlvideContrasena')}
           </Text>
         </TouchableOpacity>
 
-        {/* Si NO estamos en modo recuperar, mostramos los botones de redes sociales y el registro */}
         {!modoRecuperar && (
           <>
             <TouchableOpacity 
@@ -355,7 +556,7 @@ export default function SignInScreen() {
               onPress={() => manejarLoginSocial('google')}
               disabled={cargando}
             >
-              <Text style={styles.socialButtonText}>Continuar con Google</Text>
+              <Text style={styles.socialButtonText}>{t('btnGoogle')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -363,11 +564,11 @@ export default function SignInScreen() {
               onPress={() => manejarLoginSocial('github')}
               disabled={cargando}
             >
-              <Text style={styles.socialButtonText}>Continuar con GitHub</Text>
+              <Text style={styles.socialButtonText}>{t('btnGithub')}</Text>
             </TouchableOpacity>
 
             <Text style={styles.linkRegistro} onPress={() => router.push('/(auth)/sign-up')}>
-              No tienes cuenta? Registrate aqui
+              {t('btnRegistro')}
             </Text>
           </>
         )}
@@ -377,25 +578,48 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: { flexGrow: 1, backgroundColor: '#fff' },
+  fondo: { backgroundColor: '#FAFAFC' },
+  scrollContainer: { flexGrow: 1, backgroundColor: '#FAFAFC' },
   container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 26, fontWeight: 'bold', textAlign: 'center', color: '#333' },
-  subtitle: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 25, marginTop: 5 },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 12, marginBottom: 15, borderRadius: 5, backgroundColor: '#f9f9f9', fontSize: 15 },
-  tabContainer: { flexDirection: 'row', backgroundColor: '#f0f0f0', borderRadius: 8, padding: 4, marginBottom: 25 },
-  tabButton: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 6 },
+  
+  // ESTILOS NUEVOS PARA EL BOTÓN DE IDIOMA
+  botonIdioma: {
+    position: 'absolute',
+    top: 50, 
+    right: 20, 
+    backgroundColor: '#E5E5EA',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 10,
+  },
+  textoIdioma: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1C1C1E'
+  },
+
+  title: { fontSize: 26, fontWeight: 'bold', textAlign: 'center', color: '#1C1C1E', marginTop: 20 },
+  subtitle: { fontSize: 14, color: '#8E8E93', textAlign: 'center', marginBottom: 25, marginTop: 5 },
+  input: { borderWidth: 1, borderColor: '#E5E5EA', padding: 14, marginBottom: 15, borderRadius: 8, backgroundColor: '#FFFFFF', fontSize: 16, color: '#1C1C1E' },
+  captchaWebContainer: { alignItems: 'center', marginBottom: 15 },
+  
+  tabContainer: { flexDirection: 'row', backgroundColor: '#E5E5EA', borderRadius: 8, padding: 4, marginBottom: 25 },
+  tabButton: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 6 },
   tabClienteActive: { backgroundColor: '#007bff' },
   tabProfActive: { backgroundColor: '#28a745' },
   textActive: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  textInactive: { color: '#666', fontSize: 14 },
-  buttonContainer: { marginTop: 10, borderRadius: 5, overflow: 'hidden' },
-  linkRecuperar: { color: '#d9534f', marginTop: 15, textAlign: 'center', fontSize: 14, fontWeight: 'bold' },
-  linkRegistro: { color: '#007bff', marginTop: 25, textAlign: 'center', fontSize: 15 },
-  errorBox: { backgroundColor: '#ffe6e6', padding: 12, borderRadius: 5, marginBottom: 15, borderWidth: 1, borderColor: '#ff4d4d' },
-  errorText: { color: '#d9534f', textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
-  infoBox: { backgroundColor: '#eef6ff', padding: 12, borderRadius: 5, marginBottom: 15, borderWidth: 1, borderColor: '#007bff' },
-  infoText: { color: '#007bff', textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
-  googleButton: { backgroundColor: '#DB4437', padding: 14, borderRadius: 8, marginTop: 25, alignItems: 'center' },
-  githubButton: { backgroundColor: '#24292E', padding: 14, borderRadius: 8, marginTop: 10, alignItems: 'center' },
+  textInactive: { color: '#666', fontSize: 14, fontWeight: '500' },
+  
+  botonPrincipal: { paddingVertical: 15, borderRadius: 8, alignItems: 'center', marginTop: 5 },
+  textoBoton: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
+  
+  linkRecuperar: { color: '#d9534f', marginTop: 20, textAlign: 'center', fontSize: 14, fontWeight: 'bold' },
+  linkRegistro: { color: '#007bff', marginTop: 30, textAlign: 'center', fontSize: 15, fontWeight: '600' },
+  
+  textoMensaje: { marginTop: 15, textAlign: 'center', fontSize: 14, fontWeight: '600' },
+  
+  googleButton: { backgroundColor: '#DB4437', padding: 15, borderRadius: 8, marginTop: 25, alignItems: 'center' },
+  githubButton: { backgroundColor: '#24292E', padding: 15, borderRadius: 8, marginTop: 10, alignItems: 'center' },
   socialButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold' },
 });

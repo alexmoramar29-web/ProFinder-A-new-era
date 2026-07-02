@@ -1,19 +1,22 @@
 // ============================================================
 // ProFinder — Dashboard Cliente
 // La pantalla de búsqueda ES el dashboard principal
+// Diseño visual: versión HEAD | Datos: conectados a Supabase (Incoming)
 // ============================================================
 
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
   Dimensions,
   Image,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
@@ -24,74 +27,74 @@ import { Typography } from '../../theme/Typography';
 const { width: SCREEN_W } = Dimensions.get('window');
 const IS_MOBILE = SCREEN_W < 768;
 
-const PROFESIONISTAS = [
-  {
-    id: '1',
-    nombre: 'Ana Sofia Moreno Gaytan',
-    rol: 'Senior Product Designer',
-    rating: 4.9,
-    precio: 120,
-    descripcion: 'Ex-Google designer con 8+ años de experiencia.',
-    habilidades: ['UI Design', 'UX Research', 'Figma', 'Systems'],
-  },
-  {
-    id: '2',
-    nombre: 'Rosanen M.',
-    rol: 'Full Stack Developer',
-    rating: 4.8,
-    precio: 95,
-    descripcion: 'Building high-performance React applications.',
-    habilidades: ['React', 'Node.js', 'Next.js', 'AWS'],
-  },
-  {
-    id: '3',
-    nombre: 'Borrman M.',
-    rol: 'UX Strategist & Researcher',
-    rating: 5.0,
-    precio: 140,
-    descripcion: 'Helping startups validate ideas through rigorous...',
-    habilidades: ['User Testing', 'Strategy'],
-  },
-  {
-    id: '4',
-    nombre: 'Carlos Mendez',
-    rol: 'Mobile Developer',
-    rating: 4.7,
-    precio: 85,
-    descripcion: 'Especialista en React Native y Flutter.',
-    habilidades: ['React Native', 'Flutter', 'Firebase'],
-  },
-];
-
-const EXPERIENCIAS = ['Junior (0-2 yrs)', 'Mid-Level (3-5 yrs)', 'Senior (6+ yrs)'];
 const RATINGS_OPTS = ['3+', '4+', '4.5+'];
-const CERTS_OPTS   = ['Google UX Design', 'NN/g Certified'];
 
 export default function ClienteDashboard() {
   const router = useRouter();
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [catModalVisible, setCatModalVisible] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  const [busqueda,     setBusqueda]     = useState('');
-  const [experiencias, setExperiencias] = useState<string[]>(['Mid-Level (3-5 yrs)']);
-  const [ratingMin,    setRatingMin]    = useState('4+');
-  const [certs,        setCerts]        = useState<string[]>([]);
+  // ── Estado de datos reales ──
+  const [busqueda, setBusqueda] = useState('');
+  const [categoria, setCategoria] = useState<any>(null);
+  const [categorias, setCategorias] = useState<any[]>([]);
+  const [servicios, setServicios] = useState<any[]>([]);
+  const [ratingMin, setRatingMin] = useState('4+');
 
-  const toggleExp  = (v: string) =>
-    setExperiencias(p => p.includes(v) ? p.filter(x => x !== v) : [...p, v]);
-  const toggleCert = (v: string) =>
-    setCerts(p => p.includes(v) ? p.filter(x => x !== v) : [...p, v]);
+  const cargarDatosIniciales = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data } = await supabase
+        .from('users')
+        .select('profile_picture')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data?.profile_picture) setAvatarUrl(data.profile_picture);
+    }
+
+    const { data: catData } = await supabase.from('categories').select('*');
+    if (catData) setCategorias(catData);
+  };
+
+  const cargarServicios = async () => {
+    let query = supabase.from('services').select('*, categories(category_name)');
+
+    if (busqueda && busqueda.trim() !== '') {
+      query = query.ilike('service_name', `%${busqueda}%`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error al cargar servicios:', error);
+      return;
+    }
+
+    if (data) {
+      if (categoria) {
+        setServicios(data.filter((s) => s.category_id === categoria.category_id));
+      } else {
+        setServicios(data);
+      }
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      cargarDatosIniciales();
+      cargarServicios();
+    }, [busqueda, categoria])
+  );
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.replace('/(auth)/sign-in');
   };
 
-  const resultados = PROFESIONISTAS.filter(p => {
-    if (!busqueda) return true;
-    const q = busqueda.toLowerCase();
-    return p.nombre.toLowerCase().includes(q) ||
-           p.rol.toLowerCase().includes(q) ||
-           p.habilidades.some(h => h.toLowerCase().includes(q));
-  });
+  const fotoNavbar = avatarUrl
+    ? `${avatarUrl}?t=${new Date().getTime()}`
+    : null;
 
   return (
     <View style={styles.root}>
@@ -125,15 +128,21 @@ export default function ClienteDashboard() {
           <Pressable style={styles.navIconBtn}>
             <Ionicons name="notifications-outline" size={20} color="#fff" />
           </Pressable>
-          <View style={styles.navAvatar}>
-            <Ionicons name="person" size={16} color={Colors.primary[300]} />
-          </View>
-          {!IS_MOBILE && (
-            <Pressable onPress={handleLogout} style={styles.navUserRow}>
-              <Text style={styles.navUserName}>Mi cuenta</Text>
-              <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.7)" />
-            </Pressable>
-          )}
+
+          <Pressable onPress={() => router.push('/(cliente)/perfil')}>
+            {fotoNavbar ? (
+              <Image source={{ uri: fotoNavbar }} style={styles.navAvatarImg} />
+            ) : (
+              <View style={styles.navAvatar}>
+                <Ionicons name="person" size={16} color={Colors.primary[300]} />
+              </View>
+            )}
+          </Pressable>
+
+          <Pressable onPress={() => setMenuVisible(true)} style={styles.navUserRow}>
+            {!IS_MOBILE && <Text style={styles.navUserName}>Mi cuenta</Text>}
+            <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.7)" />
+          </Pressable>
         </View>
       </View>
 
@@ -154,7 +163,7 @@ export default function ClienteDashboard() {
             </Pressable>
           )}
         </View>
-        <Pressable style={styles.searchBtn}>
+        <Pressable style={styles.searchBtn} onPress={cargarServicios}>
           <Text style={styles.searchBtnTxt}>Buscar</Text>
         </Pressable>
       </View>
@@ -169,29 +178,19 @@ export default function ClienteDashboard() {
           <View style={styles.filtersPanel}>
             <View style={styles.filterHeader}>
               <Text style={styles.filterTitle}>Filters</Text>
-              <Pressable onPress={() => { setExperiencias([]); setCerts([]); setRatingMin('3+'); }}>
+              <Pressable onPress={() => { setCategoria(null); setRatingMin('3+'); }}>
                 <Text style={styles.filterReset}>Reset All</Text>
               </Pressable>
             </View>
 
             <View style={styles.filterGroup}>
-              <Text style={styles.filterLabel}>EXPERIENCE</Text>
-              {EXPERIENCIAS.map(exp => (
-                <Pressable key={exp} style={styles.checkRow} onPress={() => toggleExp(exp)}>
-                  <View style={[styles.checkbox, experiencias.includes(exp) && styles.checkboxOn]}>
-                    {experiencias.includes(exp) && <Ionicons name="checkmark" size={10} color="#fff" />}
-                  </View>
-                  <Text style={styles.checkText}>{exp}</Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <View style={styles.filterGroup}>
-              <Text style={styles.filterLabel}>DEGREE</Text>
-              <View style={styles.selectBox}>
-                <Text style={styles.selectText}>All Degrees</Text>
+              <Text style={styles.filterLabel}>CATEGORÍA</Text>
+              <Pressable style={styles.selectBox} onPress={() => setCatModalVisible(true)}>
+                <Text style={styles.selectText}>
+                  {categoria ? categoria.category_name : 'Todas las categorías'}
+                </Text>
                 <Ionicons name="chevron-down" size={13} color={Colors.text.secondary} />
-              </View>
+              </Pressable>
             </View>
 
             <View style={styles.filterGroup}>
@@ -223,18 +222,6 @@ export default function ClienteDashboard() {
               </View>
             </View>
 
-            <View style={styles.filterGroup}>
-              <Text style={styles.filterLabel}>CERTIFICATIONS</Text>
-              {CERTS_OPTS.map(c => (
-                <Pressable key={c} style={styles.checkRow} onPress={() => toggleCert(c)}>
-                  <View style={[styles.checkbox, certs.includes(c) && styles.checkboxOn]}>
-                    {certs.includes(c) && <Ionicons name="checkmark" size={10} color="#fff" />}
-                  </View>
-                  <Text style={styles.checkText}>{c}</Text>
-                </Pressable>
-              ))}
-            </View>
-
             {/* Botón cerrar sesión al fondo */}
             <Pressable style={styles.logoutBtn} onPress={handleLogout}>
               <Ionicons name="log-out-outline" size={15} color={Colors.error.main} />
@@ -246,49 +233,55 @@ export default function ClienteDashboard() {
         {/* ── CARDS ── */}
         <View style={styles.cardsCol}>
           <View style={styles.resultsHeader}>
-            <Text style={styles.resultsTitle}>Top Rated Near You</Text>
+            <Text style={styles.resultsTitle}>Servicios disponibles</Text>
             <Text style={styles.resultsCount}>
-              Showing {resultados.length} high-performance professionals
+              Showing {servicios.length} resultados
             </Text>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.cardsGrid}>
-              {resultados.map(prof => (
-                <View key={prof.id} style={styles.card}>
+              {servicios.map((item) => (
+                <Pressable
+                  key={item.service_id}
+                  style={styles.card}
+                  onPress={() => router.push(`/(cliente)/servicios/${item.service_id}` as any)}
+                >
                   <View style={styles.cardTop}>
                     <View style={styles.avatar}>
-                      <Ionicons name="person" size={26} color={Colors.primary[400]} />
+                      <Ionicons name="briefcase-outline" size={26} color={Colors.primary[400]} />
                     </View>
-                    <View style={styles.ratingBadge}>
-                      <Text style={styles.ratingStar}>★</Text>
-                      <Text style={styles.ratingNum}>{prof.rating.toFixed(1)}</Text>
-                    </View>
-                  </View>
-
-                  <Text style={styles.cardNombre}>{prof.nombre}</Text>
-                  <Text style={styles.cardRol}>{prof.rol}</Text>
-                  <Text style={styles.cardDesc} numberOfLines={2}>{prof.descripcion}</Text>
-
-                  <View style={styles.chips}>
-                    {prof.habilidades.map(h => (
-                      <View key={h} style={styles.chip}>
-                        <Text style={styles.chipTxt}>{h}</Text>
+                    {item.rating != null && (
+                      <View style={styles.ratingBadge}>
+                        <Text style={styles.ratingStar}>★</Text>
+                        <Text style={styles.ratingNum}>{Number(item.rating).toFixed(1)}</Text>
                       </View>
-                    ))}
+                    )}
                   </View>
+
+                  <Text style={styles.cardNombre}>{item.service_name}</Text>
+                  <Text style={styles.cardRol}>{item.categories?.category_name ?? 'Sin categoría'}</Text>
+                  {item.description ? (
+                    <Text style={styles.cardDesc} numberOfLines={2}>{item.description}</Text>
+                  ) : null}
 
                   <View style={styles.cardFooter}>
                     <View>
-                      <Text style={styles.startingAt}>STARTING AT</Text>
-                      <Text style={styles.precio}>${prof.precio}/hr</Text>
+                      <Text style={styles.startingAt}>PRECIO</Text>
+                      <Text style={styles.precio}>
+                        {item.price != null ? `$${item.price}` : 'Consultar'}
+                      </Text>
                     </View>
-                    <Pressable style={styles.viewBtn}>
-                      <Text style={styles.viewBtnTxt}>View{'\n'}Profile</Text>
-                    </Pressable>
+                    <View style={styles.viewBtn}>
+                      <Text style={styles.viewBtnTxt}>Ver{'\n'}Detalle</Text>
+                    </View>
                   </View>
-                </View>
+                </Pressable>
               ))}
+
+              {servicios.length === 0 && (
+                <Text style={styles.emptyText}>No se encontraron servicios.</Text>
+              )}
             </View>
           </ScrollView>
         </View>
@@ -297,15 +290,6 @@ export default function ClienteDashboard() {
         {!IS_MOBILE && (
           <View style={styles.mapCol}>
             <View style={styles.mapPlaceholder}>
-              {[
-                { top: '30%', left: '60%' },
-                { top: '55%', left: '20%' },
-                { top: '70%', left: '75%' },
-              ].map((pos, i) => (
-                <View key={i} style={[styles.mapPin, { top: pos.top as any, left: pos.left as any }]}>
-                  <Ionicons name="location" size={28} color={Colors.primary[600]} />
-                </View>
-              ))}
               <View style={styles.mapControls}>
                 <Pressable style={styles.mapControlBtn}>
                   <Text style={styles.mapControlTxt}>+</Text>
@@ -333,6 +317,66 @@ export default function ClienteDashboard() {
         </View>
         <Text style={styles.footerCopy}>© 2024 ProFinder.</Text>
       </View>
+
+      {/* ── MENÚ LATERAL (cuenta) ── */}
+      <Modal visible={menuVisible} transparent animationType="fade">
+        <View style={styles.modalContainer}>
+          <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
+            <View style={styles.overlay} />
+          </TouchableWithoutFeedback>
+          <View style={styles.sideMenu}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {[
+                { title: 'Inicio', route: '/(cliente)' },
+                { title: 'Favoritos', route: '/(cliente)/favoritos' },
+                { title: 'Chat', route: '/(cliente)/chat' },
+                { title: 'Mi Perfil', route: '/(cliente)/perfil' },
+                { title: 'Configuración', route: '/(cliente)/configuracion' },
+                { title: 'Ayuda', route: '/(cliente)/ayuda' },
+              ].map((item, index) => (
+                <Pressable
+                  key={index}
+                  style={styles.menuItem}
+                  onPress={() => { setMenuVisible(false); router.push(item.route as any); }}
+                >
+                  <Text style={styles.menuText}>{item.title}</Text>
+                </Pressable>
+              ))}
+              <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 20 }} />
+              <Pressable
+                onPress={() => { setMenuVisible(false); handleLogout(); }}
+                style={styles.menuItem}
+              >
+                <Text style={{ color: 'red', fontWeight: 'bold' }}>Cerrar Sesión</Text>
+              </Pressable>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── MODAL CATEGORÍAS ── */}
+      <Modal visible={catModalVisible} transparent animationType="fade">
+        <View style={styles.modalContainer}>
+          <TouchableWithoutFeedback onPress={() => setCatModalVisible(false)}>
+            <View style={styles.overlay} />
+          </TouchableWithoutFeedback>
+          <View style={styles.sideMenu}>
+            <Pressable onPress={() => { setCategoria(null); setCatModalVisible(false); }} style={styles.menuItem}>
+              <Text style={styles.menuText}>Todas</Text>
+            </Pressable>
+            {categorias.map((cat) => (
+              <Pressable
+                key={cat.category_id}
+                style={styles.menuItem}
+                onPress={() => { setCategoria(cat); setCatModalVisible(false); }}
+              >
+                <Text style={styles.menuText}>{cat.category_name}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -364,6 +408,10 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: Colors.primary[200],
     alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)',
+  },
+  navAvatarImg: {
+    width: 32, height: 32, borderRadius: 16,
     borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)',
   },
   navUserRow:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -411,14 +459,6 @@ const styles = StyleSheet.create({
   filterReset: { ...Typography.styles.bodySm, color: Colors.primary[600] },
   filterGroup: { marginBottom: Spacing[4] },
   filterLabel: { ...Typography.styles.overline, color: Colors.text.secondary, marginBottom: Spacing[2] },
-  checkRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  checkbox:    {
-    width: 15, height: 15, borderRadius: 3,
-    borderWidth: 1.5, borderColor: Colors.border.default,
-    backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center',
-  },
-  checkboxOn:  { backgroundColor: Colors.primary[600], borderColor: Colors.primary[600] },
-  checkText:   { ...Typography.styles.bodySm, color: Colors.text.primary },
   selectBox:   {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderWidth: 1.5, borderColor: Colors.border.default,
@@ -453,6 +493,7 @@ const styles = StyleSheet.create({
   resultsTitle:  { ...Typography.styles.h3, color: Colors.text.primary },
   resultsCount:  { ...Typography.styles.body, color: Colors.text.secondary, marginTop: 2 },
   cardsGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing[3] },
+  emptyText:     { ...Typography.styles.body, color: Colors.text.secondary, padding: Spacing[4] },
 
   card: {
     width: CARD_W,
@@ -476,13 +517,6 @@ const styles = StyleSheet.create({
   cardNombre:  { ...Typography.styles.h5, color: Colors.text.primary, fontSize: 15 },
   cardRol:     { ...Typography.styles.label, color: Colors.primary[600], fontSize: 12 },
   cardDesc:    { ...Typography.styles.bodySm, color: Colors.text.secondary, lineHeight: 18 },
-  chips:       { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
-  chip:        {
-    backgroundColor: Colors.primary[50], borderRadius: Radius.full,
-    paddingHorizontal: 8, paddingVertical: 3,
-    borderWidth: 1, borderColor: Colors.primary[100],
-  },
-  chipTxt:     { ...Typography.styles.caption, color: Colors.primary[700], fontWeight: '600' },
   cardFooter:  {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     marginTop: Spacing[2], paddingTop: Spacing[2],
@@ -500,7 +534,6 @@ const styles = StyleSheet.create({
   // Mapa
   mapCol:         { width: MAP_W, backgroundColor: Colors.neutral[200] },
   mapPlaceholder: { flex: 1, position: 'relative', backgroundColor: '#e8eaed' },
-  mapPin:         { position: 'absolute' },
   mapControls:    {
     position: 'absolute', right: 12, bottom: 80,
     backgroundColor: '#fff', borderRadius: Radius.md, ...Shadow.sm, overflow: 'hidden',
@@ -523,4 +556,11 @@ const styles = StyleSheet.create({
   footerLinks:{ flexDirection: 'row', gap: Spacing[4] },
   footerLink: { ...Typography.styles.caption, color: Colors.text.secondary },
   footerCopy: { ...Typography.styles.caption, color: Colors.text.disabled },
+
+  // Modales (menú lateral y categorías)
+  modalContainer: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' },
+  sideMenu: { width: 240, backgroundColor: '#fff', padding: 20, paddingTop: 60, elevation: 10 },
+  menuItem: { paddingVertical: 10 },
+  menuText: { fontSize: 15, color: '#333' },
 });

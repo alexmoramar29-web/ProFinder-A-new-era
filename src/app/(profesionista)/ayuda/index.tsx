@@ -1,37 +1,39 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // 1. Aquí están tus preguntas, ahora separadas por categorías
-const listaPreguntas = [
-  { id: 1, categoria: 'Panel', pregunta: '¿Qué información puedo ver en mi panel de Inicio?', respuesta: 'En tu Inicio tienes tu resumen del día. Puedes ver tus ingresos totales, citas pendientes y tu calificación promedio.' },
-  { id: 2, categoria: 'Panel', pregunta: '¿Dónde reviso los comentarios que me dejan los clientes?', respuesta: 'En el panel de "Reseñas" puedes ver tu calificación general grande y leer de forma detallada las opiniones de cada cliente.' },
-  { id: 3, categoria: 'Servicios', pregunta: '¿Cómo funciona el sistema de Citas?', respuesta: 'En Citas verás las solicitudes de los clientes. Cada tarjeta te mostrará el día, la hora y el estado del trabajo.' },
-  { id: 4, categoria: 'Servicios', pregunta: '¿De qué manera puedo agregar o modificar un servicio?', respuesta: 'Entra a "Mis Servicios". Ahí tienes un botón para añadir nuevos servicios con su nombre, precio y descripción, o editar los actuales.' },
-  { id: 5, categoria: 'Cuenta', pregunta: '¿Cómo configuro mis días de descanso y horarios?', respuesta: 'Ve a "Mis Horarios". Ahí puedes encender o apagar los días de la semana que trabajas y fijar tu hora de entrada y salida.' },
-  { id: 6, categoria: 'Cuenta', pregunta: '¿Cómo puedo actualizar mis datos o descripción?', respuesta: 'Entra a "Mi Perfil" y presiona editar. Podrás cambiar tu nombre, teléfono de contacto y tu descripción profesional.' },
-  { id: 7, categoria: 'Cuenta', pregunta: '¿Cómo me comunico con un cliente?', respuesta: 'Usa el módulo de "Chat" para enviar mensajes en tiempo real a los clientes para coordinar detalles del servicio.' },
-  { id: 8, categoria: 'Pagos', pregunta: '¿Cómo retiro mis ganancias de la aplicación?', respuesta: 'Tus ganancias se transfieren de forma automática a la cuenta bancaria que registraste cada vez que completas un servicio.' },
-  { id: 9, categoria: 'Pagos', pregunta: '¿Qué pasa si un cliente cancela de último minuto?', respuesta: 'Si el cliente cancela cuando ya estás en camino, el sistema te compensará con una tarifa base por el tiempo perdido.' }
-];
-
-// Las categorías que aparecerán como botones arriba
-const categorias = ['Todas', 'Cuenta', 'Panel', 'Servicios', 'Pagos'];
-
 export default function AyudaScreen() {
+  const { t } = useTranslation();
+
+  const listaPreguntas = [
+    { id: 1, categoria: t('catPanel'), pregunta: t('faq1q'), respuesta: t('faq1a') },
+    { id: 2, categoria: t('catPanel'), pregunta: t('faq2q'), respuesta: t('faq2a') },
+    { id: 3, categoria: t('catServicios'), pregunta: t('faq3q'), respuesta: t('faq3a') },
+    { id: 4, categoria: t('catServicios'), pregunta: t('faq4q'), respuesta: t('faq4a') },
+    { id: 5, categoria: t('catCuenta'), pregunta: t('faq5q'), respuesta: t('faq5a') },
+    { id: 6, categoria: t('catCuenta'), pregunta: t('faq6q'), respuesta: t('faq6a') },
+    { id: 7, categoria: t('catCuenta'), pregunta: t('faq7q'), respuesta: t('faq7a') },
+    { id: 8, categoria: t('catPagos'), pregunta: t('faq8q'), respuesta: t('faq8a') },
+    { id: 9, categoria: t('catPagos'), pregunta: t('faq9q'), respuesta: t('faq9a') }
+  ];
+
+  const categorias = [t('catTodas'), t('catCuenta'), t('catPanel'), t('catServicios'), t('catPagos')];
+
   const [preguntaAbierta, setPreguntaAbierta] = useState<number | null>(null);
-  const [categoriaActiva, setCategoriaActiva] = useState<string>('Todas');
+  const [categoriaActiva, setCategoriaActiva] = useState<string>(t('catTodas'));
 
   const enviarCorreoSoporte = () => {
     const correo = 'soporte@profinder.com';
-    const asunto = 'Soporte Técnico - ProFinder Profesionista';
-    const cuerpo = 'Hola equipo de ProFinder, necesito ayuda con: ';
+    const asunto = t('asuntoSoporte');
+    const cuerpo = t('cuerpoSoporteCorreo');
     Linking.openURL(`mailto:${correo}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`);
   };
 
   const enviarWhatsAppSoporte = async () => {
     //aqui se incluye el código de país como el 52 de México
     const numero = '526141160001'; 
-    const mensaje = 'Hola soporte de ProFinder, necesito ayuda con mi cuenta de Profesionista.';
+    const mensaje = t('cuerpoSoporteWA');
     const url = `whatsapp://send?phone=${numero}&text=${encodeURIComponent(mensaje)}`;
     
     try {
@@ -39,10 +41,10 @@ export default function AyudaScreen() {
       if (soportado) {
         await Linking.openURL(url);
       } else {
-        Alert.alert('Error', 'Parece que no tienes WhatsApp instalado en este teléfono.');
+        Alert.alert(t('error'), t('noWhatsApp'));
       }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo abrir WhatsApp.');
+      Alert.alert(t('error'), t('errorAbrirWhatsApp'));
     }
   };
 
@@ -55,7 +57,7 @@ export default function AyudaScreen() {
   };
 
   //Solo deja pasar las preguntas que coincidan con la categoría elegida.
-  const preguntasFiltradas = categoriaActiva === 'Todas' 
+  const preguntasFiltradas = categoriaActiva === t('catTodas') 
     ? listaPreguntas 
     : listaPreguntas.filter((item) => item.categoria === categoriaActiva);
 
@@ -63,14 +65,14 @@ export default function AyudaScreen() {
     <ScrollView contentContainerStyle={styles.scroll} style={styles.contenedorFondo}>
       
       <View style={styles.cabecera}>
-        <Text style={styles.tituloSeccion}>Centro de Ayuda</Text>
-        <Text style={styles.subtituloSeccion}>Todo lo que necesitas saber sobre tus paneles.</Text>
+        <Text style={styles.tituloSeccion}>{t('centroAyudaTitulo')}</Text>
+        <Text style={styles.subtituloSeccion}>{t('centroAyudaSubtitulo')}</Text>
       </View>
 
       {/* Tarjeta de Soporte con 2 botones */}
       <View style={styles.tarjetaSoporte}>
-        <Text style={styles.tituloTarjetaSoporte}>¿Tienes algún problema?</Text>
-        <Text style={styles.textoSoporte}>Escríbenos directamente y te ayudaremos al instante.</Text>
+        <Text style={styles.tituloTarjetaSoporte}>{t('tienesProblema')}</Text>
+        <Text style={styles.textoSoporte}>{t('escribenosDirectamente')}</Text>
         
         <View style={styles.contenedorBotonesContacto}>
           <TouchableOpacity style={[styles.botonContacto, styles.botonWhatsApp]} onPress={enviarWhatsAppSoporte}>
@@ -83,7 +85,7 @@ export default function AyudaScreen() {
         </View>
       </View>
 
-      <Text style={styles.tituloPreguntas}>Preguntas Frecuentes</Text>
+      <Text style={styles.tituloPreguntas}>{t('preguntasFrecuentes')}</Text>
 
       {/* Botones de Filtro (Categorías) */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.contenedorFiltros}>

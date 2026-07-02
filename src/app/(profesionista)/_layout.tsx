@@ -2,6 +2,7 @@ import { DrawerContentComponentProps, DrawerContentScrollView, DrawerItem, Drawe
 import { useRouter } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PerfilProvider, usePerfil } from '../../context/PerfilContext';
@@ -10,6 +11,7 @@ import { supabase } from '../../lib/supabase';
 // 1. Aquí armamos la caja de tu menú lateral
 function MenuPersonalizado(props: DrawerContentComponentProps) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const salirDeLaCuenta = async () => {
     await supabase.auth.signOut();
@@ -18,25 +20,23 @@ function MenuPersonalizado(props: DrawerContentComponentProps) {
 
   return (
     <View style={styles.contenedorPrincipal}>
-      {/* Esta parte muestra las pantallas de trabajo arriba */}
       <DrawerContentScrollView {...props}>
         <DrawerItemList {...props} />
       </DrawerContentScrollView>
 
-      {/* Esta parte deja fijos los botones de configuración y salida abajo */}
       <View style={styles.contenedorFijoAbajo}>
-        <DrawerItem 
-          label="Configuración" 
+        <DrawerItem
+          label={t('configuracionMenu')}
           onPress={() => router.push('/(profesionista)/configuracion' as any)}
           labelStyle={styles.textoMenuAbajo}
         />
-        <DrawerItem 
-          label="Ayuda" 
+        <DrawerItem
+          label={t('ayudaMenu')}
           onPress={() => router.push('/(profesionista)/ayuda' as any)}
           labelStyle={styles.textoMenuAbajo}
         />
-        <DrawerItem 
-          label="Cerrar Sesión" 
+        <DrawerItem
+          label={t('cerrarSesion')}
           onPress={salirDeLaCuenta}
           labelStyle={styles.textoSalir}
         />
@@ -45,10 +45,10 @@ function MenuPersonalizado(props: DrawerContentComponentProps) {
   );
 }
 
-// 2. Aquí controlamos quién puede entrar y cómo se ven las pantallas
 function EnrutadorProfesionista() {
   const router = useRouter();
-  const { fotoGlobal, setFotoGlobal } = usePerfil();
+  const { t } = useTranslation();
+  const { setFotoGlobal, fotoGlobal } = usePerfil();
   const [verificando, setVerificando] = useState(true);
 
   useEffect(() => {
@@ -68,11 +68,16 @@ function EnrutadorProfesionista() {
           .eq('prof_id', user.id)
           .maybeSingle();
           
+        if (!data) {
+          router.replace('/(cliente)');
+          return;
+        }
+        
         if (data?.profile_picture) {
           setFotoGlobal(data.profile_picture);
         }
 
-        if (!data || !data.speciality || data.speciality === 'Por definir') {
+        if (!data.speciality || data.speciality === 'Por definir') {
           router.replace('/(profesionista)/completar-registro');
         }
       }
@@ -95,7 +100,7 @@ function EnrutadorProfesionista() {
     return null; 
   }
 
-  const fotoMostrar = fotoGlobal || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+  const fotoMostrar = fotoGlobal || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
   const logoProfinder = require('../../../assets/images/logo.png');
 
   return (
@@ -108,6 +113,7 @@ function EnrutadorProfesionista() {
           drawerActiveTintColor: '#5c4b8a',
           drawerPosition: 'right',
           headerTitleAlign: 'center',
+          headerTitle: '',
           drawerStyle: { width: 260 },
           drawerLabelStyle: { fontSize: 16, fontWeight: '500' },
           headerLeft: () => (
@@ -122,7 +128,7 @@ function EnrutadorProfesionista() {
           ),
           headerRight: () => (
             <View style={styles.contenedorDerecho}>
-              <TouchableOpacity onPress={() => router.push('/(profesionista)/perfil')}>
+              <TouchableOpacity onPress={() => router.push('/(profesionista)/perfil' as any)}>
                 <Image 
                   source={{ uri: fotoMostrar }} 
                   style={styles.fotoPerfil} 
@@ -135,23 +141,25 @@ function EnrutadorProfesionista() {
           ),
         }}
       >
-        {/* PANTALLAS VISIBLES EN EL MENÚ DE ARRIBA */}
-        <Drawer.Screen name="index" options={{ drawerLabel: 'Inicio', headerTitle: 'Inicio' }} />
-        <Drawer.Screen name="calendario/index" options={{ drawerLabel: 'Citas', headerTitle: 'Mis Citas' }}/>
-        <Drawer.Screen name="horarios/index" options={{ drawerLabel: 'Mis Horarios', headerTitle: 'Mis Horarios' }}/>
-        <Drawer.Screen name="servicios/index" options={{ drawerLabel: 'Mis Servicios', headerTitle: 'Mis Servicios' }} />
-        <Drawer.Screen name="chat/index" options={{ drawerLabel: 'Chat', headerTitle: 'Mis Mensajes' }} />
-        <Drawer.Screen name="perfil/index" options={{ drawerLabel: 'Mi Perfil', headerTitle: 'Mi Perfil' }} />
-        <Drawer.Screen name="reseñas/index" options={{ drawerLabel: 'Reseñas', headerTitle: 'Mis Reseñas' }} />
+        <Drawer.Screen name="index" options={{ drawerLabel: t('Inicio') }} />
+        <Drawer.Screen name="perfil/index" options={{ drawerLabel: t('Perfil') }} />
+        <Drawer.Screen name="calendario/index" options={{ drawerLabel: t('Citas') }} />
+        <Drawer.Screen name="servicios/index" options={{ drawerLabel: t('Servicios') }} />
+        <Drawer.Screen name="horarios/index" options={{ drawerLabel: t('Horarios') }} />
+        <Drawer.Screen name="chat/index" options={{ drawerLabel: t('Chat') }} />
+        <Drawer.Screen name="reseñas/index" options={{ drawerLabel: t('Reseñas') }} />
         
-        
-        <Drawer.Screen name="servicios/agregar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Agregar Servicio' }} />
-        <Drawer.Screen name="servicios/editar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Editar Servicio' }} />
-        <Drawer.Screen name="perfil/editar" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Editar Perfil' }} />
-        <Drawer.Screen name="completar-registro" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Verificación Profesional' }} />
+        {/* PANTALLAS OCULTAS DEL MENÚ */}
+        <Drawer.Screen name="servicios/agregar" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="servicios/editar" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="servicios/ubicacion" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="perfil/editar" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="completar-registro" options={{ drawerItemStyle: { display: 'none' } }} />
         <Drawer.Screen name="chat/[id]" options={{ drawerItemStyle: { display: 'none' } }} />
-        <Drawer.Screen name="configuracion/index" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Configuración' }} />
-        <Drawer.Screen name="ayuda/index" options={{ drawerItemStyle: { display: 'none' }, headerTitle: 'Centro de Ayuda' }} />
+        <Drawer.Screen name="configuracion/index" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="ayuda/index" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="configuracion/cambiar-contrasena" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="configuracion/privacidad" options={{ drawerItemStyle: { display: 'none' } }} />
       </Drawer>
     </GestureHandlerRootView>
   );

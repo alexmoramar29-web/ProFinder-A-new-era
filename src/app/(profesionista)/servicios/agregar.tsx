@@ -4,10 +4,12 @@ import { decode } from 'base64-arraybuffer';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function AgregarServicioScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [categorias, setCategorias] = useState<any[]>([]);
@@ -38,7 +40,7 @@ export default function AgregarServicioScreen() {
         setCategoriaId(data[0].category_id.toString());
       }
     } catch (error: any) {
-      setMensajeError('Error al cargar las categorías.');
+      setMensajeError(t('errorCargarCategorias'));
     } finally {
       setCargando(false);
     }
@@ -66,17 +68,17 @@ export default function AgregarServicioScreen() {
     const precioLimpio = precio.trim();
 
     if (!nombreLimpio || !descripcionLimpia || !precioLimpio || !categoriaId) {
-      return setMensajeError('Llena todos los campos obligatorios.');
+      return setMensajeError(t('camposObligatoriosError'));
     }
 
     if (parseFloat(precioLimpio) > 999999) {
-      return setMensajeError('El precio máximo permitido es de $999,999.');
+      return setMensajeError(t('precioMaximoError'));
     }
 
     setGuardando(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No se encontró una sesión activa.');
+      if (!user) throw new Error(t('noSesionError'));
 
       // 1. Guardamos el servicio en la base de datos y le pedimos que nos devuelva el ID creado
       const { data: nuevoServicio, error: errorServicio } = await supabase
@@ -116,7 +118,7 @@ export default function AgregarServicioScreen() {
 
       router.replace('/(profesionista)/servicios');
     } catch (error: any) {
-      setMensajeError('Error al guardar: ' + error.message);
+      setMensajeError(t('errorAlGuardar') + error.message);
     } finally {
       setGuardando(false);
     }
@@ -129,8 +131,13 @@ export default function AgregarServicioScreen() {
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.container}>
-        <Text style={styles.titulo}>Crear Nuevo Servicio</Text>
-        <Text style={styles.subtitulo}>Llena los datos para ofrecer un nuevo servicio a tus clientes.</Text>
+        <TouchableOpacity onPress={() => router.replace('/(profesionista)/servicios')} style={styles.botonAtrasInline}>
+          <Text style={styles.flechaAtras}>❮</Text>
+          <Text style={styles.textoAtrasInline}>{t('atras')}</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.titulo}>{t('crearNuevoServicioTitulo')}</Text>
+        <Text style={styles.subtitulo}>{t('crearServicioSubtitulo')}</Text>
 
         {/* NUEVO: El botón para subir la foto */}
         <TouchableOpacity style={styles.fotoContainer} onPress={seleccionarImagen}>
@@ -138,21 +145,21 @@ export default function AgregarServicioScreen() {
             <Image source={{ uri: foto.uri }} style={styles.fotoSeleccionada} />
           ) : (
             <View style={styles.fotoPlaceholder}>
-              <Text style={styles.textoPlaceholder}>+ Subir Foto</Text>
-              <Text style={styles.textoSubPlaceholder}>(Opcional)</Text>
+              <Text style={styles.textoPlaceholder}>{t('subirFotoMas')}</Text>
+              <Text style={styles.textoSubPlaceholder}>{t('opcional')}</Text>
             </View>
           )}
         </TouchableOpacity>
 
-        <Text style={styles.label}>Nombre del Servicio *</Text>
+        <Text style={styles.label}>{t('nombreServicioReq')}</Text>
         <TextInput style={styles.input} value={nombre} onChangeText={setNombre} maxLength={100} editable={!guardando} />
 
-        <Text style={styles.label}>Descripción *</Text>
+        <Text style={styles.label}>{t('descripcionReq')}</Text>
         <TextInput style={[styles.input, styles.textArea]} value={descripcion} onChangeText={setDescripcion} multiline numberOfLines={3} editable={!guardando} />
 
         <View style={styles.filaDivisora}>
           <View style={styles.mitad}>
-            <Text style={styles.label}>Precio Base ($) *</Text>
+            <Text style={styles.label}>{t('precioBaseReq')}</Text>
             <TextInput 
               style={styles.input} 
               value={precio} 
@@ -164,12 +171,12 @@ export default function AgregarServicioScreen() {
           </View>
           
           <View style={styles.mitad}>
-            <Text style={styles.label}>Modalidad</Text>
+            <Text style={styles.label}>{t('modalidad')}</Text>
             <View style={styles.pickerBox}>
               <Picker selectedValue={modalidad} onValueChange={setModalidad} enabled={!guardando}>
-                <Picker.Item label="Presencial" value="Presencial" />
-                <Picker.Item label="En línea" value="En línea" />
-                <Picker.Item label="Ambos" value="Ambos" />
+                <Picker.Item label={t('presencial')} value="Presencial" />
+                <Picker.Item label={t('enLinea')} value="En línea" />
+                <Picker.Item label={t('ambos')} value="Ambos" />
               </Picker>
             </View>
           </View>
@@ -177,19 +184,19 @@ export default function AgregarServicioScreen() {
 
         <View style={styles.filaDivisora}>
           <View style={styles.mitad}>
-            <Text style={styles.label}>Duración</Text>
+            <Text style={styles.label}>{t('duracion')}</Text>
             <View style={styles.pickerBox}>
               <Picker selectedValue={duracion} onValueChange={setDuracion} enabled={!guardando}>
-                <Picker.Item label="30 min" value="30" />
-                <Picker.Item label="1 hora" value="60" />
-                <Picker.Item label="1 hr 30 min" value="90" />
-                <Picker.Item label="2 horas" value="120" />
+                <Picker.Item label={t('duracion30')} value="30" />
+                <Picker.Item label={t('duracion60')} value="60" />
+                <Picker.Item label={t('duracion90')} value="90" />
+                <Picker.Item label={t('duracion120')} value="120" />
               </Picker>
             </View>
           </View>
 
           <View style={styles.mitad}>
-            <Text style={styles.label}>Categoría *</Text>
+            <Text style={styles.label}>{t('categoriaReq')}</Text>
             <View style={styles.pickerBox}>
               <Picker selectedValue={categoriaId} onValueChange={setCategoriaId} enabled={!guardando}>
                 {categorias.map(cat => <Picker.Item key={cat.category_id} label={cat.category_name} value={cat.category_id.toString()} />)}
@@ -206,11 +213,11 @@ export default function AgregarServicioScreen() {
 
         <View style={styles.contenedorBotones}>
         <TouchableOpacity style={styles.botonCancelar} onPress={() => router.replace('/(profesionista)/servicios')} disabled={guardando}>
-  <Text style={styles.textoCancelar}>Cancelar</Text>
+  <Text style={styles.textoCancelar}>{t('cancelar')}</Text>
 </TouchableOpacity>
 
           <TouchableOpacity style={[styles.botonGuardar, guardando && styles.botonDeshabilitado]} onPress={handleGuardar} disabled={guardando}>
-            {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoGuardar}>Crear Servicio</Text>}
+            {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoGuardar}>{t('crearServicioBtn')}</Text>}
           </TouchableOpacity>
         </View>
       </View>
@@ -222,6 +229,9 @@ const styles = StyleSheet.create({
   centro: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
   scroll: { flexGrow: 1, backgroundColor: '#fff', paddingBottom: 40 },
   container: { padding: 20 },
+  botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+  flechaAtras: { fontSize: 20, color: '#5c4b8a', fontWeight: 'bold', marginRight: 5 },
+  textoAtrasInline: { fontSize: 16, color: '#5c4b8a', fontWeight: 'bold' },
   titulo: { fontSize: 24, fontWeight: 'bold', color: '#5c4b8a', textAlign: 'center' },
   subtitulo: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20, marginTop: 5 },
   

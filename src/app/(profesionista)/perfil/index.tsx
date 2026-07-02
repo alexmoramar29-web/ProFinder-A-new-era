@@ -3,10 +3,13 @@ import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Image, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
+import MapaWeb from '@/components/shared/MapaWeb';
 
 export default function PerfilScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [perfil, setPerfil] = useState<any>(null);
   const [portafolio, setPortafolio] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -42,26 +45,54 @@ export default function PerfilScreen() {
     );
   }
 
-  const fotoGrandeMostrar = fotoGlobal || perfil?.profile_picture;
+  const fotoGrandeMostrar = fotoGlobal || perfil?.profile_picture || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
   const estadoVerificacion = perfil?.verification_status || 'Pendiente';
   const perfilPausado = perfil?.is_active === false;
 
   let colorEtiqueta = '#6c757d'; 
-  let textoEtiqueta = 'Documentos sin revisar';
+  let textoEtiqueta = t('documentosSinRevisar');
   
   const estadoLimpio = estadoVerificacion.toLowerCase();
   const esAprobado = estadoLimpio === 'verificado' || estadoLimpio === 'aprobado' || estadoLimpio === 'perfil aprobado';
 
   if (esAprobado) {
     colorEtiqueta = '#28a745'; 
-    textoEtiqueta = 'Perfil Aprobado';
+    textoEtiqueta = t('perfilAprobado');
   } else if (estadoLimpio === 'en revision' || estadoLimpio === 'en revisión') {
     colorEtiqueta = '#ffc107'; 
-    textoEtiqueta = 'Documentos en revision';
+    textoEtiqueta = t('documentosEnRevision');
   } else if (estadoLimpio === 'rechazado') {
     colorEtiqueta = '#dc3545'; 
-    textoEtiqueta = 'Documentos rechazados';
+    textoEtiqueta = t('documentosRechazados');
   }
+
+  const abrirGoogleMaps = () => {
+    if (perfil?.address && perfil.address.includes('|||')) {
+      // Usar la dirección de texto para que Google Maps use su buscador hiper-preciso
+      const partes = perfil.address.split('|||');
+      const calle = partes[0] || '';
+      const numExt = partes[1] || '';
+      const colonia = partes[3] || '';
+      const cp = partes[4] || '';
+      
+      // Creamos una búsqueda ultra limpia para Google.
+      // Si tenemos CP, OMITIMOS la colonia. Los nombres de colonias muy raros o largos 
+      // confunden a Google Maps. El CP + Calle + Número es exacto.
+      let searchQuery = '';
+      if (cp) {
+        searchQuery = `${calle} ${numExt}, ${cp}, México`;
+      } else {
+        searchQuery = `${calle} ${numExt}, ${colonia}, México`;
+      }
+      
+      const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(searchQuery)}`;
+      Linking.openURL(url);
+    } else if (perfil?.latitude && perfil?.longitude) {
+      // Fallback a las coordenadas si no hay dirección estructurada
+      const url = `https://www.google.com/maps/search/?api=1&query=${perfil.latitude},${perfil.longitude}`;
+      Linking.openURL(url);
+    }
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -70,26 +101,24 @@ export default function PerfilScreen() {
         {perfilPausado && (
           <View style={styles.bannerPausado}>
             <Text style={styles.textoBannerPausado}>
-              TU PERFIL ESTA PAUSADO. LOS CLIENTES NO PUEDEN VERTE.
+              {t('perfilPausadoMensaje')}
             </Text>
           </View>
         )}
 
         <View style={styles.container}>
           
-          {/* PASO 1: Metemos la palomita aquí adentro para que flote sobre la foto */}
           <View style={styles.fotoContainer}>
             <TouchableOpacity onPress={() => { if (fotoGrandeMostrar) setFotoAmpliada(fotoGrandeMostrar); }}>
               {fotoGrandeMostrar ? (
                 <Image source={{ uri: fotoGrandeMostrar }} style={styles.foto} />
               ) : (
                 <View style={styles.fotoVacia}>
-                  <Text style={styles.textoFotoVacia}>Sin Foto</Text>
+                  <Text style={styles.textoFotoVacia}>{t('sinFoto')}</Text>
                 </View>
               )}
             </TouchableOpacity>
 
-            {/* El circulo morado con tu palomita blanca flotando abajo a la derecha */}
             {esAprobado && (
               <View style={styles.circuloVerificado}>
                 <Ionicons name="checkmark" size={16} color="#fff" />
@@ -97,9 +126,8 @@ export default function PerfilScreen() {
             )}
           </View>
 
-          {/* El nombre vuelve a quedar limpio y centrado */}
           <View style={styles.nombreContainer}>
-            <Text style={styles.nombreTexto}>{perfil?.full_name || 'Nombre no disponible'}</Text>
+            <Text style={styles.nombreTexto}>{perfil?.full_name || t('nombreNoDisponible')}</Text>
           </View>
 
           <View style={[styles.etiquetaVerificacion, { backgroundColor: colorEtiqueta }]}>
@@ -107,26 +135,67 @@ export default function PerfilScreen() {
           </View>
 
           <View style={styles.datosCard}>
-            <Text style={styles.datoTitulo}>Nombre de usuario</Text>
+            <Text style={styles.datoTitulo}>{t('nombreUsuarioDato')}</Text>
             <Text style={styles.datoValor}>@{perfil?.username}</Text>
 
-            <Text style={styles.datoTitulo}>Profesion</Text>
+            <Text style={styles.datoTitulo}>{t('profesionDato')}</Text>
             <Text style={styles.datoValor}>{perfil?.speciality}</Text>
 
-            <Text style={styles.datoTitulo}>Telefono de contacto</Text>
-            <Text style={styles.datoValor}>{perfil?.phone || 'Sin telefono'}</Text>
+            <Text style={styles.datoTitulo}>{t('telefonoDato')}</Text>
+            <Text style={styles.datoValor}>{perfil?.phone || t('sinTelefono')}</Text>
 
-            <Text style={styles.datoTitulo}>Descripcion</Text>
-            <Text style={styles.datoValor}>{perfil?.profile_description || 'Sin descripcion'}</Text>
+            <Text style={styles.datoTitulo}>{t('descripcionDato')}</Text>
+            <Text style={styles.datoValor}>{perfil?.profile_description || t('sinDescripcion')}</Text>
           </View>
 
-          <View style={styles.mapaPlaceholder}>
-            <Text style={styles.textoMapa}>Aqui ira el mapa de ubicacion</Text>
-          </View>
+          {perfil?.address ? (
+            <View style={styles.mapaContenedor}>
+              <Text style={[styles.datoTitulo, { marginTop: 0 }]}>{t('ubicacionTitulo', '📍 Ubicación de Trabajo')}</Text>
+              <Text style={styles.datoValor}>
+                {(() => {
+                  if (perfil.address.includes('|||')) {
+                    const partes = perfil.address.split('|||');
+                    const c = partes[0] || '';
+                    const ne = partes[1] || '';
+                    const ni = partes[2] || '';
+                    const co = partes[3] || '';
+                    const cp = partes[4] || '';
+                    const r = partes[5] || '';
+                    return `${c} ${ne} ${ni ? `Int ${ni}` : ''}, ${co}, CP ${cp}${r ? `. Ref: ${r}` : ''}`;
+                  }
+                  return perfil.address;
+                })()}
+              </Text>
+
+              {perfil?.latitude && perfil?.longitude && (
+                <>
+                  <TouchableOpacity onPress={abrirGoogleMaps} style={styles.mapaPequeno} activeOpacity={0.8}>
+                    <MapaWeb 
+                      coordenadas={{ latitude: perfil.latitude, longitude: perfil.longitude }} 
+                      height={150} 
+                      readOnly={true}
+                    />
+                    <View style={styles.etiquetaAbrirMapa}>
+                      <Text style={styles.textoAbrirMapa}>{t('abrirEnGoogleMaps', 'Abrir en Google Maps')}</Text>
+                    </View>
+                  </TouchableOpacity>
+                  {Platform.OS === 'web' && (
+                    <Text style={{ fontSize: 11, color: '#888', textAlign: 'center', marginTop: 4, fontStyle: 'italic' }}>
+                      Al hacer clic se abrirá Google Maps con la ubicación exacta.
+                    </Text>
+                  )}
+                </>
+              )}
+            </View>
+          ) : (
+            <View style={styles.mapaPlaceholder}>
+              <Text style={styles.textoMapa}>{t('ubicacionNoConfigurada', 'Ubicación no configurada')}</Text>
+            </View>
+          )}
 
           {portafolio.length > 0 && (
             <View style={styles.portafolioContenedor}>
-              <Text style={styles.tituloSeccion}>Mis Trabajos</Text>
+              <Text style={styles.tituloSeccion}>{t('misTrabajos')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carrusel}>
                 {portafolio.map((item) => (
                   <TouchableOpacity key={item.image_id} onPress={() => setFotoAmpliada(item.image_url)}>
@@ -139,22 +208,22 @@ export default function PerfilScreen() {
 
           <View style={styles.contenedorBotones}>
             <TouchableOpacity style={styles.botonSecundario} onPress={() => router.push('/(profesionista)/perfil/editar')}>
-              <Text style={styles.textoBoton}>Editar Perfil</Text>
+              <Text style={styles.textoBoton}>{t('editarPerfil')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.botonPrimario} onPress={() => router.push('/(profesionista)/completar-registro')}>
-              <Text style={styles.textoBoton}>Documentos</Text>
+              <Text style={styles.textoBoton}>{t('documentosBoton')}</Text>
             </TouchableOpacity>
           </View>
 
         </View>
       </ScrollView>
 
-     <Modal visible={fotoAmpliada !== null} transparent={true} animationType="fade">
+      <Modal visible={fotoAmpliada !== null} transparent={true} animationType="fade">
         
         <View style={styles.modalFondoOscuro}>
           <TouchableOpacity style={styles.botonCerrarModal} onPress={() => setFotoAmpliada(null)}>
-            <Text style={styles.textoCerrarModal}>Cerrar X</Text>
+            <Text style={styles.textoCerrarModal}>{t('cerrarModal')}</Text>
           </TouchableOpacity>
           
           {fotoAmpliada && (
@@ -203,8 +272,15 @@ const styles = StyleSheet.create({
   datosCard: { width: '100%', backgroundColor: '#fff', padding: 20, borderRadius: 10, elevation: 3, marginBottom: 20 },
   datoTitulo: { fontSize: 12, color: '#888', marginTop: 10, fontWeight: 'bold' },
   datoValor: { fontSize: 16, color: '#333', marginBottom: 5 },
-  mapaPlaceholder: { width: '100%', height: 150, backgroundColor: '#e9ecef', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderWidth: 2, borderColor: '#ccc', borderStyle: 'dashed' },
-  textoMapa: { color: '#6c757d', fontWeight: 'bold', fontSize: 16 },
+  
+  mapaContenedor: { width: '100%', backgroundColor: '#fff', padding: 20, borderRadius: 10, elevation: 3, marginBottom: 20 },
+  mapaPequeno: { height: 150, width: '100%', borderRadius: 12, overflow: 'hidden', marginTop: 15 },
+  mapa: { flex: 1 },
+  mapaPlaceholder: { width: '100%', height: 100, backgroundColor: '#e9ecef', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderWidth: 2, borderColor: '#ccc', borderStyle: 'dashed' },
+  textoMapa: { color: '#6c757d', fontWeight: 'bold', fontSize: 14 },
+  etiquetaAbrirMapa: { position: 'absolute', bottom: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 15 },
+  textoAbrirMapa: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  
   portafolioContenedor: { width: '100%', marginBottom: 20 },
   tituloSeccion: { fontSize: 16, fontWeight: 'bold', color: '#5c4b8a', marginBottom: 10, alignSelf: 'flex-start' },
   carrusel: { flexDirection: 'row' },

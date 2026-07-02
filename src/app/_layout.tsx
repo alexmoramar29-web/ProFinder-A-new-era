@@ -1,10 +1,26 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider } from '@/context/AuthProvider';
 import { Slot } from 'expo-router';
 import Head from 'expo-router/head';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import i18n from '../i18n';
 
 export default function LayoutPrincipal() {
+  useEffect(() => {
+    const loadLanguage = async () => {
+      try {
+        const savedLang = await AsyncStorage.getItem('user-language');
+        if (savedLang) {
+          i18n.changeLanguage(savedLang);
+        }
+      } catch (error) {
+        console.error('Error loading language', error);
+      }
+    };
+    loadLanguage();
+  }, []);
+
   return (
     <>
       <Head>
