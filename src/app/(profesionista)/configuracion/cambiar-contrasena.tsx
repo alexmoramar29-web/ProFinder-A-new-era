@@ -41,6 +41,12 @@ export default function CambiarContrasenaScreen() {
 
   const enviarCodigoAlCorreo = () => {
     if (!correoUsuario) return;
+    
+    if (process.env.EXPO_PUBLIC_TEST_MODE === 'true') {
+      ejecutarEnvio('dummy-token-para-pruebas');
+      return;
+    }
+
     if (Platform.OS === 'web') {
       captchaRef.current?.execute();
     } else {

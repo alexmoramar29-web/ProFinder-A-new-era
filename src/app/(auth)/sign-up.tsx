@@ -112,6 +112,11 @@ export default function SignUpScreen() {
       return setMensajeError('Documentos incompletos: Sube los archivos PDF de tu INE, Cedula y Certificado.');
     }
 
+    if (process.env.EXPO_PUBLIC_TEST_MODE === 'true') {
+      ejecutarRegistro('dummy-token-para-pruebas');
+      return;
+    }
+
     if (Platform.OS === 'web') {
       captchaRef.current?.execute();
     } else {
@@ -162,6 +167,12 @@ export default function SignUpScreen() {
       if (authError) {
         if (authError.message.includes('already registered')) throw new Error('Ese correo ya existe.');
         throw authError;
+      }
+
+      // Si authError es null pero authData.user es null, significa que Supabase ignoró silenciosamente el registro
+      // (casi siempre porque el correo ya existe y tiene activa la protección contra enumeración, o por límite de correos)
+      if (!authData.user) {
+        throw new Error('No pudimos crear la cuenta. Es muy probable que este correo ya esté registrado en el sistema, o hayas excedido el límite de registros de prueba (3 por hora). Intenta con un correo diferente.');
       }
 
       setMensajeExito('Cuenta creada. Por favor, revisa tu Gmail y dale clic al enlace para verificar tu cuenta.');
