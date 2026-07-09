@@ -528,6 +528,7 @@ export default function SignInScreen() {
         )}
 
         <TouchableOpacity 
+          testID="btn-login"
           style={[styles.botonPrincipal, { backgroundColor: portal === 'cliente' ? '#007bff' : '#28a745' }]} 
           onPress={modoRecuperar ? handleSolicitarRecuperacion : handleLogin} 
           disabled={cargando}
