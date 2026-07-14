@@ -274,7 +274,6 @@ const styles = StyleSheet.create({
   fotoSeleccionada: { width: 120, height: 120, borderRadius: 12, backgroundColor: '#e9ecef', borderWidth: 1, borderColor: '#ccc' },
   fotoPlaceholder: { width: 120, height: 120, borderRadius: 12, backgroundColor: '#f4f1fa', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#5c4b8a', borderStyle: 'dashed' },
   textoPlaceholder: { color: '#5c4b8a', fontSize: 16, fontWeight: 'bold' },
-
   switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f4f1fa', padding: 15, borderRadius: 8, marginBottom: 15, borderWidth: 1, borderColor: '#ddd' },
   switchTextos: { flex: 1 },
   switchTitulo: { fontSize: 16, fontWeight: 'bold', color: '#333' },

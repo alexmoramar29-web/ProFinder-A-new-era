@@ -245,6 +245,13 @@ export default function SignInScreen() {
 
   const procesarAccionConCaptcha = (accion: AccionPendiente) => {
     setAccionPendiente(accion);
+    
+    // MODO PRUEBAS AUTOMATIZADAS: Se salta el frontend de Captcha
+    if (process.env.EXPO_PUBLIC_TEST_MODE === 'true') {
+      ejecutarAccion(accion, 'dummy-token-para-pruebas');
+      return;
+    }
+
     if (Platform.OS === 'web') {
       if (tokenWeb) {
         ejecutarAccion(accion, tokenWeb);
@@ -521,6 +528,7 @@ export default function SignInScreen() {
         )}
 
         <TouchableOpacity 
+          testID="btn-login"
           style={[styles.botonPrincipal, { backgroundColor: portal === 'cliente' ? '#007bff' : '#28a745' }]} 
           onPress={modoRecuperar ? handleSolicitarRecuperacion : handleLogin} 
           disabled={cargando}

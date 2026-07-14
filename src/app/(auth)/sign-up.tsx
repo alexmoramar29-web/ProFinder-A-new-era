@@ -4,10 +4,16 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
+import ConfirmHcaptcha from '@hcaptcha/react-native-hcaptcha';
+
+let HCaptchaWeb: any;
+if (Platform.OS === 'web') {
+  HCaptchaWeb = require('@hcaptcha/react-hcaptcha').default;
+}
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -29,6 +35,9 @@ export default function SignUpScreen() {
   const [ineDoc, setIneDoc] = useState<any>(null);
   const [cedulaDoc, setCedulaDoc] = useState<any>(null);
   const [certificadoDoc, setCertificadoDoc] = useState<any>(null);
+
+  const captchaRef = useRef<any>(null);
+  const SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001';
 
   const seleccionarDocumento = async (tipo: 'ine' | 'cedula' | 'certificado') => {
     setMensajeError('');
@@ -80,13 +89,12 @@ export default function SignUpScreen() {
     }
   };
 
-  const handleRegistro = async () => {
+  const handleRegistro = () => {
     setMensajeError('');
     setMensajeExito('');
 
     const correoLimpio = email.trim();
     const usuarioLimpio = username.trim();
-    const telefonoLimpio = phone.trim();
 
     if (!usuarioLimpio || !fullName || !correoLimpio || !password || !confirmPassword) {
       return setMensajeError('Faltan datos: Todos los campos son obligatorios.');
@@ -104,6 +112,23 @@ export default function SignUpScreen() {
       return setMensajeError('Documentos incompletos: Sube los archivos PDF de tu INE, Cedula y Certificado.');
     }
 
+    if (process.env.EXPO_PUBLIC_TEST_MODE === 'true') {
+      ejecutarRegistro('dummy-token-para-pruebas');
+      return;
+    }
+
+    if (Platform.OS === 'web') {
+      captchaRef.current?.execute();
+    } else {
+      captchaRef.current?.show();
+    }
+  };
+
+  const ejecutarRegistro = async (tokenCaptcha: string) => {
+    const correoLimpio = email.trim();
+    const usuarioLimpio = username.trim();
+    const telefonoLimpio = phone.trim();
+    
     setCargando(true);
 
     try {
@@ -125,6 +150,7 @@ export default function SignUpScreen() {
         email: correoLimpio,
         password: password,
         options: {
+          captchaToken: tokenCaptcha,
           data: {
             rol_temporal: rol,
             username_temporal: usuarioLimpio,
@@ -141,6 +167,12 @@ export default function SignUpScreen() {
       if (authError) {
         if (authError.message.includes('already registered')) throw new Error('Ese correo ya existe.');
         throw authError;
+      }
+
+      // Si authError es null pero authData.user es null, significa que Supabase ignoró silenciosamente el registro
+      // (casi siempre porque el correo ya existe y tiene activa la protección contra enumeración, o por límite de correos)
+      if (!authData.user) {
+        throw new Error('No pudimos crear la cuenta. Es muy probable que este correo ya esté registrado en el sistema, o hayas excedido el límite de registros de prueba (3 por hora). Intenta con un correo diferente.');
       }
 
       setMensajeExito('Cuenta creada. Por favor, revisa tu Gmail y dale clic al enlace para verificar tu cuenta.');
@@ -257,6 +289,42 @@ export default function SignUpScreen() {
         <TouchableOpacity onPress={() => router.replace('/(auth)/sign-in')} disabled={cargando}>
           <Text style={styles.linkLogin}>{t('yaTengoCuenta')}</Text>
         </TouchableOpacity>
+
+        {/* COMPONENTES DE CAPTCHA */}
+        {Platform.OS === 'web' && (
+          <HCaptchaWeb
+            ref={captchaRef}
+            sitekey={SITE_KEY}
+            size="invisible"
+            onVerify={(token: string) => {
+              ejecutarRegistro(token);
+            }}
+            onError={() => {
+              setCargando(false);
+              setMensajeError('Falló la verificación de seguridad. Intenta nuevamente.');
+            }}
+          />
+        )}
+
+        {Platform.OS !== 'web' && (
+          <ConfirmHcaptcha
+            ref={captchaRef}
+            siteKey={SITE_KEY}
+            baseUrl="https://hcaptcha.com"
+            languageCode="es"
+            size="invisible"
+            onMessage={(event: any) => {
+              if (event && event.nativeEvent.data) {
+                if (['cancel', 'error', 'expired'].includes(event.nativeEvent.data)) {
+                  setCargando(false);
+                  setMensajeError('Falló la verificación de seguridad. Intenta nuevamente.');
+                  return;
+                }
+                ejecutarRegistro(event.nativeEvent.data);
+              }
+            }}
+          />
+        )}
 
       </View>
     </ScrollView>

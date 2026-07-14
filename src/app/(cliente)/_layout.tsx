@@ -1,7 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
-import { View, ActivityIndicator } from 'react-native';
 
 export default function ClienteLayout() {
   const router = useRouter();
