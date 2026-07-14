@@ -50,7 +50,7 @@ export default function EditarPerfilClienteScreen() {
 
       let urlFinal = fotoPerfil?.uri;
 
-      // SUBIDA AL STORAGE
+      // SUBIDA AL STORAGE SI LA FOTO ES NUEVA
       if (fotoPerfil?.esNueva && fotoPerfil?.base64) {
         const fileName = `avatar_${user.id}_${Date.now()}.jpg`; 
         const { error: uploadError } = await supabase.storage
@@ -66,28 +66,27 @@ export default function EditarPerfilClienteScreen() {
         urlFinal = data.publicUrl;
       }
 
-      // ACTUALIZACIÓN EN DB
-      const { error: updateError } = await supabase
+      // USO DE UPSERT: Si el ID existe, actualiza; si no, inserta.
+      const { error: upsertError } = await supabase
         .from('clientes')
-        .update({
+        .upsert({ 
+          id: user.id,
           full_name: fullName,
           username: username,
           phone: phone,
           avatar_url: urlFinal 
-        })
-        .eq('id', user.id);
+        });
 
-      if (updateError) throw updateError;
+      if (upsertError) throw upsertError;
 
-      // AQUÍ ESTÁ EL CAMBIO PARA QUE TE REGRESE SÍ O SÍ
       setGuardando(false);
       Alert.alert('Éxito', 'Perfil actualizado');
       
-      // Intentamos ambos métodos para asegurar la navegación
+      // Navegación segura
       if (router.canGoBack()) {
         router.back();
       } else {
-        router.replace('/perfil');
+        router.replace('/(cliente)/perfil');
       }
 
     } catch (e) {
@@ -102,7 +101,7 @@ export default function EditarPerfilClienteScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <TouchableOpacity onPress={seleccionarImagen} style={styles.fotoContainer}>
-        <Image source={{ uri: fotoPerfil?.uri }} style={styles.foto} />
+        <Image source={{ uri: fotoPerfil?.uri || 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }} style={styles.foto} />
         <Text style={styles.textoCambiarFoto}>Cambiar Foto</Text>
       </TouchableOpacity>
 
@@ -123,7 +122,7 @@ export default function EditarPerfilClienteScreen() {
 }
 
 const styles = StyleSheet.create({
-  centro: { flex: 1, justifyContent: 'center' },
+  centro: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   container: { padding: 20 },
   fotoContainer: { alignSelf: 'center', marginBottom: 20, alignItems: 'center' },
   foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#eee' },

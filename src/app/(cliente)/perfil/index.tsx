@@ -12,14 +12,25 @@ export default function PerfilScreen() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const cargarDatos = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data } = await supabase.from('clientes').select('*').eq('id', user.id).single();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { data, error } = await supabase.from('clientes').select('*').eq('id', user.id).single();
+    
+    if (data) {
       setDatos(data);
-      setAvatarUrl(data?.avatar_url);
+      setAvatarUrl(data.avatar_url);
+    } else {
+      // Fallback: Si no está en la tabla, usa los datos de autenticación de Google
+      setDatos({
+        full_name: user.user_metadata.full_name || 'Nuevo Usuario',
+        username: user.email?.split('@')[0],
+        phone: ''
+      });
+      setAvatarUrl(user.user_metadata.avatar_url);
     }
-    setCargando(false);
-  };
+  }
+  setCargando(false);
+};
 
   useFocusEffect(useCallback(() => { cargarDatos(); }, []));
 
