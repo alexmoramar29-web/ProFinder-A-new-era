@@ -7,6 +7,7 @@ import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PerfilProvider, usePerfil } from '../../context/PerfilContext';
 import { supabase } from '../../lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
 
 // 1. Aquí armamos la caja de tu menú lateral
 function MenuPersonalizado(props: DrawerContentComponentProps) {
@@ -15,7 +16,35 @@ function MenuPersonalizado(props: DrawerContentComponentProps) {
 
   const salirDeLaCuenta = async () => {
     await supabase.auth.signOut();
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    await AsyncStorage.removeItem('last_portal');
     router.replace('/(auth)/sign-in');
+  };
+
+  const alternarModo = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    // Verificar si ya tiene perfil de cliente
+    const { data: cliente } = await supabase.from('users').select('user_id').eq('user_id', user.id).maybeSingle();
+    
+    if (!cliente) {
+      // Crear perfil básico si no existe
+      const nombreUsuarioGenerado = (user.email?.split('@')[0] || 'user') + Math.floor(Math.random() * 100);
+      const nombreCompleto = user.user_metadata?.full_name || user.user_metadata?.name || 'Usuario';
+      
+      await supabase.from('users').insert([{
+        user_id: user.id,
+        username: nombreUsuarioGenerado,
+        full_name: nombreCompleto,
+        email: user.email,
+        password_hash: 'PROTEGIDO_POR_RED_SOCIAL'
+      }]);
+    }
+    
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    await AsyncStorage.setItem('last_portal', 'cliente');
+    router.replace('/(cliente)');
   };
 
   return (
@@ -26,17 +55,26 @@ function MenuPersonalizado(props: DrawerContentComponentProps) {
 
       <View style={styles.contenedorFijoAbajo}>
         <DrawerItem
+          label="Modo Cliente"
+          icon={({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />}
+          onPress={alternarModo}
+          labelStyle={styles.textoMenuAbajo}
+        />
+        <DrawerItem
           label={t('configuracionMenu')}
+          icon={({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />}
           onPress={() => router.push('/(profesionista)/configuracion' as any)}
           labelStyle={styles.textoMenuAbajo}
         />
         <DrawerItem
           label={t('ayudaMenu')}
+          icon={({ color, size }) => <Ionicons name="help-circle-outline" size={size} color={color} />}
           onPress={() => router.push('/(profesionista)/ayuda' as any)}
           labelStyle={styles.textoMenuAbajo}
         />
         <DrawerItem
           label={t('cerrarSesion')}
+          icon={({ color, size }) => <Ionicons name="log-out-outline" size={size} color="#FF3B30" />}
           onPress={salirDeLaCuenta}
           labelStyle={styles.textoSalir}
         />

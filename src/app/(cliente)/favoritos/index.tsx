@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { FlatList, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
+import NavbarCliente from '../../../components/NavbarCliente';
 
 export default function FavoritosDashboard() {
   const router = useRouter();
@@ -34,51 +35,9 @@ export default function FavoritosDashboard() {
     cargarFavoritos();
   }, []));
 
-  const fotoNavbar = avatarUrl ? `${avatarUrl}?t=${new Date().getTime()}` : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png';
-
-  const menuItems = [
-    { title: 'Inicio', route: '/(cliente)' },
-    { title: 'Favoritos', route: '/(cliente)/favoritos' },
-    { title: 'Chat', route: '/(cliente)/chat' },
-    { title: 'Mi Perfil', route: '/(cliente)/perfil' },
-    { title: 'Configuración', route: '/(cliente)/configuracion' },
-    { title: 'Ayuda', route: '/(cliente)/ayuda' },
-  ];
-
   return (
     <View style={styles.container}>
-      {/* NAVBAR IDÉNTICO */}
-      <View style={styles.navbar}>
-        <Text style={styles.navbarTitle}>Mis Favoritos</Text>
-        <View style={styles.rightHeaderContainer}>
-          <TouchableOpacity onPress={() => router.push('/(cliente)/perfil')}>
-            <Image source={{ uri: fotoNavbar }} style={styles.profileCircle} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setMenuVisible(true)} style={{ marginLeft: 15 }}>
-            <Text style={{ fontSize: 24 }}>☰</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* MENÚ LATERAL IDÉNTICO */}
-      <Modal visible={menuVisible} transparent={true} animationType="fade">
-        <View style={styles.modalContainer}>
-          <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}><View style={styles.overlay} /></TouchableWithoutFeedback>
-          <View style={styles.sideMenu}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {menuItems.map((item, index) => (
-                <TouchableOpacity key={index} style={[styles.menuItem, item.title === 'Configuración' && { marginTop: 30 }]} onPress={() => { setMenuVisible(false); router.push(item.route as any); }}>
-                  <Text style={styles.menuText}>{item.title}</Text>
-                </TouchableOpacity>
-              ))}
-              <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 20 }} />
-              <TouchableOpacity onPress={async () => { await supabase.auth.signOut(); router.replace('/(auth)/sign-in'); }} style={styles.menuItem}>
-                <Text style={{ color: 'red', fontWeight: 'bold' }}>Cerrar Sesión</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      <NavbarCliente />
 
       <FlatList 
         data={serviciosFav}

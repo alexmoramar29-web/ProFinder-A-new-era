@@ -1,57 +1,89 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
-import NavbarCliente from '../../components/NavbarCliente';
-import { supabase } from '../../lib/supabase';
-import { Colors } from '../../theme/Colors';
-import { Radius, Shadow, Spacing } from '../../theme/Spacing';
-import { Typography } from '../../theme/Typography';
+import { useNavigation, useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import NavbarCliente from '../../../components/NavbarCliente';
+import { Colors } from '../../../theme/Colors';
+import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
+import { Typography } from '../../../theme/Typography';
 
+// ── Datos de ejemplo ─────────────────────────────────────────
+const PROFESIONISTAS = [
+  {
+    id: '1',
+    nombre: 'Ana Sofia Moreno Gaytan',
+    rol: 'Senior Product Designer',
+    rating: 4.9,
+    precio: 120,
+    descripcion: 'Ex-Google designer con 8+ años de experiencia.',
+    habilidades: ['UI Design', 'UX Research', 'Figma', 'Systems'],
+  },
+  {
+    id: '2',
+    nombre: 'Rosanen M.',
+    rol: 'Full Stack Developer',
+    rating: 4.8,
+    precio: 95,
+    descripcion: 'Building high-performance React applications.',
+    habilidades: ['React', 'Node.js', 'Next.js', 'AWS'],
+  },
+  {
+    id: '3',
+    nombre: 'Borrman M.',
+    rol: 'UX Strategist & Researcher',
+    rating: 5.0,
+    precio: 140,
+    descripcion: 'Helping startups validate ideas through rigorous testing.',
+    habilidades: ['User Testing', 'Strategy'],
+  },
+  {
+    id: '4',
+    nombre: 'Carlos Mendez',
+    rol: 'Mobile Developer',
+    rating: 4.7,
+    precio: 85,
+    descripcion: 'Especialista en React Native y Flutter.',
+    habilidades: ['React Native', 'Flutter', 'Firebase'],
+  },
+];
+
+const EXPERIENCIAS = ['Junior (0-2)', 'Mid-Level (3-5)', 'Senior (6+)'];
 const RATINGS_OPTS = ['3+', '4+', '4.5+'];
+const CERTS_OPTS   = ['Google UX', 'NN/g'];
 
-export default function ClienteDashboard() {
+export default function BuscarScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
 
-  const [busqueda, setBusqueda] = useState('');
-  const [ubicacion, setUbicacion] = useState('');
-  const [ratingMin, setRatingMin] = useState('3+');
-  const [buscado, setBuscado] = useState(false);
-  const [resultados, setResultados] = useState<any[]>([]);
-  const [cargando, setCargando] = useState(true);
+  const [busqueda,     setBusqueda]     = useState('');
+  const [experiencias, setExperiencias] = useState<string[]>(['Mid-Level (3-5)']);
+  const [ratingMin,    setRatingMin]    = useState('4+');
+  const [certs,        setCerts]        = useState<string[]>([]);
+  const [ubicacion,    setUbicacion]    = useState('');
 
-  const buscarProfesionales = async (termino: string) => {
-    try {
-      setCargando(true);
-      setBuscado(true);
-      let query = supabase.from('professionals').select('*');
+  const toggleExp  = (v: string) =>
+    setExperiencias(p => p.includes(v) ? p.filter(x => x !== v) : [...p, v]);
+  const toggleCert = (v: string) =>
+    setCerts(p => p.includes(v) ? p.filter(x => x !== v) : [...p, v]);
 
-      if (termino.trim()) {
-        query = query.or(`speciality.ilike.%${termino}%,full_name.ilike.%${termino}%,profile_description.ilike.%${termino}%`);
-      }
-      
-      const { data, error } = await query;
-      if (error) throw error;
-      setResultados(data || []);
-    } catch (e) {
-      console.log('Error buscando:', e);
-    } finally {
-      setCargando(false);
-    }
-  };
-
-  useEffect(() => {
-    buscarProfesionales('');
-  }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-    await AsyncStorage.removeItem('last_portal');
-    router.replace('/(auth)/sign-in' as any);
-  };
+  const resultados = PROFESIONISTAS.filter(p => {
+    if (!busqueda) return true;
+    const q = busqueda.toLowerCase();
+    return p.nombre.toLowerCase().includes(q) ||
+           p.rol.toLowerCase().includes(q) ||
+           p.habilidades.some(h => h.toLowerCase().includes(q));
+  });
 
   return (
     <View style={styles.root}>
@@ -59,25 +91,19 @@ export default function ClienteDashboard() {
       <NavbarCliente />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}>
-        {/* ── SEARCH BAR (Premium) ── */}
+        {/* ── SEARCH BAR (Premium Floating) ── */}
         <View style={styles.searchBarWrap}>
           <View style={styles.searchContainer}>
             <View style={styles.searchInputRow}>
               <Ionicons name="search" size={22} color={Colors.primary[600]} />
               <TextInput
-                placeholder="¿Qué servicio buscas? Ej. Plomero, Electricista"
+                placeholder="¿Qué servicio buscas? Ej. Diseño UI, Desarrollo React"
                 placeholderTextColor={Colors.text.disabled}
                 style={styles.searchInput}
                 value={busqueda}
                 onChangeText={setBusqueda}
-                onSubmitEditing={() => buscarProfesionales(busqueda)}
               />
             </View>
-            {!isMobile && (
-              <Pressable style={styles.searchBtn} onPress={() => buscarProfesionales(busqueda)}>
-                <Text style={styles.searchBtnTxt}>Buscar</Text>
-              </Pressable>
-            )}
           </View>
         </View>
 
@@ -91,12 +117,11 @@ export default function ClienteDashboard() {
                 <View style={styles.locBoxMobile}>
                   <Ionicons name="location-outline" size={18} color={Colors.primary[600]} />
                   <TextInput
-                    placeholder="Ciudad o CP"
+                    placeholder="Ubicación"
                     placeholderTextColor={Colors.text.disabled}
                     style={styles.locInputMobile}
                     value={ubicacion}
                     onChangeText={setUbicacion}
-                    onSubmitEditing={() => buscarProfesionales(busqueda)}
                   />
                 </View>
                 {RATINGS_OPTS.map(r => (
@@ -104,7 +129,7 @@ export default function ClienteDashboard() {
                     <Text style={[styles.ratingChipTxtMobile, ratingMin === r && styles.ratingChipTxtOnMobile]}>{r}★</Text>
                   </Pressable>
                 ))}
-                <Pressable onPress={() => { setRatingMin('3+'); setUbicacion(''); buscarProfesionales(busqueda); }} style={styles.filterResetBtnMobile}>
+                <Pressable onPress={() => { setRatingMin('3+'); setUbicacion(''); setExperiencias([]); setCerts([]); }} style={styles.filterResetBtnMobile}>
                    <Text style={styles.filterResetTxtMobile}>Limpiar</Text>
                 </Pressable>
               </ScrollView>
@@ -112,29 +137,43 @@ export default function ClienteDashboard() {
           ) : (
             <View style={[styles.filtersPanel, { width: 280 }]}>
               <View style={styles.filterHeader}>
-                <Text style={styles.filterTitle}>Filtros</Text>
-                <Pressable onPress={() => { setRatingMin('3+'); setUbicacion(''); buscarProfesionales(busqueda); }}>
+                <Text style={styles.filterTitle}>Filtros Avanzados</Text>
+                <Pressable onPress={() => { setRatingMin('3+'); setUbicacion(''); setExperiencias([]); setCerts([]); }}>
                   <Text style={styles.filterReset}>Limpiar</Text>
                 </Pressable>
               </View>
 
+              {/* Experiencia */}
+              <View style={styles.filterGroup}>
+                <Text style={styles.filterLabel}>EXPERIENCIA</Text>
+                {EXPERIENCIAS.map(exp => (
+                  <Pressable key={exp} style={styles.checkRow} onPress={() => toggleExp(exp)}>
+                    <View style={[styles.checkbox, experiencias.includes(exp) && styles.checkboxOn]}>
+                      {experiencias.includes(exp) && <Ionicons name="checkmark" size={12} color="#fff" />}
+                    </View>
+                    <Text style={styles.checkText}>{exp}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* Ubicación */}
               <View style={styles.filterGroup}>
                 <Text style={styles.filterLabel}>UBICACIÓN</Text>
                 <View style={styles.locBox}>
                   <Ionicons name="location-outline" size={16} color={Colors.primary[600]} />
                   <TextInput
-                    placeholder="Ciudad o CP"
+                    placeholder="Ciudad o Remoto"
                     placeholderTextColor={Colors.text.disabled}
                     style={styles.locInput}
                     value={ubicacion}
                     onChangeText={setUbicacion}
-                    onSubmitEditing={() => buscarProfesionales(busqueda)}
                   />
                 </View>
               </View>
 
+              {/* Rating */}
               <View style={styles.filterGroup}>
-                <Text style={styles.filterLabel}>CALIFICACIÓN</Text>
+                <Text style={styles.filterLabel}>RATING MÍNIMO</Text>
                 <View style={styles.ratingRow}>
                   {RATINGS_OPTS.map(r => (
                     <Pressable key={r} style={[styles.ratingChip, ratingMin === r && styles.ratingChipOn]} onPress={() => setRatingMin(r)}>
@@ -144,108 +183,97 @@ export default function ClienteDashboard() {
                 </View>
               </View>
 
-              <Pressable style={styles.logoutBtn} onPress={handleLogout}>
-                <Ionicons name="log-out-outline" size={18} color={Colors.error.main} />
-                <Text style={styles.logoutTxt}>Cerrar sesión</Text>
-              </Pressable>
+              {/* Certificaciones */}
+              <View style={styles.filterGroup}>
+                <Text style={styles.filterLabel}>CERTIFICACIONES</Text>
+                {CERTS_OPTS.map(c => (
+                  <Pressable key={c} style={styles.checkRow} onPress={() => toggleCert(c)}>
+                    <View style={[styles.checkbox, certs.includes(c) && styles.checkboxOn]}>
+                      {certs.includes(c) && <Ionicons name="checkmark" size={12} color="#fff" />}
+                    </View>
+                    <Text style={styles.checkText}>{c}</Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
           )}
 
           {/* ── RESULTADOS ── */}
           <View style={[styles.cardsCol, { flex: 1 }]}>
-            <View style={styles.resultsHeader}>
-              <Text style={styles.resultsTitle}>
-                {buscado && busqueda ? `Resultados para "${busqueda}"` : 'Profesionistas Disponibles'}
-              </Text>
-              <Text style={styles.resultsCount}>
-                {cargando ? 'Buscando expertos...' : `Mostrando ${resultados.length} resultado${resultados.length !== 1 ? 's' : ''}`}
-              </Text>
-            </View>
+            <Text style={styles.resultsTitle}>Mejores calificados cerca de ti</Text>
+            <Text style={styles.resultsCount}>
+              Mostrando {resultados.length} expertos de alto rendimiento
+            </Text>
 
-            {cargando ? (
-              <View style={styles.loadingWrap}>
-                <ActivityIndicator size="large" color={Colors.primary[600]} />
-                <Text style={styles.loadingTxt}>Encontrando a los mejores...</Text>
-              </View>
-            ) : resultados.length === 0 ? (
-              <View style={styles.emptyWrap}>
-                <Ionicons name="search-outline" size={64} color={Colors.neutral[300]} />
-                <Text style={styles.emptyTxt}>No se encontraron profesionistas.</Text>
-                <Text style={styles.emptySubTxt}>Intenta con otros términos de búsqueda.</Text>
-              </View>
-            ) : (
-              <View style={styles.cardsGrid}>
-                {resultados.map(prof => (
-                  <Pressable key={prof.prof_id} style={[styles.card, { width: isMobile ? '100%' : '48%', minWidth: isMobile ? 'auto' : 320, flex: isMobile ? 0 : 1 }]} onPress={() => router.push(`/(cliente)/profesionista/${prof.prof_id}` as any)}>
-                    {/* Avatar Header */}
-                    <View style={styles.cardHeader}>
-                      <View style={styles.avatarContainer}>
-                        {prof.profile_picture ? (
-                          <Image source={{ uri: prof.profile_picture }} style={styles.avatar} />
-                        ) : (
-                          <View style={[styles.avatar, styles.avatarFallback]}>
-                            <Text style={styles.avatarInitial}>
-                              {prof.full_name ? prof.full_name.charAt(0).toUpperCase() : 'P'}
-                            </Text>
-                          </View>
-                        )}
+            <View style={styles.cardsGrid}>
+              {resultados.map(prof => (
+                <Pressable key={prof.id} style={[styles.card, { width: isMobile ? '100%' : '48%', minWidth: isMobile ? 'auto' : 320, flex: isMobile ? 0 : 1 }]} onPress={() => router.push(`/(cliente)/profesionista/${prof.id}` as any)}>
+                  {/* Header: avatar + badge */}
+                  <View style={styles.cardHeader}>
+                    <View style={styles.avatarContainer}>
+                      <View style={styles.avatar}>
+                        <Ionicons name="person" size={26} color={Colors.primary[500]} />
                       </View>
-                      <View style={styles.cardHeaderInfo}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                          <Text style={styles.cardNombre} numberOfLines={1}>{prof.full_name}</Text>
-                          {prof.verification_status === 'verified' && (
-                            <View style={styles.verifiedBadge}>
-                              <Ionicons name="checkmark-circle" size={12} color={Colors.success.dark} />
-                              <Text style={styles.verifiedTxt}>Verificado</Text>
-                            </View>
-                          )}
+                    </View>
+                    <View style={styles.cardHeaderInfo}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <Text style={styles.cardNombre} numberOfLines={1}>{prof.nombre}</Text>
+                        <View style={styles.ratingBadge}>
+                          <Ionicons name="star" size={11} color="#F59E0B" />
+                          <Text style={styles.ratingNum}>{prof.rating.toFixed(1)}</Text>
                         </View>
-                        <Text style={styles.cardRol}>{prof.speciality}</Text>
                       </View>
+                      <Text style={styles.cardRol}>{prof.rol}</Text>
                     </View>
+                  </View>
 
-                    {/* Desc */}
-                    {prof.profile_description && (
-                      <Text style={styles.cardDesc} numberOfLines={2}>{prof.profile_description}</Text>
-                    )}
+                  <Text style={styles.cardDesc} numberOfLines={2}>{prof.descripcion}</Text>
 
-                    {/* Footer / Acción */}
-                    <View style={styles.cardFooter}>
-                      <View>
-                        {prof.hourly_rate != null ? (
-                          <>
-                            <Text style={styles.startingAt}>TARIFA DESDE</Text>
-                            <Text style={styles.precio}>${prof.hourly_rate}<Text style={styles.precioSub}>/hr</Text></Text>
-                          </>
-                        ) : (
-                          <Text style={styles.startingAt}>TARIFA A CONVENIR</Text>
-                        )}
+                  {/* Chips */}
+                  <View style={styles.chips}>
+                    {prof.habilidades.map(h => (
+                      <View key={h} style={styles.chip}>
+                        <Text style={styles.chipTxt}>{h}</Text>
                       </View>
-                      <Pressable style={styles.viewBtn} onPress={() => router.push(`/(cliente)/profesionista/${prof.prof_id}` as any)}>
-                        <Text style={styles.viewBtnTxt}>Ver Perfil</Text>
-                        <Ionicons name="arrow-forward" size={16} color="#fff" />
-                      </Pressable>
+                    ))}
+                  </View>
+
+                  {/* Footer / Acción */}
+                  <View style={styles.cardFooter}>
+                    <View>
+                      <Text style={styles.startingAt}>TARIFA DESDE</Text>
+                      <Text style={styles.precio}>${prof.precio}<Text style={styles.precioSub}>/hr</Text></Text>
                     </View>
-                  </Pressable>
-                ))}
-              </View>
-            )}
+                    <View style={styles.viewBtn}>
+                      <Text style={styles.viewBtnTxt}>Ver Perfil</Text>
+                      <Ionicons name="arrow-forward" size={16} color="#fff" />
+                    </View>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
           </View>
 
           {/* ── MAPA placeholder ── */}
           {!isMobile && (
             <View style={[styles.mapCol, { width: '30%' }]}>
               <View style={styles.mapPlaceholder}>
-                {resultados.map((prof, i) => prof.latitude != null && (
-                  <View key={prof.prof_id} style={[styles.mapPin, { top: `${20 + i * 20}%` as any, left: `${30 + i * 15}%` as any }]}>
-                    <Ionicons name="location" size={32} color={Colors.primary[600]} />
+                {/* Pins simulados */}
+                {[
+                  { top: '30%', left: '60%' },
+                  { top: '55%', left: '20%' },
+                  { top: '70%', left: '75%' },
+                ].map((pos, i) => (
+                  <View key={i} style={[styles.mapPin, { top: pos.top as any, left: pos.left as any }]}>
+                    <Ionicons name="location" size={36} color={Colors.primary[600]} />
                     <View style={styles.mapPinDot} />
                   </View>
                 ))}
+
                 <View style={styles.mapControls}>
                   <Pressable style={styles.mapControlBtn}><Text style={styles.mapControlTxt}>+</Text></Pressable>
                   <Pressable style={styles.mapControlBtn}><Text style={styles.mapControlTxt}>−</Text></Pressable>
-                  <Pressable style={styles.mapControlBtn}><Ionicons name="locate-outline" size={18} color={Colors.text.secondary} /></Pressable>
+                  <Pressable style={styles.mapControlBtn}><Ionicons name="locate-outline" size={20} color={Colors.text.secondary} /></Pressable>
                 </View>
               </View>
             </View>
@@ -278,8 +306,6 @@ const styles = StyleSheet.create({
   searchContainer: { flexDirection: 'row', alignItems: 'center', gap: Spacing[3], maxWidth: 1200, alignSelf: 'center', width: '100%' },
   searchInputRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing[3], backgroundColor: '#F3F4F6', borderRadius: 999, paddingHorizontal: Spacing[4], height: 48 },
   searchInput: { flex: 1, ...Typography.styles.body, color: Colors.text.primary, fontSize: 16 },
-  searchBtn: { backgroundColor: Colors.primary[600], paddingHorizontal: Spacing[6], height: 48, justifyContent: 'center', borderRadius: 999, ...Shadow.brand },
-  searchBtnTxt: { ...Typography.styles.btn, color: '#fff', fontSize: 15, fontWeight: '700' },
 
   body: { flex: 1, flexDirection: 'row', maxWidth: 1600, alignSelf: 'center', width: '100%' },
 
@@ -287,7 +313,7 @@ const styles = StyleSheet.create({
   mobileFiltersWrapper: { backgroundColor: '#fff', paddingVertical: Spacing[3] },
   mobileFiltersScroll: { paddingHorizontal: Spacing[4], gap: Spacing[3], alignItems: 'center' },
   locBoxMobile: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F3F4F6', borderRadius: 999, paddingHorizontal: 16, height: 38 },
-  locInputMobile: { minWidth: 120, ...Typography.styles.bodySm, color: Colors.text.primary, fontWeight: '500' },
+  locInputMobile: { minWidth: 100, ...Typography.styles.bodySm, color: Colors.text.primary, fontWeight: '500' },
   ratingChipMobile: { paddingHorizontal: 16, height: 38, justifyContent: 'center', borderRadius: 999, backgroundColor: '#F3F4F6' },
   ratingChipOnMobile: { backgroundColor: Colors.primary[100] },
   ratingChipTxtMobile: { ...Typography.styles.label, color: Colors.text.secondary, fontSize: 13 },
@@ -309,36 +335,31 @@ const styles = StyleSheet.create({
   ratingChipOn: { backgroundColor: Colors.primary[100] },
   ratingChipTxt: { ...Typography.styles.label, color: Colors.text.secondary, fontSize: 13 },
   ratingChipTxtOn: { color: Colors.primary[700], fontWeight: '700' },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 'auto' as any, paddingTop: Spacing[6] },
-  logoutTxt: { ...Typography.styles.body, color: Colors.error.main, fontWeight: '600' },
+  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  checkbox: { width: 18, height: 18, borderRadius: 4, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  checkboxOn: { backgroundColor: Colors.primary[600] },
+  checkText: { ...Typography.styles.body, color: Colors.text.primary, fontSize: 15 },
 
   // Resultados
   cardsCol: { padding: Spacing[5], backgroundColor: '#F8F9FA' },
-  resultsHeader: { marginBottom: Spacing[5] },
   resultsTitle: { ...Typography.styles.h3, color: Colors.text.primary, fontWeight: '800', letterSpacing: -0.5 },
-  resultsCount: { ...Typography.styles.body, color: Colors.text.secondary, marginTop: 4 },
+  resultsCount: { ...Typography.styles.body, color: Colors.text.secondary, marginTop: 4, marginBottom: 16 },
   cardsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing[4] },
-
-  // Loading / Empty
-  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing[12], gap: Spacing[4] },
-  loadingTxt: { ...Typography.styles.h5, color: Colors.text.secondary },
-  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing[16], gap: Spacing[3] },
-  emptyTxt: { ...Typography.styles.h4, color: Colors.text.primary, fontWeight: '700' },
-  emptySubTxt: { ...Typography.styles.body, color: Colors.text.secondary },
 
   // Premium Card
   card: { backgroundColor: '#fff', borderRadius: 20, padding: Spacing[5], ...Shadow.md, gap: Spacing[4] },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   avatarContainer: { position: 'relative' },
-  avatar: { width: 56, height: 56, borderRadius: 28 },
-  avatarFallback: { backgroundColor: Colors.primary[100], alignItems: 'center', justifyContent: 'center' },
-  avatarInitial: { ...Typography.styles.h3, color: Colors.primary[700], fontWeight: 'bold' },
+  avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.primary[50], alignItems: 'center', justifyContent: 'center' },
   cardHeaderInfo: { flex: 1 },
   cardNombre: { ...Typography.styles.h5, color: Colors.text.primary, fontWeight: '700', fontSize: 17 },
   cardRol: { ...Typography.styles.label, color: Colors.primary[600], fontSize: 13, marginTop: 2, fontWeight: '600' },
-  verifiedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.success.light, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
-  verifiedTxt: { ...Typography.styles.caption, color: Colors.success.dark, fontWeight: '700', fontSize: 10 },
+  ratingBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FEF3C7', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
+  ratingNum: { ...Typography.styles.caption, color: '#92400E', fontWeight: '800', fontSize: 11 },
   cardDesc: { ...Typography.styles.body, color: Colors.text.secondary, lineHeight: 22, fontSize: 14 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  chip: { backgroundColor: '#F3F4F6', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 },
+  chipTxt: { ...Typography.styles.caption, color: Colors.text.secondary, fontWeight: '600' },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4, paddingTop: Spacing[4] },
   startingAt: { ...Typography.styles.overline, color: Colors.text.disabled, fontSize: 10, letterSpacing: 0.5, marginBottom: 2 },
   precio: { ...Typography.styles.h3, color: Colors.text.primary, fontWeight: '800' },
@@ -350,10 +371,10 @@ const styles = StyleSheet.create({
   mapCol: { backgroundColor: '#E5E7EB' },
   mapPlaceholder: { flex: 1, position: 'relative', backgroundColor: '#F3F4F6' },
   mapPin: { position: 'absolute', alignItems: 'center' },
-  mapPinDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#000', opacity: 0.2, marginTop: -4 },
-  mapControls: { position: 'absolute', right: 16, bottom: 24, backgroundColor: '#fff', borderRadius: 12, ...Shadow.md, overflow: 'hidden' },
-  mapControlBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  mapControlTxt: { fontSize: 22, color: Colors.text.secondary, fontWeight: '300' },
+  mapPinDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#000', opacity: 0.2, marginTop: -4 },
+  mapControls: { position: 'absolute', right: 16, bottom: 24, backgroundColor: '#fff', borderRadius: 16, ...Shadow.md, overflow: 'hidden' },
+  mapControlBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  mapControlTxt: { fontSize: 24, color: Colors.text.secondary, fontWeight: '300' },
 
   // Footer
   footer: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: Spacing[4], paddingHorizontal: Spacing[6], paddingVertical: Spacing[4], backgroundColor: '#fff' },

@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
+import NavbarCliente from '../../../components/NavbarCliente';
 
 export default function PerfilScreen() {
   const router = useRouter();
@@ -46,38 +47,7 @@ export default function PerfilScreen() {
 
   return (
     <View style={styles.container}>
-      {/* NAVBAR */}
-      <View style={styles.navbar}>
-        <Text style={styles.navbarTitle}>Mi Perfil</Text>
-        <View style={styles.rightHeaderContainer}>
-          <TouchableOpacity onPress={() => router.push('/(cliente)/perfil')}>
-            <Image source={{ uri: fotoPerfil }} style={styles.profileCircle} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setMenuVisible(true)} style={{ marginLeft: 15 }}>
-            <Text style={{ fontSize: 24 }}>☰</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* MODAL MENÚ */}
-      <Modal visible={menuVisible} transparent={true} animationType="fade">
-        <View style={styles.modalContainer}>
-          <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}><View style={styles.overlay} /></TouchableWithoutFeedback>
-          <View style={styles.sideMenu}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {menuItems.map((item, index) => (
-                <TouchableOpacity key={index} style={[styles.menuItem, item.title === 'Configuración' && { marginTop: 30 }]} onPress={() => { setMenuVisible(false); router.push(item.route as any); }}>
-                  <Text style={styles.menuText}>{item.title}</Text>
-                </TouchableOpacity>
-              ))}
-              <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 20 }} />
-              <TouchableOpacity onPress={async () => { await supabase.auth.signOut(); router.replace('/(auth)/sign-in'); }} style={styles.menuItem}>
-                <Text style={{ color: 'red', fontWeight: 'bold' }}>Cerrar Sesión</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      <NavbarCliente />
 
  {/* ZOOM IMAGEN */}
 {/* Cambiamos animationType a 'fade' para evitar el error de TypeScript */}
@@ -122,7 +92,7 @@ const styles = StyleSheet.create({
   sideMenu: { width: 220, backgroundColor: '#fff', padding: 20, paddingTop: 60, elevation: 10 },
   menuItem: { paddingVertical: 10 },
   menuText: { fontSize: 16, color: '#333' },
-  content: { padding: 20, alignItems: 'center' },
+  content: { padding: 20, alignItems: 'center', maxWidth: 600, width: '100%', alignSelf: 'center' },
   fotoGrande: { width: 150, height: 150, borderRadius: 75, marginBottom: 20 },
   label: { fontSize: 16, marginBottom: 10 },
   botonEditar: { backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, marginTop: 20, width: '100%', alignItems: 'center' },

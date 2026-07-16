@@ -21,7 +21,7 @@ import { Colors } from '../../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Typography } from '../../../theme/Typography';
 
-export default function ChatIndividualProfesionistaScreen() {
+export default function ChatIndividualScreen() {
   const { id, nombre, inicial } = useLocalSearchParams();
   const router = useRouter();
   const navigation = useNavigation();
@@ -29,7 +29,7 @@ export default function ChatIndividualProfesionistaScreen() {
   const [mensajes, setMensajes] = useState<any[]>([]);
   const [texto, setTexto] = useState('');
   const [cargando, setCargando] = useState(true);
-  const [miId, setMiId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [mostrarMenu, setMostrarMenu] = useState(false);
   const [estaBloqueado, setEstaBloqueado] = useState(false);
   const [yoLoBloquee, setYoLoBloquee] = useState(false);
@@ -47,7 +47,7 @@ export default function ChatIndividualProfesionistaScreen() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
-        setMiId(session.user.id);
+        setUserId(session.user.id);
 
         // 1. Verificar bloqueos
         const { data: blocks } = await supabase
@@ -79,10 +79,10 @@ export default function ChatIndividualProfesionistaScreen() {
 
   // Suscripción a Realtime
   useEffect(() => {
-    if (!miId || !id) return;
+    if (!userId || !id) return;
 
     const channel = supabase
-      .channel(`chat_prof_${miId}_${id}`)
+      .channel(`chat_client_${userId}_${id}`)
       .on('broadcast', { event: 'typing' }, (payload) => {
         if (payload.payload.user === id) {
           setEscribiendo(payload.payload.isTyping);
@@ -94,7 +94,7 @@ export default function ChatIndividualProfesionistaScreen() {
           event: '*', 
           schema: 'public',
           table: 'chat_messages',
-          filter: `prof_id=eq.${miId}`
+          filter: `user_id=eq.${userId}`
         },
         (payload) => {
           if (payload.eventType === 'DELETE') {
@@ -102,11 +102,11 @@ export default function ChatIndividualProfesionistaScreen() {
             return;
           }
           if (payload.eventType === 'INSERT') {
-            if (payload.new.user_id === id) {
+            if (payload.new.prof_id === id) {
               const nuevoMsj = {
                 id: payload.new.message_id,
                 texto: payload.new.message_text,
-                deMi: payload.new.sender_type === 2,
+                deMi: payload.new.sender_type === 1,
                 hora: new Date(payload.new.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
               };
               setMensajes(prev => {
@@ -131,15 +131,15 @@ export default function ChatIndividualProfesionistaScreen() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [miId, id]);
+  }, [userId, id]);
 
-  const fetchMensajes = async (mId: string, clearedAt: string | null) => {
+  const fetchMensajes = async (uId: string, clearedAt: string | null) => {
     try {
       let query = supabase
         .from('chat_messages')
         .select('*')
-        .eq('prof_id', mId)
-        .eq('user_id', id);
+        .eq('user_id', uId)
+        .eq('prof_id', id);
 
       if (clearedAt) {
         query = query.gte('sent_at', clearedAt);
@@ -153,20 +153,10 @@ export default function ChatIndividualProfesionistaScreen() {
         const formateados = data.map(m => ({
           id: m.message_id,
           texto: m.message_text,
-          deMi: m.sender_type === 2, // 2 = Profesionista
+          deMi: m.sender_type === 1,
           hora: new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }));
         setMensajes(formateados);
-        
-        // Marcar como leídos (opcional, si quisiéramos)
-        await supabase
-          .from('chat_messages')
-          .update({ is_read: true })
-          .eq('prof_id', mId)
-          .eq('user_id', id)
-          .eq('sender_type', 1)
-          .eq('is_read', false);
-
         setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 200);
       }
     } catch (err) {
@@ -178,35 +168,35 @@ export default function ChatIndividualProfesionistaScreen() {
 
   const notificarEscribiendo = (txt: string) => {
     setTexto(txt);
-    if (!miId || !id) return;
+    if (!userId || !id) return;
     
-    supabase.channel(`chat_prof_${miId}_${id}`).send({
+    supabase.channel(`chat_client_${userId}_${id}`).send({
       type: 'broadcast',
       event: 'typing',
-      payload: { user: miId, isTyping: txt.length > 0 }
+      payload: { user: userId, isTyping: txt.length > 0 }
     });
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      supabase.channel(`chat_prof_${miId}_${id}`).send({
+      supabase.channel(`chat_client_${userId}_${id}`).send({
         type: 'broadcast',
         event: 'typing',
-        payload: { user: miId, isTyping: false }
+        payload: { user: userId, isTyping: false }
       });
     }, 2000);
   };
 
   const enviarMensaje = async () => {
-    if (!texto.trim() || !miId || !id || estaBloqueado) return;
+    if (!texto.trim() || !userId || !id || estaBloqueado) return;
     
     const mensajeTexto = texto.trim();
     setTexto(''); // Limpiar optimísticamente
     
     // Quitar "escribiendo" inmediatamente
-    supabase.channel(`chat_prof_${miId}_${id}`).send({
+    supabase.channel(`chat_client_${userId}_${id}`).send({
       type: 'broadcast',
       event: 'typing',
-      payload: { user: miId, isTyping: false }
+      payload: { user: userId, isTyping: false }
     });
 
     // Optimistic Update
@@ -218,19 +208,19 @@ export default function ChatIndividualProfesionistaScreen() {
       const { error } = await supabase
         .from('chat_messages')
         .insert([{
-          user_id: id,     // ID del cliente
-          prof_id: miId,   // Mi ID (Profesionista)
-          sender_type: 2,  // 2 = Profesionista
+          user_id: userId, // Mi ID (Cliente)
+          prof_id: id,     // ID del Profesionista
+          sender_type: 1,  // 1 = Cliente
           message_text: mensajeTexto
         }]);
       
       if (error) throw error;
-      } catch (err) {
-        console.log('Error enviando mensaje:', err);
-        // Revertir optimista si falla
-        setMensajes(prev => prev.filter(m => m.id !== tempId));
-      }
-    };
+    } catch (err) {
+      console.log('Error enviando mensaje:', err);
+      // Revertir optimista si falla
+      setMensajes(prev => prev.filter(m => m.id !== tempId));
+    }
+  };
 
   const manejarReporte = () => {
     setMostrarMenu(false);
@@ -251,9 +241,9 @@ export default function ChatIndividualProfesionistaScreen() {
   };
 
   const ejecutarReporte = async () => {
-    if (!miId) return;
+    if (!userId) return;
     try {
-      await supabase.from('user_reports').insert([{ reporter_id: miId, reported_id: id, reason: 'Reportado desde el chat por profesionista' }]);
+      await supabase.from('user_reports').insert([{ reporter_id: userId, reported_id: id, reason: 'Reportado desde el chat por cliente' }]);
       if (Platform.OS === 'web') window.alert('Reporte Enviado. El equipo revisará la conversación. El usuario ha sido reportado.');
       else Alert.alert('Reporte Enviado', 'El equipo revisará la conversación. El usuario ha sido reportado.');
     } catch (err) { 
@@ -286,16 +276,16 @@ export default function ChatIndividualProfesionistaScreen() {
   };
 
   const ejecutarBloqueo = async () => {
-    if (!miId) return;
+    if (!userId) return;
     try {
       if (yoLoBloquee) {
-        await supabase.from('user_blocks').delete().eq('blocker_id', miId).eq('blocked_id', id);
+        await supabase.from('user_blocks').delete().eq('blocker_id', userId).eq('blocked_id', id);
         setEstaBloqueado(false);
         setYoLoBloquee(false);
         if (Platform.OS === 'web') window.alert('Desbloqueado. Ya puedes enviarle mensajes de nuevo.');
         else Alert.alert('Desbloqueado', 'Ya puedes enviarle mensajes de nuevo.');
       } else {
-        await supabase.from('user_blocks').insert([{ blocker_id: miId, blocked_id: id }]);
+        await supabase.from('user_blocks').insert([{ blocker_id: userId, blocked_id: id }]);
         setEstaBloqueado(true);
         setYoLoBloquee(true);
         if (Platform.OS === 'web') window.alert('Bloqueado. Has bloqueado a este usuario.');
@@ -328,13 +318,13 @@ export default function ChatIndividualProfesionistaScreen() {
   };
 
   const ejecutarVaciado = async () => {
-    if (!miId) return;
+    if (!userId) return;
     try {
-      const { data } = await supabase.from('chat_clearances').select('id').eq('user_id', miId).eq('other_user_id', id).maybeSingle();
+      const { data } = await supabase.from('chat_clearances').select('id').eq('user_id', userId).eq('other_user_id', id).maybeSingle();
       if (data) {
         await supabase.from('chat_clearances').update({ cleared_at: new Date().toISOString() }).eq('id', data.id);
       } else {
-        await supabase.from('chat_clearances').insert([{ user_id: miId, other_user_id: id, cleared_at: new Date().toISOString() }]);
+        await supabase.from('chat_clearances').insert([{ user_id: userId, other_user_id: id, cleared_at: new Date().toISOString() }]);
       }
       setMensajes([]);
       if (Platform.OS === 'web') window.alert('Chat Vaciado. El historial se ha borrado de tu pantalla.');
@@ -373,6 +363,7 @@ export default function ChatIndividualProfesionistaScreen() {
     setMostrarMenu(true);
   };
 
+
   return (
     <KeyboardAvoidingView 
       style={styles.root} 
@@ -382,25 +373,23 @@ export default function ChatIndividualProfesionistaScreen() {
       <View style={styles.chatArea}>
         {/* Cabecera */}
         <View style={styles.chatHeader}>
-          <Pressable onPress={() => router.replace('/(profesionista)/chat' as any)} style={styles.backBtn}>
+          <Pressable onPress={() => router.replace('/(cliente)/chat' as any)} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
           </Pressable>
           
           <View style={styles.chatHeaderAvatarWrap}>
-            <View style={styles.chatHeaderAvatar}>
-              <Text style={styles.chatHeaderAvatarTxt}>{inicial || 'C'}</Text>
-            </View>
+            <View style={styles.chatHeaderAvatar}><Text style={styles.chatHeaderAvatarTxt}>{inicial}</Text></View>
             <View style={styles.onlineDotLg} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.chatHeaderNombre}>{nombre || 'Cliente'}</Text>
-            <Text style={styles.chatHeaderStatus}>Cliente • ProFinder</Text>
+            <Text style={styles.chatHeaderNombre}>{nombre}</Text>
+            <Text style={styles.chatHeaderStatus}>● Online</Text>
           </View>
-          <View style={{ flexDirection: 'row', gap: 4 }}>
-            <Pressable style={styles.chatActionBtn} onPress={mostrarOpcionesChat}>
-              <Ionicons name="ellipsis-horizontal-outline" size={20} color={Colors.text.secondary} />
-            </Pressable>
-          </View>
+            <View style={{ flexDirection: 'row', gap: 4 }}>
+              <Pressable style={styles.chatActionBtn} onPress={mostrarOpcionesChat}>
+                <Ionicons name="ellipsis-horizontal-outline" size={20} color={Colors.text.secondary} />
+              </Pressable>
+            </View>
         </View>
 
         {/* Mensajes */}
@@ -417,14 +406,14 @@ export default function ChatIndividualProfesionistaScreen() {
           >
             {mensajes.length === 0 && (
               <Text style={{ textAlign: 'center', color: Colors.text.disabled, marginVertical: 20 }}>
-                Aún no hay mensajes con este cliente.
+                Envía tu primer mensaje a {nombre}
               </Text>
             )}
             
             {mensajes.map(m => (
               <View key={m.id} style={[styles.msgRow, m.deMi && styles.msgRowMio]}>
                 {!m.deMi && (
-                  <View style={styles.msgAvatar}><Text style={styles.msgAvatarTxt}>{inicial || 'C'}</Text></View>
+                  <View style={styles.msgAvatar}><Text style={styles.msgAvatarTxt}>{inicial}</Text></View>
                 )}
                 <View style={{ maxWidth: '75%' }}>
                   <View style={[styles.msgBubble, m.deMi ? styles.msgBubbleMio : styles.msgBubbleEllos]}>
@@ -448,7 +437,7 @@ export default function ChatIndividualProfesionistaScreen() {
             ))}
             {escribiendo && (
               <View style={[styles.msgRow, { opacity: 0.7 }]}>
-                <View style={styles.msgAvatar}><Text style={styles.msgAvatarTxt}>{inicial || 'C'}</Text></View>
+                <View style={styles.msgAvatar}><Text style={styles.msgAvatarTxt}>{inicial}</Text></View>
                 <View style={[styles.msgBubble, styles.msgBubbleEllos, { paddingHorizontal: 12, paddingVertical: 8 }]}>
                   <Text style={[styles.msgTxt, { fontStyle: 'italic', fontSize: 12 }]}>escribiendo...</Text>
                 </View>
@@ -485,17 +474,17 @@ export default function ChatIndividualProfesionistaScreen() {
         {mostrarMenu && (
           <Pressable style={[StyleSheet.absoluteFill, { zIndex: 99 }]} onPress={() => setMostrarMenu(false)}>
             <View style={styles.dropdownMenu}>
-              <TouchableOpacity style={styles.dropdownMenuItem} onPress={() => { setMostrarMenu(false); router.push(`/(cliente)/perfil/${id}` as any); }}>
-                <Text style={styles.dropdownMenuText}>Ver Perfil del Cliente</Text>
+              <TouchableOpacity style={styles.dropdownMenuItem} onPress={() => { setMostrarMenu(false); router.push(`/servicios/${id}` as any); }}>
+                <Text style={styles.dropdownMenuText}>Ver Perfil del Profesionista</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.dropdownMenuItem} onPress={vaciarChat}>
                 <Text style={styles.dropdownMenuText}>Vaciar Chat local</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.dropdownMenuItem} onPress={manejarReporte}>
-                <Text style={styles.dropdownMenuText}>Reportar Cliente</Text>
+                <Text style={styles.dropdownMenuText}>Reportar Usuario</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.dropdownMenuItem, { borderBottomWidth: 0 }]} onPress={manejarBloqueo}>
-                <Text style={[styles.dropdownMenuText, { color: Colors.error.main }]}>{yoLoBloquee ? 'Desbloquear Cliente' : 'Bloquear Cliente'}</Text>
+                <Text style={[styles.dropdownMenuText, { color: Colors.error.main }]}>{yoLoBloquee ? 'Desbloquear Usuario' : 'Bloquear Usuario'}</Text>
               </TouchableOpacity>
             </View>
           </Pressable>
@@ -516,7 +505,7 @@ const styles = StyleSheet.create({
   chatHeaderAvatarTxt:  { ...Typography.styles.label, color: Colors.primary[700], fontSize: 16 },
   onlineDotLg:          { position: 'absolute', bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.success.main, borderWidth: 2, borderColor: '#fff' },
   chatHeaderNombre:     { ...Typography.styles.h5, color: Colors.text.primary, fontSize: 16 },
-  chatHeaderStatus:     { ...Typography.styles.caption, color: Colors.text.secondary, marginTop: 1 },
+  chatHeaderStatus:     { ...Typography.styles.caption, color: Colors.success.main, marginTop: 1 },
   chatActionBtn:        { padding: Spacing[2], borderRadius: Radius.full },
 
   mensajesScroll:  { flex: 1, backgroundColor: Colors.neutral[50] },

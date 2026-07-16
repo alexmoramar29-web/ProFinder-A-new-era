@@ -4,6 +4,7 @@ import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, Modal, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
+import NavbarCliente from '../../../components/NavbarCliente';
 
 export default function ConfiguracionScreen() {
   const { t, i18n } = useTranslation();
@@ -35,40 +36,7 @@ export default function ConfiguracionScreen() {
 
   return (
     <View style={styles.container}>
-      {/* NAVBAR LIMPIA */}
-      <View style={styles.navbar}>
-        <Text style={styles.navbarTitle}>Configuración</Text>
-        <View style={styles.rightHeaderContainer}>
-          {/* AHORA LA FOTO TE LLEVA A PERFIL */}
-          <TouchableOpacity onPress={() => router.push('/(cliente)/perfil')}>
-            <Image source={{ uri: fotoNavbar }} style={styles.profileCircle} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity onPress={() => setMenuVisible(true)} style={{ marginLeft: 15 }}>
-            <Text style={{ fontSize: 24, color: '#fff' }}>☰</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* MENÚ HAMBURGUESA */}
-      <Modal visible={menuVisible} transparent={true} animationType="fade">
-        <View style={styles.modalContainer}>
-          <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}><View style={styles.overlay} /></TouchableWithoutFeedback>
-          <View style={styles.sideMenu}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {menuItems.map((item, index) => (
-                <TouchableOpacity key={index} style={[styles.menuItem, item.title === 'Configuración' && { marginTop: 30 }]} onPress={() => { setMenuVisible(false); router.push(item.route as any); }}>
-                  <Text style={styles.menuText}>{item.title}</Text>
-                </TouchableOpacity>
-              ))}
-              <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 20 }} />
-              <TouchableOpacity onPress={async () => { await supabase.auth.signOut(); router.replace('/(auth)/sign-in'); }} style={styles.menuItem}>
-                <Text style={{ color: 'red', fontWeight: 'bold' }}>Cerrar Sesión</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      <NavbarCliente />
 
       {/* CONTENIDO */}
       <ScrollView contentContainerStyle={styles.scroll}>

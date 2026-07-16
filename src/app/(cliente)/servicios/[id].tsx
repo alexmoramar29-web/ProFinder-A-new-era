@@ -2,6 +2,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'; /
 import React, { useCallback, useState } from 'react'; // 2. Importamos useCallback
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
+import NavbarCliente from '../../../components/NavbarCliente';
 
 export default function DetalleServicio() {
   const { id } = useLocalSearchParams();
@@ -71,41 +72,44 @@ export default function DetalleServicio() {
   if (!servicio) return <View style={{flex:1, justifyContent:'center', alignItems:'center'}}><Text>No se encontró el servicio.</Text></View>;
 
   return (
-    <ScrollView style={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backButtonText}>← Volver</Text>
-      </TouchableOpacity>
-
-      {imageUrl && (
-        <Image 
-          source={{ uri: imageUrl }} 
-          style={styles.image} 
-          resizeMode="cover"
-        />
-      )}
-      
-      <Text style={styles.title}>{servicio.service_name}</Text>
-      
-      <View style={styles.card}>
-        <Text style={styles.label}>Descripción</Text>
-        <Text style={styles.value}>{servicio.description}</Text>
-        <Text style={styles.label}>Precio Base</Text>
-        <Text style={styles.value}>${servicio.base_price}</Text>
-        <Text style={styles.label}>Modalidad</Text>
-        <Text style={styles.value}>{servicio.modality}</Text>
-        <Text style={styles.label}>Categoría</Text>
-        <Text style={styles.value}>{servicio.categories?.category_name}</Text>
-
-        <TouchableOpacity 
-          style={[styles.btnFav, { backgroundColor: esFavorito ? '#999' : '#ff6b6b' }]} 
-          onPress={alternarFavorito}
-        >
-          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
-            {esFavorito ? 'Quitar de Favoritos' : 'Agregar a Favoritos'}
-          </Text>
+    <View style={{ flex: 1, backgroundColor: '#f9f9f9' }}>
+      <NavbarCliente />
+      <ScrollView style={styles.container}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Text style={styles.backButtonText}>← Volver</Text>
         </TouchableOpacity>
-      </View>
-    </ScrollView>
+
+        {imageUrl && (
+          <Image 
+            source={{ uri: imageUrl }} 
+            style={styles.image} 
+            resizeMode="cover"
+          />
+        )}
+        
+        <Text style={styles.title}>{servicio.service_name}</Text>
+        
+        <View style={styles.card}>
+          <Text style={styles.label}>Descripción</Text>
+          <Text style={styles.value}>{servicio.description}</Text>
+          <Text style={styles.label}>Precio Base</Text>
+          <Text style={styles.value}>${servicio.base_price}</Text>
+          <Text style={styles.label}>Modalidad</Text>
+          <Text style={styles.value}>{servicio.modality}</Text>
+          <Text style={styles.label}>Categoría</Text>
+          <Text style={styles.value}>{servicio.categories?.category_name}</Text>
+
+          <TouchableOpacity 
+            style={[styles.btnFav, { backgroundColor: esFavorito ? '#999' : '#ff6b6b' }]} 
+            onPress={alternarFavorito}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
+              {esFavorito ? 'Quitar de Favoritos' : 'Agregar a Favoritos'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 

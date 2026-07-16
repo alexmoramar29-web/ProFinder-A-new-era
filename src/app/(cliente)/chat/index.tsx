@@ -1,75 +1,79 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
+import { useNavigation, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+    ActivityIndicator,
+    FlatList,
+    Image,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from 'react-native';
 import { supabase } from '../../../lib/supabase';
 import { Colors } from '../../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Typography } from '../../../theme/Typography';
+import NavbarCliente from '../../../components/NavbarCliente';
 
-export default function BandejaChatScreen() {
-  const { t } = useTranslation();
+export default function ChatIndexScreen() {
   const router = useRouter();
-
+  const navigation = useNavigation();
+  const [nombreUsuario, setNombreUsuario] = useState('Mi cuenta');
+  const [inicialUsuario, setInicialUsuario] = useState('U');
+  
   const [conversaciones, setConversaciones] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState('');
-  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setUserId(user.id);
-        cargarConversaciones(user.id);
-      }
+      if (!user) return;
+      const nombre = user.user_metadata?.fullname_temporal
+        || user.user_metadata?.full_name
+        || user.email?.split('@')[0]
+        || 'Mi cuenta';
+      setNombreUsuario(nombre);
+      setInicialUsuario(nombre.charAt(0).toUpperCase());
+      
+      cargarConversaciones(user.id);
     });
   }, []);
 
-  const cargarConversaciones = async (profId: string) => {
+  const cargarConversaciones = async (userId: string) => {
     try {
-      // 1. Obtener los mensajes del profesionista ordenados por fecha
       const { data: mensajes, error } = await supabase
         .from('chat_messages')
-        .select('message_id, message_text, sent_at, is_read, sender_type, user_id')
-        .eq('prof_id', profId)
+        .select(`
+          message_id, message_text, sent_at, is_read, sender_type, prof_id,
+          professionals(full_name, profile_picture, username)
+        `)
+        .eq('user_id', userId)
         .order('sent_at', { ascending: false });
 
       if (error) throw error;
-      if (!mensajes || mensajes.length === 0) {
+
+      if (!mensajes) {
         setConversaciones([]);
         return;
       }
 
-      // 2. Extraer los user_id únicos para buscar su información
-      const userIds = [...new Set(mensajes.map((m: any) => m.user_id))];
-
-      // 3. Buscar los datos de esos clientes
-      const { data: clientesData } = await supabase
-        .from('clientes')
-        .select('id, full_name, avatar_url')
-        .in('id', userIds);
-
-      const clientesMap = new Map();
-      if (clientesData) {
-        clientesData.forEach(c => clientesMap.set(c.id, c));
-      }
-
-      // 4. Armar las conversaciones agrupando por user_id
       const convsMap = new Map();
-      mensajes.forEach((m: any) => {
-        if (!convsMap.has(m.user_id)) {
-          const clienteInfo = clientesMap.get(m.user_id);
-          const nombreCli = clienteInfo?.full_name || 'Cliente';
+      mensajes.forEach(m => {
+        if (!convsMap.has(m.prof_id)) {
+          const prof = Array.isArray(m.professionals) ? m.professionals[0] : m.professionals;
+          const nombreProf = prof?.full_name || prof?.username || 'Profesional';
           
-          convsMap.set(m.user_id, {
-            id: m.user_id,
-            nombre: nombreCli,
+          convsMap.set(m.prof_id, {
+            id: m.prof_id,
+            nombre: nombreProf,
             ultimoMensaje: m.message_text,
             hora: new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            noLeidos: (m.sender_type === 1 && !m.is_read) ? 1 : 0, 
-            avatar: clienteInfo?.avatar_url || null,
-            inicial: nombreCli.charAt(0).toUpperCase(),
+            noLeidos: (m.sender_type === 2 && !m.is_read) ? 1 : 0, 
+            avatar: prof?.profile_picture || null,
+            inicial: nombreProf.charAt(0).toUpperCase(),
             online: false 
           });
         }
@@ -77,7 +81,7 @@ export default function BandejaChatScreen() {
 
       setConversaciones(Array.from(convsMap.values()));
     } catch (err) {
-      console.log('Error cargando chats del profesionista:', err);
+      console.log('Error cargando chats:', err);
     } finally {
       setCargando(false);
     }
@@ -89,24 +93,27 @@ export default function BandejaChatScreen() {
 
   const irAlChat = (id: string, nombre: string, inicial: string) => {
     router.push({
-      pathname: '/(profesionista)/chat/[id]',
+      pathname: '/(cliente)/chat/[id]',
       params: { id, nombre, inicial }
     } as any);
   };
 
   return (
     <View style={styles.root}>
+      <NavbarCliente />
+
       <View style={styles.body}>
         <View style={styles.sidebar}>
           <View style={styles.sidebarHeader}>
-            <Text style={styles.sidebarTitle}>{t('chatMenu') || 'Mensajes'}</Text>
+            <Text style={styles.sidebarTitle}>Messages</Text>
+            <Pressable><Ionicons name="create-outline" size={20} color={Colors.primary[600]} /></Pressable>
           </View>
 
           <View style={styles.searchWrap}>
             <Ionicons name="search-outline" size={15} color={Colors.text.disabled} />
             <TextInput 
               style={styles.searchInput} 
-              placeholder={t('buscarChat') || 'Buscar conversaciones...'}
+              placeholder="Search conversations" 
               placeholderTextColor={Colors.text.disabled} 
               value={busqueda} 
               onChangeText={setBusqueda} 
@@ -116,9 +123,7 @@ export default function BandejaChatScreen() {
           {cargando ? (
             <ActivityIndicator style={{ marginTop: 40 }} size="large" color={Colors.primary[600]} />
           ) : conversaciones.length === 0 ? (
-            <Text style={{ textAlign: 'center', marginTop: 40, color: Colors.text.disabled }}>
-              No tienes mensajes de clientes.
-            </Text>
+            <Text style={{ textAlign: 'center', marginTop: 40, color: Colors.text.disabled }}>No tienes conversaciones aún.</Text>
           ) : (
             <FlatList
               data={convFiltradas}
@@ -160,6 +165,18 @@ export default function BandejaChatScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.neutral[100] },
+  navbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.primary[600], paddingHorizontal: Spacing[5], paddingVertical: Spacing[3], height: 56 },
+  navBrand:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  navLogo:     { width: 32, height: 32 },
+  navLogoText: { ...Typography.styles.h5, color: '#fff' },
+  navLinks:    { flexDirection: 'row', gap: Spacing[5], display: 'flex' },
+  navLink:     { ...Typography.styles.body, color: 'rgba(255,255,255,0.75)' },
+  navLinkActive: { ...Typography.styles.body, color: '#fff', fontWeight: '700' },
+  navRight:    { flexDirection: 'row', alignItems: 'center', gap: Spacing[3] },
+  navAvatar:   { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.primary[400], alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)' },
+  navAvatarTxt:{ ...Typography.styles.label, color: '#fff', fontSize: 13 },
+  navUserName: { ...Typography.styles.body, color: '#fff', fontWeight: '600' },
+
   body: { flex: 1, alignItems: 'center' },
   sidebar: { width: '100%', maxWidth: 800, flex: 1, backgroundColor: Colors.background.card, alignSelf: 'center', borderLeftWidth: 1, borderRightWidth: 1, borderColor: Colors.border.default },
   sidebarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing[4], paddingVertical: Spacing[4], borderBottomWidth: 1, borderBottomColor: Colors.border.default },

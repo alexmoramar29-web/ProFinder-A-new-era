@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import NavbarCliente from '../../../components/NavbarCliente';
 
 export default function EditarPerfilClienteScreen() {
   const router = useRouter();
@@ -99,31 +100,34 @@ export default function EditarPerfilClienteScreen() {
   if (cargando) return <View style={styles.centro}><ActivityIndicator size="large" /></View>;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity onPress={seleccionarImagen} style={styles.fotoContainer}>
-        <Image source={{ uri: fotoPerfil?.uri || 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }} style={styles.foto} />
-        <Text style={styles.textoCambiarFoto}>Cambiar Foto</Text>
-      </TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      <NavbarCliente />
+      <ScrollView contentContainerStyle={styles.container}>
+        <TouchableOpacity onPress={seleccionarImagen} style={styles.fotoContainer}>
+          <Image source={{ uri: fotoPerfil?.uri || 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }} style={styles.foto} />
+          <Text style={styles.textoCambiarFoto}>Cambiar Foto</Text>
+        </TouchableOpacity>
 
-      <Text style={styles.label}>Nombre</Text>
-      <TextInput style={styles.input} value={fullName} onChangeText={setFullName} />
-      
-      <Text style={styles.label}>Usuario</Text>
-      <TextInput style={styles.input} value={username} onChangeText={setUsername} />
-      
-      <Text style={styles.label}>Teléfono</Text>
-      <TextInput style={styles.input} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+        <Text style={styles.label}>Nombre</Text>
+        <TextInput style={styles.input} value={fullName} onChangeText={setFullName} />
+        
+        <Text style={styles.label}>Usuario</Text>
+        <TextInput style={styles.input} value={username} onChangeText={setUsername} />
+        
+        <Text style={styles.label}>Teléfono</Text>
+        <TextInput style={styles.input} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
 
-      <TouchableOpacity style={styles.botonGuardar} onPress={handleGuardar} disabled={guardando}>
-        <Text style={styles.textoBotonGuardar}>{guardando ? 'Guardando...' : 'Guardar'}</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity style={styles.botonGuardar} onPress={handleGuardar} disabled={guardando}>
+          <Text style={styles.textoBotonGuardar}>{guardando ? 'Guardando...' : 'Guardar'}</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   centro: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  container: { padding: 20 },
+  container: { padding: 20, maxWidth: 600, width: '100%', alignSelf: 'center' },
   fotoContainer: { alignSelf: 'center', marginBottom: 20, alignItems: 'center' },
   foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#eee' },
   textoCambiarFoto: { color: '#007bff', marginTop: 10, fontWeight: 'bold' },

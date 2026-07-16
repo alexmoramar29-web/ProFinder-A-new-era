@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { Image, LayoutAnimation, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, UIManager, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
+import NavbarCliente from '../../../components/NavbarCliente';
 
 // Habilitar animación para Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -41,35 +42,7 @@ export default function AyudaScreen() {
   return (
     <View style={styles.container}>
       {/* NAVBAR */}
-      <View style={styles.navbar}>
-        <Text style={styles.navbarTitle}>Ayuda</Text>
-        <View style={styles.rightHeaderContainer}>
-          <TouchableOpacity onPress={() => router.push('/(cliente)/perfil' as any)}>
-            <Image source={{ uri: avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png' }} style={styles.profileCircle} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setMenuVisible(true)} style={{ marginLeft: 15 }}>
-            <Text style={{ fontSize: 24, color: '#fff' }}>☰</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* MODAL MENÚ */}
-      <Modal visible={menuVisible} transparent={true} animationType="fade">
-        <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
-          <View style={styles.overlay} />
-        </TouchableWithoutFeedback>
-        <View style={styles.sideMenu}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); router.push('/(cliente)' as any); }}><Text style={styles.menuText}>Inicio</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); router.push('/(cliente)/chat' as any); }}><Text style={styles.menuText}>Chat</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); router.push('/(cliente)/perfil' as any); }}><Text style={styles.menuText}>Mi Perfil</Text></TouchableOpacity>
-          <TouchableOpacity style={[styles.menuItem, { marginTop: 10 }]} onPress={() => { setMenuVisible(false); router.push('/(cliente)/configuracion' as any); }}><Text style={styles.menuText}>Configuración</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); router.push('/(cliente)/ayuda' as any); }}><Text style={styles.menuText}>Ayuda</Text></TouchableOpacity>
-          <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 20 }} />
-          <TouchableOpacity style={styles.menuItem} onPress={async () => { await supabase.auth.signOut(); router.replace('/login' as any); }}>
-            <Text style={[styles.menuText, { color: 'red', fontWeight: 'bold' }]}>Cerrar Sesión</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+      <NavbarCliente />
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.tarjetaSoporte}>

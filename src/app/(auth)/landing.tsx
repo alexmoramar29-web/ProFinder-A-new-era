@@ -26,28 +26,70 @@ export default function LandingScreen() {
   const router    = useRouter();
   const scrollRef = useRef<ScrollView>(null);
 
-  // ── Guardián de sesión ──────────────────────────────────────
-  // Si ya hay sesión activa, redirige directo sin mostrar la landing
+  // ── Guardián de sesión inteligente ─────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) return; // Sin sesión → quedarse en landing
 
       const userId = session.user.id;
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      const lastPortal = await AsyncStorage.getItem('last_portal');
 
-      // ¿Es cliente?
-      const { data: cliente } = await supabase
-        .from('users')
-        .select('user_id')
-        .eq('user_id', userId)
-        .maybeSingle();
+      const pendingPortal = await AsyncStorage.getItem('pending_oauth_portal');
+      if (pendingPortal) {
+        // Están a mitad de un flujo OAuth. No interrumpir, enviarlos a sign-in.
+        router.replace('/(auth)/sign-in');
+        return;
+      }
 
-      if (cliente) {
+      // 1. Si tienen una preferencia explícita y existen en esa base de datos
+      if (lastPortal === 'profesionista') {
+        const { data: prof } = await supabase.from('professionals').select('prof_id').eq('prof_id', userId).maybeSingle();
+        if (prof) { router.replace('/(profesionista)'); return; }
+      }
+      if (lastPortal === 'cliente') {
+        const { data: cliente } = await supabase.from('users').select('user_id').eq('user_id', userId).maybeSingle();
+        if (cliente) { router.replace('/(cliente)'); return; }
+      }
+
+      // 2. Si vienen de confirmar su correo (tienen rol_temporal en metadata)
+      const rolOriginal = session.user.user_metadata?.rol_temporal;
+      if (rolOriginal === 'profesionista') {
+        // Redirigir a sign-in para que la lógica termine de crear su perfil si no existe
+        const { data: profFallback } = await supabase.from('professionals').select('prof_id').eq('prof_id', userId).maybeSingle();
+        if (!profFallback) {
+          await AsyncStorage.setItem('pending_oauth_portal', 'profesionista');
+          await AsyncStorage.setItem('pending_oauth_provider', session.user.app_metadata?.provider || 'email');
+          router.replace('/(auth)/sign-in');
+          return;
+        }
+        router.replace('/(profesionista)');
+        return;
+      }
+
+      if (rolOriginal === 'cliente') {
+        const { data: clienteFallback } = await supabase.from('users').select('user_id').eq('user_id', userId).maybeSingle();
+        if (!clienteFallback) {
+          await AsyncStorage.setItem('pending_oauth_portal', 'cliente');
+          await AsyncStorage.setItem('pending_oauth_provider', session.user.app_metadata?.provider || 'email');
+          router.replace('/(auth)/sign-in');
+          return;
+        }
         router.replace('/(cliente)');
         return;
       }
 
-      // ¿Es profesionista?
-      router.replace('/(profesionista)');
+      // 3. Fallback genérico si ya tienen cuenta
+      const { data: isClient } = await supabase.from('users').select('user_id').eq('user_id', userId).maybeSingle();
+      if (isClient) { router.replace('/(cliente)'); return; }
+      
+      const { data: isProf } = await supabase.from('professionals').select('prof_id').eq('prof_id', userId).maybeSingle();
+      if (isProf) { router.replace('/(profesionista)'); return; }
+
+      // 4. Si tienen sesión pero no existen en la BD, es porque Supabase los redirigió aquí por error
+      // (falla de Redirect URL permitida). Los mandamos a sign-in para que se complete el registro.
+      await AsyncStorage.setItem('pending_oauth_provider', session.user.app_metadata?.provider || 'email');
+      router.replace('/(auth)/sign-in');
     });
   }, []);
 

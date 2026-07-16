@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -39,20 +40,46 @@ export default function SignInScreen() {
   const [accionPendiente, setAccionPendiente] = useState<AccionPendiente>(null);
   const SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001';
 
-  // ── Toda la lógica original intacta ─────────────────────────
   useEffect(() => {
+    const limpiarFantasmas = async () => {
+      const pending = await AsyncStorage.getItem('pending_oauth_portal');
+      if (!pending) {
+        // Solo limpiamos fantasmas si NO estamos en medio de un flujo OAuth
+        if (Platform.OS === 'web' && window.location.hash.includes('access_token')) {
+          return; // Tampoco limpiar si apenas llegó el hash y no se ha leído
+        }
+        await supabase.auth.signOut();
+      }
+    };
+    limpiarFantasmas();
+
+    const procesarSiHayPendiente = async (sessionData: any) => {
+      const pendingPortal = await AsyncStorage.getItem('pending_oauth_portal');
+      const pendingProvider = await AsyncStorage.getItem('pending_oauth_provider');
+      if (pendingPortal && pendingProvider) {
+        setCargando(true);
+        await AsyncStorage.removeItem('pending_oauth_portal');
+        await AsyncStorage.removeItem('pending_oauth_provider');
+        try { await procesarUsuarioAutenticado(sessionData.user, pendingPortal, pendingProvider); }
+        catch (err: any) { setMensaje('Error de sincronización: ' + err.message); setTipoMensaje('error'); setCargando(false); }
+      }
+    };
+
     if (Platform.OS === 'web') {
+      // 1. Revisión manual
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        if (session?.user) {
+          const pendingPortal = await AsyncStorage.getItem('pending_oauth_portal');
+          if (pendingPortal) {
+            procesarSiHayPendiente(session);
+          }
+        }
+      });
+
+      // 2. Suscripción por si el evento ocurre después
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
-          const pendingPortal = await AsyncStorage.getItem('pending_oauth_portal');
-          const pendingProvider = await AsyncStorage.getItem('pending_oauth_provider');
-          if (pendingPortal && pendingProvider) {
-            setCargando(true);
-            await AsyncStorage.removeItem('pending_oauth_portal');
-            await AsyncStorage.removeItem('pending_oauth_provider');
-            try { await procesarUsuarioAutenticado(session.user, pendingPortal, pendingProvider); }
-            catch (err: any) { setMensaje('Error de sincronización: ' + err.message); setTipoMensaje('error'); setCargando(false); }
-          }
+          procesarSiHayPendiente(session);
         }
       });
       return () => { subscription.unsubscribe(); };
@@ -82,6 +109,7 @@ export default function SignInScreen() {
       } else if (!existeCliente.profile_picture && fotoDePerfil) {
         await supabase.from('users').update({ profile_picture: fotoDePerfil }).eq('user_id', idDelUsuario);
       }
+      await AsyncStorage.setItem('last_portal', 'cliente');
       router.replace('/(cliente)');
     } else {
       const { data: existeProf } = await supabase.from('professionals').select('prof_id, profile_picture').eq('prof_id', idDelUsuario).maybeSingle();
@@ -89,11 +117,13 @@ export default function SignInScreen() {
         const { error: insertError } = await supabase.from('professionals').insert([{ prof_id: idDelUsuario, username: nombreUsuarioGenerado, full_name: nombreCompleto, email: correo, profile_picture: fotoDePerfil, speciality: 'Por definir', year_experience: 0, password_hash: 'PROTEGIDO_POR_RED_SOCIAL' }]);
         if (insertError) throw new Error('No se pudo crear la cuenta de profesionista: ' + insertError.message);
         await supabase.from('social_logins').insert([{ user_id: idDelUsuario, provider: proveedor, provider_id: idDelUsuario }]);
+        await AsyncStorage.setItem('last_portal', 'profesionista');
         router.replace('/(profesionista)/perfil/editar');
         return;
       } else if (!existeProf.profile_picture && fotoDePerfil) {
         await supabase.from('professionals').update({ profile_picture: fotoDePerfil }).eq('prof_id', idDelUsuario);
       }
+      await AsyncStorage.setItem('last_portal', 'profesionista');
       router.replace('/(profesionista)');
     }
   };
@@ -101,37 +131,81 @@ export default function SignInScreen() {
   const ejecutarLoginSocial = async (proveedor: 'google' | 'github') => {
     setMensaje(''); setCargando(true); setMensaje('Conectando con ' + proveedor + '...'); setTipoMensaje('info');
     try {
+      await AsyncStorage.setItem('pending_oauth_portal', portal);
+      await AsyncStorage.setItem('pending_oauth_provider', proveedor);
+
       if (Platform.OS === 'web') {
-        await AsyncStorage.setItem('pending_oauth_portal', portal);
-        await AsyncStorage.setItem('pending_oauth_provider', proveedor);
-        const { error } = await supabase.auth.signInWithOAuth({ provider: proveedor, options: { redirectTo: window.location.origin + '/(auth)/sign-in', skipBrowserRedirect: false } });
+        const { error } = await supabase.auth.signInWithOAuth({ 
+          provider: proveedor, 
+          options: { 
+            redirectTo: window.location.origin + '/(auth)/sign-in',
+            queryParams: { prompt: 'consent select_account' } 
+          } 
+        });
         if (error) throw error;
         return;
       }
-      const urlDeRegreso = Linking.createURL('/(auth)/sign-in');
-      const { data, error } = await supabase.auth.signInWithOAuth({ provider: proveedor, options: { redirectTo: urlDeRegreso, skipBrowserRedirect: true } });
+      
+      // 1. Generamos la URL de retorno dinámica (Uso de AuthSession para cerrar la pestaña automáticamente)
+      const urlDeRegreso = AuthSession.makeRedirectUri({ path: 'auth-callback' });
+      console.log('URL de regreso móvil:', urlDeRegreso);
+      
+      // 2. Iniciamos el proceso OAuth con Supabase
+      const { data, error } = await supabase.auth.signInWithOAuth({ 
+        provider: proveedor, 
+        options: { 
+          redirectTo: urlDeRegreso, 
+          skipBrowserRedirect: true, 
+          queryParams: { prompt: 'consent select_account' } 
+        } 
+      });
       if (error) throw error;
+      
+      // 3. Abrimos el navegador interno del celular
       if (data?.url) {
         const resultado = await WebBrowser.openAuthSessionAsync(data.url, urlDeRegreso);
         if (Platform.OS === 'android') WebBrowser.dismissBrowser();
+        
+        // 4. Extraemos tokens si el usuario terminó el login
         if (resultado.type === 'success' && resultado.url) {
           setMensaje('Verificando llaves de seguridad...');
-          const stringParametros = resultado.url.split('#')[1] || resultado.url.split('?')[1];
-          if (!stringParametros) throw new Error('No se recibieron credenciales de la red social.');
-          const pares = stringParametros.split('&');
-          const tokens: any = {};
-          for (const par of pares) { const [llave, valor] = par.split('='); tokens[llave] = valor; }
-          if (!tokens.access_token || !tokens.refresh_token) throw new Error('Faltan los tokens de acceso en el regreso.');
-          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({ access_token: tokens.access_token, refresh_token: tokens.refresh_token });
+          
+          // Soporte tanto para parseo oficial como fallback manual para hash de Supabase
+          const parsedUrl = Linking.parse(resultado.url);
+          const paramsFromLinking = parsedUrl.queryParams || {};
+          
+          let accessToken = paramsFromLinking.access_token;
+          let refreshToken = paramsFromLinking.refresh_token;
+
+          if (!accessToken && resultado.url.includes('#')) {
+            const hashParams = new URLSearchParams(resultado.url.split('#')[1]);
+            accessToken = hashParams.get('access_token') || undefined;
+            refreshToken = hashParams.get('refresh_token') || undefined;
+          }
+
+          if (!accessToken || !refreshToken) {
+            throw new Error('Faltan los tokens de acceso en el regreso (OAuth fallido o incompleto).');
+          }
+          
+          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({ 
+            access_token: accessToken as string, 
+            refresh_token: refreshToken as string 
+          });
+          
           if (sessionError) throw sessionError;
           try { await procesarUsuarioAutenticado(sessionData.user, portal, proveedor); }
           catch (err: any) { setMensaje('Error de sincronización: ' + err.message); setTipoMensaje('error'); setCargando(false); }
+        } else {
+           setCargando(false);
         }
+      } else {
+          setCargando(false);
       }
     } catch (error: any) {
       setMensaje('Error: ' + (error.message || `No se pudo iniciar sesión con ${proveedor}`));
       setTipoMensaje('error');
-    } finally { setCargando(false); }
+      setCargando(false);
+    }
   };
 
   const ejecutarAccion = (accion: AccionPendiente, token: string) => {
@@ -179,26 +253,29 @@ export default function SignInScreen() {
       if (rolOriginal && rolOriginal !== portal) { await supabase.auth.signOut(); throw new Error(`Esta cuenta no está disponible, haz el intento en el otro portal.`); }
       if (portal === 'cliente') {
         const { data: existeCliente } = await supabase.from('users').select('user_id').eq('user_id', idDelUsuario).maybeSingle();
-        if (!existeCliente && metadatos.rol_temporal === 'cliente') {
+        if (!existeCliente) {
           setMensaje('Configurando tu nuevo perfil de cliente...');
-          const { error: dbError } = await supabase.from('users').insert([{ user_id: idDelUsuario, username: metadatos.username_temporal, full_name: metadatos.fullname_temporal, email: correoFinal, phone: metadatos.phone_temporal, password_hash: 'PROTEGIDO_POR_AUTH' }]);
+          const { error: dbError } = await supabase.from('users').insert([{ user_id: idDelUsuario, username: metadatos.username_temporal || correoFinal.split('@')[0], full_name: metadatos.fullname_temporal || 'Usuario', email: correoFinal, phone: metadatos.phone_temporal, password_hash: 'PROTEGIDO_POR_AUTH' }]);
           if (dbError) throw new Error('No se pudo crear el perfil en la base de datos.');
         }
+        await AsyncStorage.setItem('last_portal', 'cliente');
         router.replace('/(cliente)');
       } else {
         const { data: existeProf } = await supabase.from('professionals').select('prof_id').eq('prof_id', idDelUsuario).maybeSingle();
-        if (!existeProf && metadatos.rol_temporal === 'profesionista') {
+        if (!existeProf) {
           setMensaje('Configurando tu nuevo perfil profesional...');
-          const { error: profError } = await supabase.from('professionals').insert([{ prof_id: idDelUsuario, username: metadatos.username_temporal, full_name: metadatos.fullname_temporal, email: correoFinal, phone: metadatos.phone_temporal, speciality: metadatos.speciality_temporal, password_hash: 'PROTEGIDO_POR_AUTH' }]);
+          const { error: profError } = await supabase.from('professionals').insert([{ prof_id: idDelUsuario, username: metadatos.username_temporal || correoFinal.split('@')[0], full_name: metadatos.fullname_temporal || 'Usuario', email: correoFinal, phone: metadatos.phone_temporal, speciality: metadatos.speciality_temporal || 'Por definir', password_hash: 'PROTEGIDO_POR_AUTH' }]);
           if (profError) throw new Error('No se pudo guardar tus datos.');
           setMensaje('Vinculando documentos de seguridad...');
-          const { error: docsError } = await supabase.from('professional_documents').insert([
-            { prof_id: idDelUsuario, document_type: 'INE', file_url: metadatos.ine_temporal },
-            { prof_id: idDelUsuario, document_type: 'Cédula Profesional', file_url: metadatos.cedula_temporal },
-            { prof_id: idDelUsuario, document_type: 'Certificado', file_url: metadatos.certificado_temporal }
-          ]);
-          if (docsError) throw new Error('Fallo al asociar los enlaces.');
+          const docs = [];
+          if (metadatos.ine_temporal) docs.push({ prof_id: idDelUsuario, document_type: 'INE', file_url: metadatos.ine_temporal });
+          if (metadatos.cedula_temporal) docs.push({ prof_id: idDelUsuario, document_type: 'Cédula Profesional', file_url: metadatos.cedula_temporal });
+          if (metadatos.certificado_temporal) docs.push({ prof_id: idDelUsuario, document_type: 'Certificado', file_url: metadatos.certificado_temporal });
+          if (docs.length > 0) {
+            await supabase.from('professional_documents').insert(docs);
+          }
         }
+        await AsyncStorage.setItem('last_portal', 'profesionista');
         router.replace('/(profesionista)');
       }
     } catch (error: any) {
