@@ -158,6 +158,8 @@ export default function ClienteLayout() {
         <Drawer.Screen name="perfil/editar" options={{ drawerItemStyle: { display: 'none' } }} />
         <Drawer.Screen name="chat/[id]" options={{ drawerItemStyle: { display: 'none' }, headerShown: false }} />
         <Drawer.Screen name="servicios/[id]" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="profesionista/[id]" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="agendar/[id]" options={{ drawerItemStyle: { display: 'none' } }} />
         <Drawer.Screen name="configuracion/index" options={{ drawerItemStyle: { display: 'none' } }} />
         <Drawer.Screen name="ayuda/index" options={{ drawerItemStyle: { display: 'none' } }} />
       </Drawer>

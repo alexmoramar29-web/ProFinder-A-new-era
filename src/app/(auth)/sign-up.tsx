@@ -14,6 +14,8 @@ import { supabase } from '../../lib/supabase';
 import { Colors } from '../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../theme/Spacing';
 import { Typography } from '../../theme/Typography';
+import LegalModal from '../../components/LegalModal';
+import { LEGAL_TEXTS } from '../../constants/LegalTexts';
 
 let HCaptchaWeb: any;
 if (Platform.OS === 'web') {
@@ -42,6 +44,10 @@ export default function SignUpScreen() {
   const [mostrarPass, setMostrarPass] = useState(false);
   const [mostrarConfirm, setMostrarConfirm] = useState(false);
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  
+  // Estado para los modales legales
+  const [modalLegal, setModalLegal] = useState<{ visible: boolean; tipo: 'terminos' | 'privacidad' | null }>({ visible: false, tipo: null });
+  
   const captchaRef = useRef<any>(null);
   const SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001';
 
@@ -85,6 +91,7 @@ export default function SignUpScreen() {
     if (password.length < 8) return setMensajeError('Contrasena debil: Debe tener minimo 8 caracteres.');
     if (password !== confirmPassword) return setMensajeError('Las contrasenas no coinciden: Escribe exactamente lo mismo en ambas cajas.');
     if (rol === 'profesionista' && (!ineDoc || !cedulaDoc || !certificadoDoc)) return setMensajeError('Documentos incompletos: Sube los archivos PDF de tu INE, Cedula y Certificado.');
+    if (!aceptaTerminos) return setMensajeError('Debes aceptar los Términos y Condiciones y el Aviso de Privacidad para continuar.');
     if (process.env.EXPO_PUBLIC_TEST_MODE === 'true') { ejecutarRegistro('dummy-token-para-pruebas'); return; }
     if (Platform.OS === 'web') captchaRef.current?.execute();
     else captchaRef.current?.show();
@@ -270,14 +277,30 @@ export default function SignUpScreen() {
           )}
 
           {/* Términos y condiciones */}
-          <Pressable style={styles.terminosRow} onPress={() => setAceptaTerminos(v => !v)}>
-            <View style={[styles.checkbox, aceptaTerminos && styles.checkboxOn]}>
-              {aceptaTerminos && <Ionicons name="checkmark" size={11} color="#fff" />}
-            </View>
-            <Text style={styles.terminosTxt}>
-              Acepto los <Text style={styles.terminosLink}>Términos y Condiciones</Text> y la <Text style={styles.terminosLink}>Política de Privacidad</Text> de ProFinder.
+          <View style={styles.terminosRow}>
+            <Pressable style={styles.checkboxContainer} onPress={() => setAceptaTerminos(v => !v)}>
+              <View style={[styles.checkbox, aceptaTerminos && styles.checkboxOn]}>
+                {aceptaTerminos && <Ionicons name="checkmark" size={11} color="#fff" />}
+              </View>
+            </Pressable>
+            <Text style={styles.terminosTxt} onPress={() => setAceptaTerminos(v => !v)}>
+              Acepto los{' '}
+              <Text 
+                style={styles.terminosLink} 
+                onPress={(e) => { e.stopPropagation(); setModalLegal({ visible: true, tipo: 'terminos' }); }}
+              >
+                Términos y Condiciones
+              </Text>{' '}
+              y el{' '}
+              <Text 
+                style={styles.terminosLink} 
+                onPress={(e) => { e.stopPropagation(); setModalLegal({ visible: true, tipo: 'privacidad' }); }}
+              >
+                Aviso de Privacidad
+              </Text>{' '}
+              de ProFinder.
             </Text>
-          </Pressable>
+          </View>
 
           {/* Mensajes */}
           {mensajeError !== '' && (
@@ -329,6 +352,20 @@ export default function SignUpScreen() {
 
         <Text style={styles.footer}>© 2024 ProFinder. Connecting visionaries with experts.</Text>
       </ScrollView>
+
+      {/* Modal de Textos Legales movido fuera del ScrollView para que sea fijo */}
+      <LegalModal
+        visible={modalLegal.visible}
+        titulo={modalLegal.tipo === 'terminos' ? 'Términos y Condiciones' : 'Aviso de Privacidad'}
+        contenido={
+          modalLegal.tipo === 'terminos' 
+            ? LEGAL_TEXTS[rol].terminos 
+            : modalLegal.tipo === 'privacidad' 
+              ? LEGAL_TEXTS[rol].privacidad 
+              : ''
+        }
+        onClose={() => setModalLegal({ visible: false, tipo: null })}
+      />
     </LinearGradient>
   );
 }
@@ -395,10 +432,11 @@ const styles = StyleSheet.create({
 
   // Términos
   terminosRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: Spacing[4] },
-  checkbox:    { width: 16, height: 16, borderRadius: 4, borderWidth: 1.5, borderColor: Colors.border.default, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  checkboxContainer: { padding: 4, marginLeft: -4 },
+  checkbox:    { width: 16, height: 16, borderRadius: 4, borderWidth: 1.5, borderColor: Colors.border.default, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   checkboxOn:  { backgroundColor: Colors.primary[600], borderColor: Colors.primary[600] },
-  terminosTxt: { ...Typography.styles.bodySm, color: Colors.text.secondary, flex: 1, lineHeight: 18 },
-  terminosLink:{ color: Colors.primary[600], fontWeight: '600' },
+  terminosTxt: { ...Typography.styles.bodySm, color: Colors.text.secondary, flex: 1, lineHeight: 22, marginTop: 1 },
+  terminosLink:{ color: Colors.primary[600], fontWeight: '600', textDecorationLine: 'underline' },
 
   // Mensajes
   errorBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.error.light, borderRadius: Radius.md, padding: Spacing[3], marginBottom: Spacing[3] },

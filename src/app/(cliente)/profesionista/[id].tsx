@@ -128,6 +128,11 @@ export default function PerfilProfesionistaScreen() {
             <Ionicons name="chatbubbles-outline" size={22} color="#fff" />
             <Text style={styles.chatBtnTxt}>Enviar Mensaje</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity style={styles.agendarBtn} onPress={() => router.push(`/(cliente)/agendar/${profesional.prof_id}` as any)}>
+            <Ionicons name="calendar-outline" size={22} color={Colors.primary[700]} />
+            <Text style={styles.agendarBtnTxt}>Agendar Cita</Text>
+          </TouchableOpacity>
         </View>
         </View>
       </ScrollView>
@@ -166,6 +171,9 @@ const styles = StyleSheet.create({
   sectionTitle: { ...Typography.styles.h5, color: Colors.text.primary, marginBottom: Spacing[3] },
   desc: { ...Typography.styles.body, color: Colors.text.secondary, lineHeight: 22, marginBottom: Spacing[6] },
 
-  chatBtn: { flexDirection: 'row', backgroundColor: Colors.primary[600], paddingVertical: 14, borderRadius: Radius.button, justifyContent: 'center', alignItems: 'center', ...Shadow.brand, gap: 10 },
-  chatBtnTxt: { ...Typography.styles.btn, color: '#fff', fontSize: 16 }
+  chatBtn: { flexDirection: 'row', backgroundColor: Colors.primary[600], paddingVertical: 14, borderRadius: Radius.button, justifyContent: 'center', alignItems: 'center', ...Shadow.brand, gap: 10, marginBottom: Spacing[3] },
+  chatBtnTxt: { ...Typography.styles.btn, color: '#fff', fontSize: 16 },
+
+  agendarBtn: { flexDirection: 'row', backgroundColor: Colors.primary[100], paddingVertical: 14, borderRadius: Radius.button, justifyContent: 'center', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: Colors.primary[200] },
+  agendarBtnTxt: { ...Typography.styles.btn, color: Colors.primary[700], fontSize: 16 }
 });

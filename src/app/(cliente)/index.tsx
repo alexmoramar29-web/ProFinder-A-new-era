@@ -222,7 +222,7 @@ export default function ClienteDashboard() {
                         )}
                       </View>
                       <Pressable style={styles.viewBtn} onPress={() => router.push(`/(cliente)/profesionista/${prof.prof_id}` as any)}>
-                        <Text style={styles.viewBtnTxt}>Ver Perfil</Text>
+                        <Text style={styles.viewBtnTxt}>Agendar / Ver más</Text>
                         <Ionicons name="arrow-forward" size={16} color="#fff" />
                       </Pressable>
                     </View>
