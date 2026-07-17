@@ -235,7 +235,7 @@ export default function ClienteDashboard() {
           )}
 
           {/* ── RESULTADOS ── */}
-          <View style={[styles.cardsCol, { flex: 1 }]}>
+          <View style={[styles.cardsCol, !isMobile && { flex: 1 }]}>
             <View style={styles.resultsHeader}>
               <Text style={styles.resultsTitle}>
                 {buscado && busqueda ? `Resultados para "${busqueda}"` : 'Profesionistas Disponibles'}
@@ -257,7 +257,7 @@ export default function ClienteDashboard() {
                 <Text style={styles.emptySubTxt}>Intenta con otros términos de búsqueda.</Text>
               </View>
             ) : (
-              <View style={[styles.cardsGrid, isMobile && { flexDirection: 'column' }]}>
+              <View style={[styles.cardsGrid, isMobile && { flexDirection: 'column', flexWrap: 'nowrap' }]}>
                 {resultadosProcesados.map(prof => (
                     <Pressable key={prof.prof_id} style={[styles.card, { width: isMobile ? '100%' : '48%', minWidth: isMobile ? 'auto' : 320, flex: isMobile ? 0 : 1 }]} onPress={() => router.push(`/(cliente)/profesionista/${prof.prof_id}` as any)}>
                       {/* Avatar Header */}
