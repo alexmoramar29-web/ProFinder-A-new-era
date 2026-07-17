@@ -240,10 +240,14 @@ export default function BuscarScreen() {
 
                   {/* Footer / Acción */}
                   <View style={styles.cardFooter}>
-                    <View>
-                      <Text style={styles.startingAt}>TARIFA DESDE</Text>
-                      <Text style={styles.precio}>${prof.precio}<Text style={styles.precioSub}>/hr</Text></Text>
-                    </View>
+                      <View>
+                        <Text style={styles.startingAt}>RESEÑAS</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Ionicons name="star" size={16} color="#F59E0B" />
+                          <Text style={styles.precio}>{prof.rating.toFixed(1)}</Text>
+                          <Text style={styles.precioSub}>(12)</Text>
+                        </View>
+                      </View>
                     <View style={styles.viewBtn}>
                       <Text style={styles.viewBtnTxt}>Ver Perfil</Text>
                       <Ionicons name="arrow-forward" size={16} color="#fff" />

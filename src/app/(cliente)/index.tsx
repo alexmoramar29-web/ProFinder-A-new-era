@@ -1,14 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import NavbarCliente from '../../components/NavbarCliente';
+import MapaWeb from '../../components/shared/MapaWeb';
 import { supabase } from '../../lib/supabase';
 import { Colors } from '../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../theme/Spacing';
 import { Typography } from '../../theme/Typography';
 
-const RATINGS_OPTS = ['3+', '4+', '4.5+'];
+const RATINGS_OPTS = ['1+', '2+', '3+', '4+', '4.5+'];
 
 export default function ClienteDashboard() {
   const router = useRouter();
@@ -17,16 +19,31 @@ export default function ClienteDashboard() {
 
   const [busqueda, setBusqueda] = useState('');
   const [ubicacion, setUbicacion] = useState('');
-  const [ratingMin, setRatingMin] = useState('3+');
+  const [ratingMin, setRatingMin] = useState('');
   const [buscado, setBuscado] = useState(false);
   const [resultados, setResultados] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [miUbicacion, setMiUbicacion] = useState<any>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          setMiUbicacion({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+        }
+      } catch (e) {
+        // Ignorar si el usuario deniega o falla
+      }
+    })();
+  }, []);
 
   const buscarProfesionales = async (termino: string) => {
     try {
       setCargando(true);
       setBuscado(true);
-      let query = supabase.from('professionals').select('*');
+      let query = supabase.from('professionals').select('*, services(reviews(rating))');
 
       if (termino.trim()) {
         query = query.or(`speciality.ilike.%${termino}%,full_name.ilike.%${termino}%,profile_description.ilike.%${termino}%`);
@@ -52,6 +69,62 @@ export default function ClienteDashboard() {
     await AsyncStorage.removeItem('last_portal');
     router.replace('/(auth)/sign-in' as any);
   };
+
+  const resultadosProcesados = resultados.map(prof => {
+    let totalRating = 0;
+    let reviewCount = 0;
+    if (prof.services) {
+      prof.services.forEach((s: any) => {
+        if (s.reviews) {
+          s.reviews.forEach((r: any) => {
+            totalRating += r.rating;
+            reviewCount++;
+          });
+        }
+      });
+    }
+    const avgRating = reviewCount > 0 ? Number((totalRating / reviewCount).toFixed(1)) : 0;
+    return { ...prof, avgRating, reviewCount };
+  }).filter(prof => {
+    if (ubicacion.trim()) {
+      const ubiNorm = ubicacion.toLowerCase().trim();
+      const addrNorm = (prof.address || '').toLowerCase();
+      if (!addrNorm.includes(ubiNorm)) return false;
+    }
+    if (ratingMin === '4.5+' && prof.avgRating < 4.5) return false;
+    if (ratingMin === '4+' && prof.avgRating < 4) return false;
+    if (ratingMin === '3+' && prof.avgRating < 3) return false;
+    if (ratingMin === '2+' && prof.avgRating < 2) return false;
+    if (ratingMin === '1+' && prof.avgRating < 1) return false;
+    return true;
+  });
+
+  const marcadores = resultadosProcesados
+    .filter(p => p.latitude != null && p.longitude != null)
+    .map(p => ({
+      id: p.prof_id,
+      latitude: parseFloat(p.latitude as any),
+      longitude: parseFloat(p.longitude as any),
+      title: p.full_name,
+      color: 'morado' as any
+    }))
+    .filter(p => !isNaN(p.latitude) && !isNaN(p.longitude));
+
+  if (miUbicacion) {
+    marcadores.push({
+      id: 'mi-ubicacion',
+      latitude: miUbicacion.latitude,
+      longitude: miUbicacion.longitude,
+      title: 'Tú estás aquí',
+      color: 'plateado' as any
+    });
+  }
+
+  let latSum = 0, lonSum = 0;
+  marcadores.forEach(m => { latSum += m.latitude; lonSum += m.longitude; });
+  const centroMapa = marcadores.length > 0
+    ? { latitude: latSum / marcadores.length, longitude: lonSum / marcadores.length }
+    : { latitude: 23.6345, longitude: -102.5528 }; // Centro de México default
 
   return (
     <View style={styles.root}>
@@ -104,7 +177,7 @@ export default function ClienteDashboard() {
                     <Text style={[styles.ratingChipTxtMobile, ratingMin === r && styles.ratingChipTxtOnMobile]}>{r}★</Text>
                   </Pressable>
                 ))}
-                <Pressable onPress={() => { setRatingMin('3+'); setUbicacion(''); buscarProfesionales(busqueda); }} style={styles.filterResetBtnMobile}>
+                <Pressable onPress={() => { setRatingMin(''); setUbicacion(''); buscarProfesionales(busqueda); }} style={styles.filterResetBtnMobile}>
                    <Text style={styles.filterResetTxtMobile}>Limpiar</Text>
                 </Pressable>
               </ScrollView>
@@ -113,7 +186,7 @@ export default function ClienteDashboard() {
             <View style={[styles.filtersPanel, { width: 280 }]}>
               <View style={styles.filterHeader}>
                 <Text style={styles.filterTitle}>Filtros</Text>
-                <Pressable onPress={() => { setRatingMin('3+'); setUbicacion(''); buscarProfesionales(busqueda); }}>
+                <Pressable onPress={() => { setRatingMin(''); setUbicacion(''); buscarProfesionales(busqueda); }}>
                   <Text style={styles.filterReset}>Limpiar</Text>
                 </Pressable>
               </View>
@@ -144,10 +217,20 @@ export default function ClienteDashboard() {
                 </View>
               </View>
 
-              <Pressable style={styles.logoutBtn} onPress={handleLogout}>
-                <Ionicons name="log-out-outline" size={18} color={Colors.error.main} />
-                <Text style={styles.logoutTxt}>Cerrar sesión</Text>
-              </Pressable>
+            </View>
+          )}
+
+          {/* ── MAPA PARA MÓVIL ── */}
+          {isMobile && (
+            <View style={{ width: '100%', paddingHorizontal: 16, marginBottom: 16 }}>
+              <View style={{ height: 350, borderRadius: 20, overflow: 'hidden', ...Shadow.md }}>
+                <MapaWeb 
+                  coordenadas={centroMapa} 
+                  marcadores={marcadores} 
+                  height={350} 
+                  onMarkerPress={(id) => router.push(`/(cliente)/profesionista/${id}` as any)}
+                />
+              </View>
             </View>
           )}
 
@@ -158,7 +241,7 @@ export default function ClienteDashboard() {
                 {buscado && busqueda ? `Resultados para "${busqueda}"` : 'Profesionistas Disponibles'}
               </Text>
               <Text style={styles.resultsCount}>
-                {cargando ? 'Buscando expertos...' : `Mostrando ${resultados.length} resultado${resultados.length !== 1 ? 's' : ''}`}
+                {cargando ? 'Buscando expertos...' : `Mostrando ${resultadosProcesados.length} resultado${resultadosProcesados.length !== 1 ? 's' : ''}`}
               </Text>
             </View>
 
@@ -167,17 +250,17 @@ export default function ClienteDashboard() {
                 <ActivityIndicator size="large" color={Colors.primary[600]} />
                 <Text style={styles.loadingTxt}>Encontrando a los mejores...</Text>
               </View>
-            ) : resultados.length === 0 ? (
+            ) : resultadosProcesados.length === 0 ? (
               <View style={styles.emptyWrap}>
                 <Ionicons name="search-outline" size={64} color={Colors.neutral[300]} />
                 <Text style={styles.emptyTxt}>No se encontraron profesionistas.</Text>
                 <Text style={styles.emptySubTxt}>Intenta con otros términos de búsqueda.</Text>
               </View>
             ) : (
-              <View style={styles.cardsGrid}>
-                {resultados.map(prof => (
-                  <Pressable key={prof.prof_id} style={[styles.card, { width: isMobile ? '100%' : '48%', minWidth: isMobile ? 'auto' : 320, flex: isMobile ? 0 : 1 }]} onPress={() => router.push(`/(cliente)/profesionista/${prof.prof_id}` as any)}>
-                    {/* Avatar Header */}
+              <View style={[styles.cardsGrid, isMobile && { flexDirection: 'column' }]}>
+                {resultadosProcesados.map(prof => (
+                    <Pressable key={prof.prof_id} style={[styles.card, { width: isMobile ? '100%' : '48%', minWidth: isMobile ? 'auto' : 320, flex: isMobile ? 0 : 1 }]} onPress={() => router.push(`/(cliente)/profesionista/${prof.prof_id}` as any)}>
+                      {/* Avatar Header */}
                     <View style={styles.cardHeader}>
                       <View style={styles.avatarContainer}>
                         {prof.profile_picture ? (
@@ -212,14 +295,12 @@ export default function ClienteDashboard() {
                     {/* Footer / Acción */}
                     <View style={styles.cardFooter}>
                       <View>
-                        {prof.hourly_rate != null ? (
-                          <>
-                            <Text style={styles.startingAt}>TARIFA DESDE</Text>
-                            <Text style={styles.precio}>${prof.hourly_rate}<Text style={styles.precioSub}>/hr</Text></Text>
-                          </>
-                        ) : (
-                          <Text style={styles.startingAt}>TARIFA A CONVENIR</Text>
-                        )}
+                        <Text style={styles.startingAt}>RESEÑAS</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Ionicons name="star" size={16} color="#F59E0B" />
+                          <Text style={styles.precio}>{prof.avgRating > 0 ? prof.avgRating : 'N/A'}</Text>
+                          <Text style={styles.precioSub}>({prof.reviewCount})</Text>
+                        </View>
                       </View>
                       <Pressable style={styles.viewBtn} onPress={() => router.push(`/(cliente)/profesionista/${prof.prof_id}` as any)}>
                         <Text style={styles.viewBtnTxt}>Agendar / Ver más</Text>
@@ -232,21 +313,16 @@ export default function ClienteDashboard() {
             )}
           </View>
 
-          {/* ── MAPA placeholder ── */}
+          {/* ── MAPA real ── */}
           {!isMobile && (
-            <View style={[styles.mapCol, { width: '30%' }]}>
-              <View style={styles.mapPlaceholder}>
-                {resultados.map((prof, i) => prof.latitude != null && (
-                  <View key={prof.prof_id} style={[styles.mapPin, { top: `${20 + i * 20}%` as any, left: `${30 + i * 15}%` as any }]}>
-                    <Ionicons name="location" size={32} color={Colors.primary[600]} />
-                    <View style={styles.mapPinDot} />
-                  </View>
-                ))}
-                <View style={styles.mapControls}>
-                  <Pressable style={styles.mapControlBtn}><Text style={styles.mapControlTxt}>+</Text></Pressable>
-                  <Pressable style={styles.mapControlBtn}><Text style={styles.mapControlTxt}>−</Text></Pressable>
-                  <Pressable style={styles.mapControlBtn}><Ionicons name="locate-outline" size={18} color={Colors.text.secondary} /></Pressable>
-                </View>
+            <View style={[styles.mapCol, { width: '30%', padding: Spacing[4], position: 'sticky' as any, top: 16, alignSelf: 'flex-start' }]}>
+              <View style={{ flex: 1, height: 600, borderRadius: 20, overflow: 'hidden', ...Shadow.md }}>
+                <MapaWeb 
+                  coordenadas={centroMapa} 
+                  marcadores={marcadores} 
+                  height={600} 
+                  onMarkerPress={(id) => router.push(`/(cliente)/profesionista/${id}` as any)}
+                />
               </View>
             </View>
           )}
