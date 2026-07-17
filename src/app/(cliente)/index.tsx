@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions, Modal, TouchableOpacity, Platform } from 'react-native';
 import NavbarCliente from '../../components/NavbarCliente';
 import MapaWeb from '../../components/shared/MapaWeb';
 import { supabase } from '../../lib/supabase';
@@ -15,15 +15,21 @@ const RATINGS_OPTS = ['1+', '2+', '3+', '4+', '4.5+'];
 export default function ClienteDashboard() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const isMobile = width < 768;
+  const isMobileLayout = width < 768;
+  const isTouchDevice = Platform.OS !== 'web' || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
+  const shouldUseModalMap = isMobileLayout && isTouchDevice;
+  const isMobile = isMobileLayout; // Alias for backward compatibility in the rest of the code
 
   const [busqueda, setBusqueda] = useState('');
   const [ubicacion, setUbicacion] = useState('');
   const [ratingMin, setRatingMin] = useState('');
+  const [distanciaMax, setDistanciaMax] = useState('');
+  const [soloVerificados, setSoloVerificados] = useState(false);
   const [buscado, setBuscado] = useState(false);
   const [resultados, setResultados] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   const [miUbicacion, setMiUbicacion] = useState<any>(null);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -70,6 +76,15 @@ export default function ClienteDashboard() {
     router.replace('/(auth)/sign-in' as any);
   };
 
+  const getDistanceFromLatLonInKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
   const resultadosProcesados = resultados.map(prof => {
     let totalRating = 0;
     let reviewCount = 0;
@@ -96,6 +111,22 @@ export default function ClienteDashboard() {
     if (ratingMin === '3+' && prof.avgRating < 3) return false;
     if (ratingMin === '2+' && prof.avgRating < 2) return false;
     if (ratingMin === '1+' && prof.avgRating < 1) return false;
+
+    if (soloVerificados) {
+      const estado = (prof.verification_status || '').toLowerCase();
+      const esAprobado = estado === 'verificado' || estado === 'aprobado' || estado === 'perfil aprobado';
+      if (!esAprobado) return false;
+    }
+
+    if (distanciaMax.trim() && !isNaN(Number(distanciaMax)) && miUbicacion && prof.latitude && prof.longitude) {
+      const maxKm = Number(distanciaMax);
+      const dist = getDistanceFromLatLonInKm(
+        miUbicacion.latitude, miUbicacion.longitude,
+        parseFloat(prof.latitude), parseFloat(prof.longitude)
+      );
+      if (dist > maxKm) return false;
+    }
+
     return true;
   });
 
@@ -106,6 +137,9 @@ export default function ClienteDashboard() {
       latitude: parseFloat(p.latitude as any),
       longitude: parseFloat(p.longitude as any),
       title: p.full_name,
+      subtitle: p.speciality,
+      rating: p.avgRating,
+      reviewCount: p.reviewCount,
       color: 'morado' as any
     }))
     .filter(p => !isNaN(p.latitude) && !isNaN(p.longitude));
@@ -115,16 +149,19 @@ export default function ClienteDashboard() {
       id: 'mi-ubicacion',
       latitude: miUbicacion.latitude,
       longitude: miUbicacion.longitude,
-      title: 'Tú estás aquí',
+      title: 'Mi Ubicación',
+      subtitle: 'Estás aquí',
       color: 'plateado' as any
     });
   }
 
   let latSum = 0, lonSum = 0;
   marcadores.forEach(m => { latSum += m.latitude; lonSum += m.longitude; });
-  const centroMapa = marcadores.length > 0
-    ? { latitude: latSum / marcadores.length, longitude: lonSum / marcadores.length }
-    : { latitude: 23.6345, longitude: -102.5528 }; // Centro de México default
+  const centroMapa = miUbicacion 
+    ? miUbicacion 
+    : marcadores.length > 0
+      ? { latitude: latSum / marcadores.length, longitude: lonSum / marcadores.length }
+      : { latitude: 23.6345, longitude: -102.5528 }; // Centro de México default
 
   return (
     <View style={styles.root}>
@@ -172,12 +209,26 @@ export default function ClienteDashboard() {
                     onSubmitEditing={() => buscarProfesionales(busqueda)}
                   />
                 </View>
+                <View style={styles.locBoxMobile}>
+                  <Ionicons name="navigate-outline" size={18} color={Colors.primary[600]} />
+                  <TextInput
+                    placeholder="Máx Km"
+                    placeholderTextColor={Colors.text.disabled}
+                    style={[styles.locInputMobile, { width: 70 }]}
+                    value={distanciaMax}
+                    onChangeText={setDistanciaMax}
+                    keyboardType="numeric"
+                  />
+                </View>
+                <Pressable style={[styles.ratingChipMobile, soloVerificados && styles.ratingChipOnMobile]} onPress={() => setSoloVerificados(!soloVerificados)}>
+                  <Text style={[styles.ratingChipTxtMobile, soloVerificados && styles.ratingChipTxtOnMobile]}>Verificados</Text>
+                </Pressable>
                 {RATINGS_OPTS.map(r => (
                   <Pressable key={r} style={[styles.ratingChipMobile, ratingMin === r && styles.ratingChipOnMobile]} onPress={() => setRatingMin(r)}>
                     <Text style={[styles.ratingChipTxtMobile, ratingMin === r && styles.ratingChipTxtOnMobile]}>{r}★</Text>
                   </Pressable>
                 ))}
-                <Pressable onPress={() => { setRatingMin(''); setUbicacion(''); buscarProfesionales(busqueda); }} style={styles.filterResetBtnMobile}>
+                <Pressable onPress={() => { setRatingMin(''); setUbicacion(''); setDistanciaMax(''); setSoloVerificados(false); buscarProfesionales(busqueda); }} style={styles.filterResetBtnMobile}>
                    <Text style={styles.filterResetTxtMobile}>Limpiar</Text>
                 </Pressable>
               </ScrollView>
@@ -186,7 +237,7 @@ export default function ClienteDashboard() {
             <View style={[styles.filtersPanel, { width: 280 }]}>
               <View style={styles.filterHeader}>
                 <Text style={styles.filterTitle}>Filtros</Text>
-                <Pressable onPress={() => { setRatingMin(''); setUbicacion(''); buscarProfesionales(busqueda); }}>
+                <Pressable onPress={() => { setRatingMin(''); setUbicacion(''); setDistanciaMax(''); setSoloVerificados(false); buscarProfesionales(busqueda); }}>
                   <Text style={styles.filterReset}>Limpiar</Text>
                 </Pressable>
               </View>
@@ -204,6 +255,28 @@ export default function ClienteDashboard() {
                     onSubmitEditing={() => buscarProfesionales(busqueda)}
                   />
                 </View>
+                <View style={[styles.locBox, { marginTop: 8 }]}>
+                  <Ionicons name="navigate-outline" size={16} color={Colors.primary[600]} />
+                  <TextInput
+                    placeholder="Distancia Máx (Km)"
+                    placeholderTextColor={Colors.text.disabled}
+                    style={styles.locInput}
+                    value={distanciaMax}
+                    onChangeText={setDistanciaMax}
+                    keyboardType="numeric"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.filterGroup}>
+                <Text style={styles.filterLabel}>VERIFICACIÓN</Text>
+                <Pressable 
+                  style={[styles.locBox, { backgroundColor: soloVerificados ? Colors.primary[50] : '#fff', borderColor: soloVerificados ? Colors.primary[400] : Colors.border.default }]} 
+                  onPress={() => setSoloVerificados(!soloVerificados)}
+                >
+                  <Ionicons name={soloVerificados ? "checkmark-circle" : "ellipse-outline"} size={16} color={soloVerificados ? Colors.primary[600] : Colors.text.disabled} />
+                  <Text style={{ marginLeft: 8, color: soloVerificados ? Colors.primary[700] : Colors.text.secondary }}>Solo Verificados</Text>
+                </Pressable>
               </View>
 
               <View style={styles.filterGroup}>
@@ -220,16 +293,30 @@ export default function ClienteDashboard() {
             </View>
           )}
 
-          {/* ── MAPA PARA MÓVIL ── */}
+          {/* ── MAPA PARA MÓVIL (PREVIEW) ── */}
           {isMobile && (
             <View style={{ width: '100%', paddingHorizontal: 16, marginBottom: 16 }}>
-              <View style={{ height: 350, borderRadius: 20, overflow: 'hidden', ...Shadow.md }}>
+              <View style={{ height: 350, borderRadius: 20, overflow: 'hidden', position: 'relative', ...Shadow.md }}>
                 <MapaWeb 
                   coordenadas={centroMapa} 
-                  marcadores={marcadores} 
-                  height={350} 
+                  marcadores={marcadores}
                   onMarkerPress={(id) => router.push(`/(cliente)/profesionista/${id}` as any)}
+                  height={350}
+                  readOnly={shouldUseModalMap}
+                  requireConfirmToNavigate={true}
                 />
+                {shouldUseModalMap && (
+                  <TouchableOpacity 
+                     style={styles.mapOverlayMobile}
+                     activeOpacity={0.8}
+                     onPress={() => setIsMapModalOpen(true)}
+                  >
+                     <View style={styles.mapOverlayBtn}>
+                       <Ionicons name="expand-outline" size={20} color="#fff" />
+                       <Text style={styles.mapOverlayBtnTxt}>Tocar para interactuar</Text>
+                     </View>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           )}
@@ -259,7 +346,7 @@ export default function ClienteDashboard() {
             ) : (
               <View style={[styles.cardsGrid, isMobile && { flexDirection: 'column', flexWrap: 'nowrap' }]}>
                 {resultadosProcesados.map(prof => (
-                    <Pressable key={prof.prof_id} style={[styles.card, { width: isMobile ? '100%' : '48%', minWidth: isMobile ? 'auto' : 320, flex: isMobile ? 0 : 1 }]} onPress={() => router.push(`/(cliente)/profesionista/${prof.prof_id}` as any)}>
+                    <Pressable key={prof.prof_id} style={[styles.card, { width: isMobile ? '100%' : '48%', minWidth: isMobile ? 'auto' : 320 }]} onPress={() => router.push(`/(cliente)/profesionista/${prof.prof_id}` as any)}>
                       {/* Avatar Header */}
                     <View style={styles.cardHeader}>
                       <View style={styles.avatarContainer}>
@@ -275,34 +362,39 @@ export default function ClienteDashboard() {
                       </View>
                       <View style={styles.cardHeaderInfo}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                          <Text style={styles.cardNombre} numberOfLines={1}>{prof.full_name}</Text>
-                          {prof.verification_status === 'verified' && (
+                          {(() => {
+                            const estado = (prof.verification_status || '').toLowerCase();
+                            return estado === 'verificado' || estado === 'aprobado' || estado === 'perfil aprobado';
+                          })() && (
                             <View style={styles.verifiedBadge}>
-                              <Ionicons name="checkmark-circle" size={12} color={Colors.success.dark} />
+                              <Ionicons name="checkmark-circle" size={12} color={Colors.primary[700]} />
                               <Text style={styles.verifiedTxt}>Verificado</Text>
                             </View>
                           )}
+                          <Text style={styles.cardNombre} numberOfLines={1}>{prof.full_name}</Text>
                         </View>
                         <Text style={styles.cardRol}>{prof.speciality}</Text>
                       </View>
                     </View>
 
                     {/* Desc */}
-                    {prof.profile_description && (
+                    {prof.profile_description ? (
                       <Text style={styles.cardDesc} numberOfLines={2}>{prof.profile_description}</Text>
-                    )}
+                    ) : null}
 
                     {/* Footer / Acción */}
-                    <View style={styles.cardFooter}>
-                      <View>
-                        <Text style={styles.startingAt}>RESEÑAS</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                          <Ionicons name="star" size={16} color="#F59E0B" />
-                          <Text style={styles.precio}>{prof.avgRating > 0 ? prof.avgRating : 'N/A'}</Text>
-                          <Text style={styles.precioSub}>({prof.reviewCount})</Text>
+                    <View style={[styles.cardFooter, isMobile && { flexDirection: 'column', alignItems: 'stretch', gap: 16 }]}>
+                      <View style={isMobile && { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <View>
+                          <Text style={styles.startingAt}>RESEÑAS</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Ionicons name="star" size={16} color="#F59E0B" />
+                            <Text style={styles.precio}>{prof.avgRating > 0 ? prof.avgRating : 'N/A'}</Text>
+                            <Text style={styles.precioSub}>({prof.reviewCount})</Text>
+                          </View>
                         </View>
                       </View>
-                      <Pressable style={styles.viewBtn} onPress={() => router.push(`/(cliente)/profesionista/${prof.prof_id}` as any)}>
+                      <Pressable style={[styles.viewBtn, isMobile && { justifyContent: 'center', height: 44 }]} onPress={() => router.push(`/(cliente)/profesionista/${prof.prof_id}` as any)}>
                         <Text style={styles.viewBtnTxt}>Agendar / Ver más</Text>
                         <Ionicons name="arrow-forward" size={16} color="#fff" />
                       </Pressable>
@@ -322,6 +414,7 @@ export default function ClienteDashboard() {
                   marcadores={marcadores} 
                   height={600} 
                   onMarkerPress={(id) => router.push(`/(cliente)/profesionista/${id}` as any)}
+                  requireConfirmToNavigate={true}
                 />
               </View>
             </View>
@@ -342,6 +435,33 @@ export default function ClienteDashboard() {
           <Text style={styles.footerCopy}>© 2024 ProFinder.</Text>
         </View>
       </ScrollView>
+
+      {/* ── MAPA MODAL (PANTALLA COMPLETA) ── */}
+      <Modal visible={isMapModalOpen} transparent={true} animationType="fade" onRequestClose={() => setIsMapModalOpen(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Mapa de Profesionistas</Text>
+              <TouchableOpacity onPress={() => setIsMapModalOpen(false)} style={styles.modalCloseBtn}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <View style={{ flex: 1 }}>
+              <MapaWeb 
+                coordenadas={centroMapa} 
+                marcadores={marcadores}
+                onMarkerPress={(id) => {
+                   setIsMapModalOpen(false);
+                   router.push(`/(cliente)/profesionista/${id}` as any);
+                }}
+                height="100%"
+                readOnly={false}
+                requireConfirmToNavigate={true}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -412,8 +532,8 @@ const styles = StyleSheet.create({
   cardHeaderInfo: { flex: 1 },
   cardNombre: { ...Typography.styles.h5, color: Colors.text.primary, fontWeight: '700', fontSize: 17 },
   cardRol: { ...Typography.styles.label, color: Colors.primary[600], fontSize: 13, marginTop: 2, fontWeight: '600' },
-  verifiedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.success.light, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
-  verifiedTxt: { ...Typography.styles.caption, color: Colors.success.dark, fontWeight: '700', fontSize: 10 },
+  verifiedBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primary[100], paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999, gap: 2 },
+  verifiedTxt: { ...Typography.styles.caption, color: Colors.primary[700], fontSize: 10, fontWeight: '600' },
   cardDesc: { ...Typography.styles.body, color: Colors.text.secondary, lineHeight: 22, fontSize: 14 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4, paddingTop: Spacing[4] },
   startingAt: { ...Typography.styles.overline, color: Colors.text.disabled, fontSize: 10, letterSpacing: 0.5, marginBottom: 2 },
@@ -421,6 +541,14 @@ const styles = StyleSheet.create({
   precioSub: { fontSize: 14, color: Colors.text.secondary, fontWeight: '500' },
   viewBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.primary[600], paddingHorizontal: 20, height: 40, borderRadius: 999, ...Shadow.brand },
   viewBtnTxt: { ...Typography.styles.btn, color: '#fff', fontSize: 13, fontWeight: '700' },
+  mapOverlayMobile: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.15)' },
+  mapOverlayBtn: { backgroundColor: Colors.primary[700], paddingHorizontal: 20, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 8, ...Shadow.lg },
+  mapOverlayBtnTxt: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 16 },
+  modalContent: { width: '100%', height: '85%', backgroundColor: '#fff', borderRadius: 24, overflow: 'hidden', ...Shadow.xl },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#eee', backgroundColor: '#fff' },
+  modalTitle: { ...Typography.styles.h5, color: Colors.text.primary },
+  modalCloseBtn: { padding: 4 },
 
   // Mapa
   mapCol: { backgroundColor: '#E5E7EB' },

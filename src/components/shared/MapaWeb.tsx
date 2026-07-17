@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Platform, StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Text, Platform, Linking } from 'react-native';
 
 // Si no estamos en web, usamos WebView
 let WebView: any = null;
@@ -24,7 +24,10 @@ if (Platform.OS === 'web' && typeof window !== 'undefined') {
   
   const style = document.createElement('style');
   style.type = 'text/css';
-  style.innerHTML = `@import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');`;
+  style.innerHTML = `
+    @import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+    .leaflet-container { touch-action: none !important; }
+  `;
   document.head.appendChild(style);
 
   iconoMorado = new L.Icon({
@@ -47,6 +50,9 @@ export interface Marcador {
   latitude: number;
   longitude: number;
   title?: string;
+  subtitle?: string;
+  rating?: number;
+  reviewCount?: number;
   color?: 'morado' | 'plateado';
 }
 
@@ -57,6 +63,7 @@ interface MapaWebProps {
   onMarkerPress?: (id: string) => void;
   height?: number | string;
   readOnly?: boolean;
+  requireConfirmToNavigate?: boolean;
 }
 
 // Componente dedicado SOLO a mover la cámara del mapa cuando las coordenadas cambian desde afuera
@@ -67,7 +74,7 @@ const ChangeView = ({ center }: { center: [number, number] }) => {
   // Solo movemos la cámara cuando las coordenadas REALMENTE cambiaron (no en cada re-render)
   if (center[0] !== prevRef.current[0] || center[1] !== prevRef.current[1]) {
     prevRef.current = center;
-    map.setView(center, 19); // Zoom 19 = máximo nivel de calle, se ven casas individuales
+    map.setView(center, 12); // Zoom 12 = nivel ciudad
   }
 
   return null;
@@ -85,9 +92,25 @@ const ClickHandler = ({ onSelect }: { onSelect: any }) => {
   return null;
 };
 
-export default function MapaWeb({ coordenadas, marcadores = [], onLocationSelect, onMarkerPress, height = 350, readOnly = false }: MapaWebProps) {
+export default function MapaWeb({ coordenadas, marcadores = [], onLocationSelect, onMarkerPress, height = 350, readOnly = false, requireConfirmToNavigate = false }: MapaWebProps) {
   const [mounted, setMounted] = useState(false);
   const webviewRef = useRef<any>(null);
+  const webContainerRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && webContainerRef.current) {
+      const stop = (e: any) => e.stopPropagation();
+      const node = webContainerRef.current;
+      node.addEventListener('touchstart', stop, { passive: false });
+      node.addEventListener('touchmove', stop, { passive: false });
+      node.addEventListener('wheel', stop, { passive: false });
+      return () => {
+        node.removeEventListener('touchstart', stop);
+        node.removeEventListener('touchmove', stop);
+        node.removeEventListener('wheel', stop);
+      };
+    }
+  }, [mounted]);
 
   useEffect(() => {
     setMounted(true);
@@ -113,7 +136,9 @@ export default function MapaWeb({ coordenadas, marcadores = [], onLocationSelect
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <style>
           body { padding: 0; margin: 0; }
-          html, body, #map { height: 100%; width: 100%; }
+          html, body { height: 100%; width: 100%; }
+          #map { width: 100%; height: 100%; touch-action: none !important; }
+          .leaflet-container { touch-action: none !important; }
         </style>
       </head>
       <body>
@@ -125,7 +150,7 @@ export default function MapaWeb({ coordenadas, marcadores = [], onLocationSelect
             scrollWheelZoom: ${!readOnly},
             doubleClickZoom: ${!readOnly},
             touchZoom: ${!readOnly}
-          }).setView([${coordenadas.latitude}, ${coordenadas.longitude}], 15);
+          }).setView([${coordenadas.latitude}, ${coordenadas.longitude}], 12);
           
           L.tileLayer('https://cartodb-basemaps-a.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
             maxZoom: 19,
@@ -150,10 +175,28 @@ export default function MapaWeb({ coordenadas, marcadores = [], onLocationSelect
           if (marcadores && marcadores.length > 0) {
             marcadores.forEach(function(m) {
               var mkr = L.marker([m.latitude, m.longitude], { icon: getIcon(m.color) }).addTo(map);
-              if (m.title) mkr.bindTooltip(m.title, { direction: 'top', offset: [0, -30] });
-              mkr.on('click', function() {
-                window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'marker_click', id: m.id }));
-              });
+              if (${requireConfirmToNavigate}) {
+                var popupHtml = '<div style="text-align: center; padding: 4px;">';
+                if (m.title) popupHtml += '<div style="font-weight: bold; font-size: 14px; color: #111827; margin-bottom: 2px;">' + m.title + '</div>';
+                if (m.subtitle) popupHtml += '<div style="font-size: 12px; color: #6B7280; margin-bottom: 4px;">' + m.subtitle + '</div>';
+                if (typeof m.rating === 'number') {
+                  var ratingTxt = m.rating > 0 ? '★ ' + m.rating + ' (' + m.reviewCount + ' reseñas)' : 'Nuevo (Sin reseñas)';
+                  popupHtml += '<div style="font-size: 12px; color: #f59e0b; margin-bottom: 8px;">' + ratingTxt + '</div>';
+                }
+                if (m.id !== 'mi-ubicacion') {
+                  popupHtml += '<div style="display: flex; gap: 8px;">';
+                  popupHtml += '<button onclick="window.ReactNativeWebView.postMessage(JSON.stringify({ type: \\'open_maps\\', lat: ' + m.latitude + ', lon: ' + m.longitude + ' }))" style="background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; padding: 6px 12px; border-radius: 999px; font-size: 12px; cursor: pointer; flex: 1;">Maps</button>';
+                  popupHtml += '<button onclick="window.ReactNativeWebView.postMessage(JSON.stringify({ type: \\'marker_click\\', id: \\'' + m.id + '\\' }))" style="background-color: #5c4b8a; color: white; border: none; padding: 6px 12px; border-radius: 999px; font-size: 12px; cursor: pointer; flex: 1;">Perfil</button>';
+                  popupHtml += '</div>';
+                }
+                popupHtml += '</div>';
+                mkr.bindPopup(popupHtml);
+              } else {
+                if (m.title) mkr.bindTooltip(m.title, { direction: 'top', offset: [0, -30] });
+                mkr.on('click', function() {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'marker_click', id: m.id }));
+                });
+              }
             });
           } else {
             var marker = L.marker([${coordenadas.latitude}, ${coordenadas.longitude}], { icon: getIcon('morado') }).addTo(map);
@@ -205,6 +248,8 @@ export default function MapaWeb({ coordenadas, marcadores = [], onLocationSelect
         const data = JSON.parse(event.nativeEvent.data);
         if (data.type === 'marker_click' && onMarkerPress) {
           onMarkerPress(data.id);
+        } else if (data.type === 'open_maps') {
+          Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${data.lat},${data.lon}`);
         } else if (data.type === 'map_click' && onLocationSelect && !readOnly) {
           onLocationSelect(data.lat, data.lon);
         } else if (data.lat && data.lon && onLocationSelect && !readOnly) {
@@ -248,10 +293,16 @@ export default function MapaWeb({ coordenadas, marcadores = [], onLocationSelect
   }
 
   return (
-    <View style={[styles.mapa, { height: height as any }]}>
-      <MapContainer
+    <View 
+      style={[styles.mapa, { height: height as any }]}
+      onStartShouldSetResponder={() => true}
+      onMoveShouldSetResponder={() => true}
+      onStartShouldSetResponderCapture={() => true}
+    >
+      <div ref={webContainerRef} style={{ height: '100%', width: '100%' }}>
+        <MapContainer
         center={[coordenadas.latitude, coordenadas.longitude]}
-        zoom={15}
+        zoom={12}
         style={{ height: '100%', width: '100%', zIndex: 0 }}
         dragging={!readOnly}
         scrollWheelZoom={!readOnly}
@@ -269,22 +320,59 @@ export default function MapaWeb({ coordenadas, marcadores = [], onLocationSelect
         {!readOnly && <ClickHandler onSelect={onLocationSelect} />}
         {/* El pin rojo */}
         {marcadores && marcadores.length > 0 ? (
-          marcadores.map(m => (
-            <Marker 
-              key={m.id} 
-              position={[m.latitude, m.longitude]} 
-              icon={m.color === 'plateado' ? iconoPlateado : iconoMorado}
-              eventHandlers={{
-                click: () => onMarkerPress && onMarkerPress(m.id)
-              }}
-            >
-              {m.title && <Tooltip direction="top" offset={[0, -30]}>{m.title}</Tooltip>}
-            </Marker>
-          ))
+          marcadores.map(m => 
+            requireConfirmToNavigate ? (
+              <Marker 
+                key={m.id} 
+                position={[m.latitude, m.longitude]} 
+                icon={m.color === 'plateado' ? iconoPlateado : iconoMorado}
+              >
+                <Popup>
+                  <div style={{ textAlign: 'center', padding: '4px' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#111827', marginBottom: '2px' }}>{m.title}</div>
+                    {m.subtitle && <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>{m.subtitle}</div>}
+                    {typeof m.rating === 'number' && (
+                      <div style={{ fontSize: '12px', color: '#f59e0b', marginBottom: '8px' }}>
+                        {m.rating > 0 ? `★ ${m.rating} (${m.reviewCount} reseñas)` : 'Nuevo (Sin reseñas)'}
+                      </div>
+                    )}
+                    {m.id !== 'mi-ubicacion' && (
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); window.open(`https://www.google.com/maps/search/?api=1&query=${m.latitude},${m.longitude}`, '_blank'); }}
+                          style={{ backgroundColor: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db', padding: '6px 12px', borderRadius: '999px', fontSize: '12px', cursor: 'pointer', flex: 1 }}
+                        >
+                          Maps
+                        </button>
+                        <button 
+                          onClick={() => onMarkerPress && onMarkerPress(m.id)}
+                          style={{ backgroundColor: '#5c4b8a', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '999px', fontSize: '12px', cursor: 'pointer', flex: 1 }}
+                        >
+                          Perfil
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
+            ) : (
+              <Marker 
+                key={m.id} 
+                position={[m.latitude, m.longitude]} 
+                icon={m.color === 'plateado' ? iconoPlateado : iconoMorado}
+                eventHandlers={{
+                  click: () => onMarkerPress && onMarkerPress(m.id)
+                }}
+              >
+                {m.title ? <Tooltip direction="top" offset={[0, -30]}>{m.title}</Tooltip> : null}
+              </Marker>
+            )
+          )
         ) : (
           <Marker position={[coordenadas.latitude, coordenadas.longitude]} icon={iconoMorado} />
         )}
       </MapContainer>
+      </div>
     </View>
   );
 }

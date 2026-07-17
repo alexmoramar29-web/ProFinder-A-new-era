@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { useIsFocused, useFocusEffect } from '@react-navigation/native';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -11,10 +12,10 @@ import {
     Text,
     TextInput,
     View,
-    Alert,
     ActionSheetIOS,
     Modal,
     TouchableOpacity,
+    Image,
 } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 import { Colors } from '../../../theme/Colors';
@@ -22,14 +23,21 @@ import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Typography } from '../../../theme/Typography';
 
 export default function ChatIndividualProfesionistaScreen() {
-  const { id, nombre, inicial } = useLocalSearchParams();
+  const { id, nombre, inicial, foto } = useLocalSearchParams();
   const router = useRouter();
   const navigation = useNavigation();
+
+  const isFocused = useIsFocused();
+  const isFocusedRef = useRef(isFocused);
+  useEffect(() => {
+    isFocusedRef.current = isFocused;
+  }, [isFocused]);
   
   const [mensajes, setMensajes] = useState<any[]>([]);
   const [texto, setTexto] = useState('');
   const [cargando, setCargando] = useState(true);
   const [miId, setMiId] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(false);
   const [mostrarMenu, setMostrarMenu] = useState(false);
   const [estaBloqueado, setEstaBloqueado] = useState(false);
   const [yoLoBloquee, setYoLoBloquee] = useState(false);
@@ -38,12 +46,31 @@ export default function ChatIndividualProfesionistaScreen() {
   
   const scrollRef = useRef<ScrollView>(null);
 
+  // Marcar como leídos constantemente cuando la pantalla está en foco
+  useFocusEffect(
+    useCallback(() => {
+      const marcarLeidos = async () => {
+        if (!miId || !id) return;
+        await supabase
+          .from('chat_messages')
+          .update({ is_read: true })
+          .eq('prof_id', miId)
+          .eq('user_id', id)
+          .eq('sender_type', 1)
+          .eq('is_read', false);
+      };
+      marcarLeidos();
+    }, [miId, id])
+  );
+
   useEffect(() => {
     navigation.setOptions({ headerTitle: '' });
   }, [nombre]);
 
   useEffect(() => {
     const initChat = async () => {
+      setMensajes([]);
+      setCargando(true);
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
@@ -64,8 +91,8 @@ export default function ChatIndividualProfesionistaScreen() {
         const { data: clearance } = await supabase
           .from('chat_clearances')
           .select('cleared_at')
-          .eq('user_id', session.user.id)
-          .eq('other_user_id', id)
+          .eq('user_id', id)
+          .eq('prof_id', session.user.id)
           .maybeSingle();
 
         await fetchMensajes(session.user.id, clearance?.cleared_at || null);
@@ -75,14 +102,28 @@ export default function ChatIndividualProfesionistaScreen() {
     };
 
     initChat();
-  }, []);
+  }, [id]);
 
-  // Suscripción a Realtime
+  // Suscripción a Realtime y Presencia
   useEffect(() => {
     if (!miId || !id) return;
 
+    // Room ID is always the client's ID followed by the prof's ID, to match client side `chat_room_${userId}_${id}`. Wait, in prof side, `id` is the client ID, `miId` is the prof ID. So `chat_room_${id}_${miId}`!
+    const roomId = `chat_room_${id}_${miId}`;
     const channel = supabase
-      .channel(`chat_prof_${miId}_${id}`)
+      .channel(roomId, {
+        config: { presence: { key: miId } }
+      })
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        setIsOnline(Object.keys(state).includes(id));
+      })
+      .on('presence', { event: 'join' }, ({ key }) => {
+        if (key === id) setIsOnline(true);
+      })
+      .on('presence', { event: 'leave' }, ({ key }) => {
+        if (key === id) setIsOnline(false);
+      })
       .on('broadcast', { event: 'typing' }, (payload) => {
         if (payload.payload.user === id) {
           setEscribiendo(payload.payload.isTyping);
@@ -107,7 +148,7 @@ export default function ChatIndividualProfesionistaScreen() {
                 id: payload.new.message_id,
                 texto: payload.new.message_text,
                 deMi: payload.new.sender_type === 2,
-                hora: new Date(payload.new.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                hora: new Date(payload.new.sent_at + (payload.new.sent_at.endsWith('Z') ? '' : 'Z')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
               };
               setMensajes(prev => {
                 if (prev.find(m => m.id === nuevoMsj.id)) return prev;
@@ -121,12 +162,24 @@ export default function ChatIndividualProfesionistaScreen() {
                 }
                 return [...prev, nuevoMsj];
               });
+
+              // Marcar como leído si no es mío
+              if (!nuevoMsj.deMi && miId && isFocusedRef.current) {
+                supabase.from('chat_messages').update({ is_read: true })
+                  .eq('message_id', nuevoMsj.id).then();
+              }
+
               setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
             }
           }
         }
-      )
-      .subscribe();
+      );
+
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({ online_at: new Date().toISOString() });
+      }
+    });
 
     return () => {
       supabase.removeChannel(channel);
@@ -154,19 +207,9 @@ export default function ChatIndividualProfesionistaScreen() {
           id: m.message_id,
           texto: m.message_text,
           deMi: m.sender_type === 2, // 2 = Profesionista
-          hora: new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          hora: new Date(m.sent_at + (m.sent_at.endsWith('Z') ? '' : 'Z')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }));
         setMensajes(formateados);
-        
-        // Marcar como leídos (opcional, si quisiéramos)
-        await supabase
-          .from('chat_messages')
-          .update({ is_read: true })
-          .eq('prof_id', mId)
-          .eq('user_id', id)
-          .eq('sender_type', 1)
-          .eq('is_read', false);
-
         setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 200);
       }
     } catch (err) {
@@ -180,7 +223,8 @@ export default function ChatIndividualProfesionistaScreen() {
     setTexto(txt);
     if (!miId || !id) return;
     
-    supabase.channel(`chat_prof_${miId}_${id}`).send({
+    const roomId = `chat_room_${id}_${miId}`;
+    supabase.channel(roomId).send({
       type: 'broadcast',
       event: 'typing',
       payload: { user: miId, isTyping: txt.length > 0 }
@@ -188,7 +232,7 @@ export default function ChatIndividualProfesionistaScreen() {
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      supabase.channel(`chat_prof_${miId}_${id}`).send({
+      supabase.channel(roomId).send({
         type: 'broadcast',
         event: 'typing',
         payload: { user: miId, isTyping: false }
@@ -202,8 +246,8 @@ export default function ChatIndividualProfesionistaScreen() {
     const mensajeTexto = texto.trim();
     setTexto(''); // Limpiar optimísticamente
     
-    // Quitar "escribiendo" inmediatamente
-    supabase.channel(`chat_prof_${miId}_${id}`).send({
+    const roomId = `chat_room_${id}_${miId}`;
+    supabase.channel(roomId).send({
       type: 'broadcast',
       event: 'typing',
       payload: { user: miId, isTyping: false }
@@ -387,14 +431,18 @@ export default function ChatIndividualProfesionistaScreen() {
           </Pressable>
           
           <View style={styles.chatHeaderAvatarWrap}>
-            <View style={styles.chatHeaderAvatar}>
-              <Text style={styles.chatHeaderAvatarTxt}>{inicial || 'C'}</Text>
-            </View>
-            <View style={styles.onlineDotLg} />
+            {foto ? (
+              <Image source={{ uri: foto as string }} style={styles.chatHeaderAvatarImg} />
+            ) : (
+              <View style={styles.chatHeaderAvatar}><Text style={styles.chatHeaderAvatarTxt}>{inicial}</Text></View>
+            )}
+            {isOnline && <View style={[styles.onlineDotLg, { backgroundColor: Colors.primary[600] }]} />}
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.chatHeaderNombre}>{nombre || 'Cliente'}</Text>
-            <Text style={styles.chatHeaderStatus}>Cliente • ProFinder</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={styles.chatHeaderNombre}>{nombre}</Text>
+            </View>
+            {isOnline && <Text style={[styles.chatHeaderStatus, { color: Colors.primary[600] }]}>● Online</Text>}
           </View>
           <View style={{ flexDirection: 'row', gap: 4 }}>
             <Pressable style={styles.chatActionBtn} onPress={mostrarOpcionesChat}>
@@ -511,9 +559,10 @@ const styles = StyleSheet.create({
   chatHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing[3], paddingHorizontal: Spacing[4], paddingVertical: Spacing[3], borderBottomWidth: 1, borderBottomColor: Colors.border.default, ...Shadow.xs },
   backBtn:    { marginRight: 4, padding: 4 },
   
-  chatHeaderAvatarWrap: { position: 'relative' },
-  chatHeaderAvatar:     { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary[200], alignItems: 'center', justifyContent: 'center' },
-  chatHeaderAvatarTxt:  { ...Typography.styles.label, color: Colors.primary[700], fontSize: 16 },
+  chatHeaderAvatarWrap: { position: 'relative', marginRight: 12 },
+  chatHeaderAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary[100], justifyContent: 'center', alignItems: 'center' },
+  chatHeaderAvatarImg: { width: 44, height: 44, borderRadius: 22 },
+  chatHeaderAvatarTxt: { ...Typography.styles.h5, color: Colors.primary[700] },
   onlineDotLg:          { position: 'absolute', bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.success.main, borderWidth: 2, borderColor: '#fff' },
   chatHeaderNombre:     { ...Typography.styles.h5, color: Colors.text.primary, fontSize: 16 },
   chatHeaderStatus:     { ...Typography.styles.caption, color: Colors.text.secondary, marginTop: 1 },
@@ -522,7 +571,7 @@ const styles = StyleSheet.create({
   mensajesScroll:  { flex: 1, backgroundColor: Colors.neutral[50] },
   mensajesContent: { padding: Spacing[4], gap: Spacing[4] },
 
-  msgRow:         { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing[2] },
+  msgRow:         { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing[2], width: '100%' },
   msgRowMio:      { flexDirection: 'row-reverse' },
   msgAvatar:      { width: 34, height: 34, borderRadius: 17, backgroundColor: Colors.primary[100], alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
   msgAvatarTxt:   { ...Typography.styles.caption, color: Colors.primary[700], fontWeight: '700', fontSize: 11 },

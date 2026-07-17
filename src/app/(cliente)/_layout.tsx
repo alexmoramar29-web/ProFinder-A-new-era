@@ -148,7 +148,6 @@ export default function ClienteLayout() {
         }}
       >
         <Drawer.Screen name="index" options={{ drawerLabel: 'Inicio' }} />
-        <Drawer.Screen name="buscar/index" options={{ drawerLabel: 'Buscar' }} />
         <Drawer.Screen name="chat/index" options={{ drawerLabel: 'Mensajes' }} />
         <Drawer.Screen name="favoritos/index" options={{ drawerLabel: 'Favoritos' }} />
         <Drawer.Screen name="perfil/index" options={{ drawerLabel: 'Perfil' }} />

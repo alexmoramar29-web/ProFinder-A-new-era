@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerActions } from '@react-navigation/native';
-import { useNavigation, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -27,20 +27,43 @@ export default function ChatIndexScreen() {
   const [conversaciones, setConversaciones] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) return;
+        const nombre = user.user_metadata?.fullname_temporal
+          || user.user_metadata?.full_name
+          || user.email?.split('@')[0]
+          || 'Mi cuenta';
+        setNombreUsuario(nombre);
+        setInicialUsuario(nombre.charAt(0).toUpperCase());
+        setUserId(user.id);
+        
+        cargarConversaciones(user.id);
+      });
+    }, [])
+  );
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      const nombre = user.user_metadata?.fullname_temporal
-        || user.user_metadata?.full_name
-        || user.email?.split('@')[0]
-        || 'Mi cuenta';
-      setNombreUsuario(nombre);
-      setInicialUsuario(nombre.charAt(0).toUpperCase());
-      
-      cargarConversaciones(user.id);
-    });
-  }, []);
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`chat_index_client_${userId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'chat_messages' },
+        () => {
+          cargarConversaciones(userId);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
   const cargarConversaciones = async (userId: string) => {
     try {
@@ -48,7 +71,7 @@ export default function ChatIndexScreen() {
         .from('chat_messages')
         .select(`
           message_id, message_text, sent_at, is_read, sender_type, prof_id,
-          professionals(full_name, profile_picture, username)
+          professionals(full_name, profile_picture, username, verification_status)
         `)
         .eq('user_id', userId)
         .order('sent_at', { ascending: false });
@@ -65,17 +88,24 @@ export default function ChatIndexScreen() {
         if (!convsMap.has(m.prof_id)) {
           const prof = Array.isArray(m.professionals) ? m.professionals[0] : m.professionals;
           const nombreProf = prof?.full_name || prof?.username || 'Profesional';
-          
+          const estado = (prof?.verification_status || '').toLowerCase();
+          const esAprobado = estado === 'verificado' || estado === 'aprobado' || estado === 'perfil aprobado';
+
           convsMap.set(m.prof_id, {
             id: m.prof_id,
             nombre: nombreProf,
             ultimoMensaje: m.message_text,
-            hora: new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            noLeidos: (m.sender_type === 2 && !m.is_read) ? 1 : 0, 
+            hora: new Date(m.sent_at + (m.sent_at.endsWith('Z') ? '' : 'Z')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            noLeidos: 0, 
             avatar: prof?.profile_picture || null,
             inicial: nombreProf.charAt(0).toUpperCase(),
-            online: false 
+            online: false,
+            verificado: esAprobado
           });
+        }
+        
+        if (m.sender_type === 2 && !m.is_read) {
+          convsMap.get(m.prof_id).noLeidos += 1;
         }
       });
 
@@ -91,10 +121,10 @@ export default function ChatIndexScreen() {
     c.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const irAlChat = (id: string, nombre: string, inicial: string) => {
+  const irAlChat = (id: string, nombre: string, inicial: string, verificado: boolean, foto: string | null) => {
     router.push({
       pathname: '/(cliente)/chat/[id]',
-      params: { id, nombre, inicial }
+      params: { id, nombre, inicial, verificado: String(verificado), foto: foto || '' }
     } as any);
   };
 
@@ -130,7 +160,7 @@ export default function ChatIndexScreen() {
               keyExtractor={c => c.id}
               contentContainerStyle={{ paddingBottom: 20 }}
               renderItem={({ item }) => (
-                <Pressable style={styles.convItem} onPress={() => irAlChat(item.id, item.nombre, item.inicial)}>
+                <Pressable style={styles.convItem} onPress={() => irAlChat(item.id, item.nombre, item.inicial, item.verificado, item.avatar)}>
                   <View style={styles.convAvatarWrap}>
                     {item.avatar ? (
                         <Image source={{ uri: item.avatar }} style={styles.convAvatar} />
@@ -139,18 +169,21 @@ export default function ChatIndexScreen() {
                     )}
                     {item.online && <View style={styles.onlineDot} />}
                   </View>
-                  <View style={styles.convInfo}>
-                    <View style={styles.convInfoTop}>
+                  <View style={[styles.convInfo, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1, paddingRight: 8 }}>
+                      {item.verificado && <Ionicons name="checkmark-circle" size={12} color={Colors.primary[700]} />}
                       <Text style={styles.convNombre} numberOfLines={1}>{item.nombre}</Text>
-                      <Text style={styles.convHora}>{item.hora}</Text>
                     </View>
-                    <View style={styles.convInfoBottom}>
-                      <Text style={styles.convUltimo} numberOfLines={1}>
-                        {item.ultimoMensaje}
-                      </Text>
-                      {item.noLeidos > 0 && (
-                        <View style={styles.badge}><Text style={styles.badgeTxt}>{item.noLeidos}</Text></View>
-                      )}
+                    <View style={{ alignItems: 'flex-end', flexShrink: 1, maxWidth: '60%' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={[styles.convUltimo, { textAlign: 'right', marginRight: 0 }]} numberOfLines={1}>
+                          {item.ultimoMensaje}
+                        </Text>
+                        {item.noLeidos > 0 && (
+                          <View style={styles.badge}><Text style={styles.badgeTxt}>{item.noLeidos}</Text></View>
+                        )}
+                      </View>
+                      <Text style={[styles.convHora, { marginTop: 4 }]}>{item.hora}</Text>
                     </View>
                   </View>
                 </Pressable>

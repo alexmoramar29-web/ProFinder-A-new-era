@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
@@ -17,14 +17,35 @@ export default function BandejaChatScreen() {
   const [busqueda, setBusqueda] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
 
+  useFocusEffect(
+    useCallback(() => {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          setUserId(user.id);
+          cargarConversaciones(user.id);
+        }
+      });
+    }, [])
+  );
+
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setUserId(user.id);
-        cargarConversaciones(user.id);
-      }
-    });
-  }, []);
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`chat_index_prof_${userId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'chat_messages' },
+        () => {
+          cargarConversaciones(userId);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
   const cargarConversaciones = async (profId: string) => {
     try {
@@ -45,14 +66,16 @@ export default function BandejaChatScreen() {
       const userIds = [...new Set(mensajes.map((m: any) => m.user_id))];
 
       // 3. Buscar los datos de esos clientes
-      const { data: clientesData } = await supabase
-        .from('clientes')
-        .select('id, full_name, avatar_url')
-        .in('id', userIds);
+      const { data: clientesData, error: errUsers } = await supabase
+        .from('users')
+        .select('user_id, full_name, profile_picture')
+        .in('user_id', userIds);
+
+      if (errUsers) console.warn("Error fetching users:", errUsers);
 
       const clientesMap = new Map();
       if (clientesData) {
-        clientesData.forEach(c => clientesMap.set(c.id, c));
+        clientesData.forEach(c => clientesMap.set(c.user_id, c));
       }
 
       // 4. Armar las conversaciones agrupando por user_id
@@ -66,12 +89,16 @@ export default function BandejaChatScreen() {
             id: m.user_id,
             nombre: nombreCli,
             ultimoMensaje: m.message_text,
-            hora: new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            noLeidos: (m.sender_type === 1 && !m.is_read) ? 1 : 0, 
-            avatar: clienteInfo?.avatar_url || null,
+            hora: new Date(m.sent_at + (m.sent_at.endsWith('Z') ? '' : 'Z')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            noLeidos: 0, 
+            avatar: clienteInfo?.profile_picture || null,
             inicial: nombreCli.charAt(0).toUpperCase(),
             online: false 
           });
+        }
+        
+        if (m.sender_type === 1 && !m.is_read) {
+          convsMap.get(m.user_id).noLeidos += 1;
         }
       });
 
@@ -87,10 +114,10 @@ export default function BandejaChatScreen() {
     c.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const irAlChat = (id: string, nombre: string, inicial: string) => {
+  const irAlChat = (id: string, nombre: string, inicial: string, foto: string | null) => {
     router.push({
       pathname: '/(profesionista)/chat/[id]',
-      params: { id, nombre, inicial }
+      params: { id, nombre, inicial, foto: foto || '' }
     } as any);
   };
 
@@ -125,7 +152,7 @@ export default function BandejaChatScreen() {
               keyExtractor={c => c.id}
               contentContainerStyle={{ paddingBottom: 20 }}
               renderItem={({ item }) => (
-                <Pressable style={styles.convItem} onPress={() => irAlChat(item.id, item.nombre, item.inicial)}>
+                <Pressable style={styles.convItem} onPress={() => irAlChat(item.id, item.nombre, item.inicial, item.avatar)}>
                   <View style={styles.convAvatarWrap}>
                     {item.avatar ? (
                         <Image source={{ uri: item.avatar }} style={styles.convAvatar} />
@@ -134,18 +161,20 @@ export default function BandejaChatScreen() {
                     )}
                     {item.online && <View style={styles.onlineDot} />}
                   </View>
-                  <View style={styles.convInfo}>
-                    <View style={styles.convInfoTop}>
+                  <View style={[styles.convInfo, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1, paddingRight: 8 }}>
                       <Text style={styles.convNombre} numberOfLines={1}>{item.nombre}</Text>
-                      <Text style={styles.convHora}>{item.hora}</Text>
                     </View>
-                    <View style={styles.convInfoBottom}>
-                      <Text style={styles.convUltimo} numberOfLines={1}>
-                        {item.ultimoMensaje}
-                      </Text>
-                      {item.noLeidos > 0 && (
-                        <View style={styles.badge}><Text style={styles.badgeTxt}>{item.noLeidos}</Text></View>
-                      )}
+                    <View style={{ alignItems: 'flex-end', flexShrink: 1, maxWidth: '60%' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={[styles.convUltimo, { textAlign: 'right', marginRight: 0 }]} numberOfLines={1}>
+                          {item.ultimoMensaje}
+                        </Text>
+                        {item.noLeidos > 0 && (
+                          <View style={styles.badge}><Text style={styles.badgeTxt}>{item.noLeidos}</Text></View>
+                        )}
+                      </View>
+                      <Text style={[styles.convHora, { marginTop: 4 }]}>{item.hora}</Text>
                     </View>
                   </View>
                 </Pressable>
