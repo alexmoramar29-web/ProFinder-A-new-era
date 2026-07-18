@@ -267,6 +267,7 @@ export default function UbicacionServiciosScreen() {
               </Text>
             </TouchableOpacity>
           </View>
+          </View>
         </ScrollView>
       </View>
     </View>
