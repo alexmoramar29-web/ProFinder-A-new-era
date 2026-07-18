@@ -69,7 +69,7 @@ export default function BandejaChatScreen() {
       // 3. Buscar los datos de esos clientes
       const { data: clientesData, error: errUsers } = await supabase
         .from('users')
-        .select('user_id, full_name, profile_picture')
+        .select('user_id, full_name, username, email, profile_picture')
         .in('user_id', userIds);
 
       if (errUsers) console.warn("Error fetching users:", errUsers);
@@ -84,7 +84,8 @@ export default function BandejaChatScreen() {
       mensajes.forEach((m: any) => {
         if (!convsMap.has(m.user_id)) {
           const clienteInfo = clientesMap.get(m.user_id);
-          const nombreCli = clienteInfo?.full_name || 'Cliente';
+          const emailPrefix = clienteInfo?.email ? clienteInfo.email.split('@')[0] : null;
+          const nombreCli = clienteInfo?.full_name || clienteInfo?.username || emailPrefix || 'Cliente';
           
           convsMap.set(m.user_id, {
             id: m.user_id,

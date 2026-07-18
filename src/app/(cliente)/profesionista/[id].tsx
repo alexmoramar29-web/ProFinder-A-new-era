@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState, useEffect } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions, Platform, Modal } from 'react-native';
@@ -152,7 +152,7 @@ export default function PerfilProfesionistaScreen() {
 
           <View style={styles.card}>
             <TouchableOpacity style={{ position: 'absolute', top: Spacing[4], right: Spacing[4], zIndex: 10, padding: 4 }} onPress={alternarFavorito}>
-              <Ionicons name={esFavorito ? "heart" : "heart-outline"} size={28} color={esFavorito ? Colors.primary[600] : Colors.text.secondary} />
+              <FontAwesome name={esFavorito ? "heart" : "heart-o"} size={28} color={esFavorito ? Colors.primary[600] : Colors.text.secondary} />
             </TouchableOpacity>
 
           <View style={styles.header}>

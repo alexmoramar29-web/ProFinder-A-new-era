@@ -13,10 +13,12 @@ import {
     TextInput,
     View,
     ActionSheetIOS,
+    Alert,
     Modal,
     TouchableOpacity,
     Image,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
 import { Colors } from '../../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
@@ -25,6 +27,7 @@ import { useTranslation } from 'react-i18next';
 
 export default function ChatIndividualProfesionistaScreen() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { id, nombre, inicial, foto } = useLocalSearchParams();
   const router = useRouter();
   const navigation = useNavigation();
@@ -440,7 +443,7 @@ export default function ChatIndividualProfesionistaScreen() {
     >
       <View style={styles.chatArea}>
         {/* Cabecera */}
-        <View style={styles.chatHeader}>
+        <View style={[styles.chatHeader, { paddingTop: Math.max(insets.top, Spacing[3]) }]}>
           <Pressable onPress={() => router.replace('/(profesionista)/chat' as any)} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
           </Pressable>

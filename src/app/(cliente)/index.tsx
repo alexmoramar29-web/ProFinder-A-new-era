@@ -10,6 +10,7 @@ import { Colors } from '../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../theme/Spacing';
 import { Typography } from '../../theme/Typography';
 import { useTranslation } from 'react-i18next';
+import { FontAwesome } from '@expo/vector-icons';
 
 const RATINGS_OPTS = ['1+', '2+', '3+', '4+', '4.5+'];
 
@@ -435,7 +436,7 @@ export default function ClienteDashboard() {
                             if (e && e.preventDefault) e.preventDefault();
                             alternarFavorito(prof.prof_id); 
                           }} style={{ padding: 4, zIndex: 10 }}>
-                            <Ionicons name={favoritos.includes(prof.prof_id) ? "heart" : "heart-outline"} size={20} color={favoritos.includes(prof.prof_id) ? Colors.primary[600] : Colors.text.secondary} />
+                            <FontAwesome name={favoritos.includes(prof.prof_id) ? "heart" : "heart-o"} size={20} color={favoritos.includes(prof.prof_id) ? Colors.primary[600] : Colors.text.secondary} />
                           </Pressable>
                         </View>
                       </View>
