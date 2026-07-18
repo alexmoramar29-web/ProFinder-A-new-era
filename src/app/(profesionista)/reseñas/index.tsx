@@ -6,8 +6,11 @@ import { Typography } from '../../../theme/Typography';
 import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import NavbarProfesionista from '@/components/NavbarProfesionista';
 
 export default function ReseñasProfesionistaScreen() {
+  const { t } = useTranslation();
   const [reseñas, setReseñas] = useState<any[]>([]);
   const [promedio, setPromedio] = useState<number>(0);
   const [cargando, setCargando] = useState(true);
@@ -99,12 +102,14 @@ export default function ReseñasProfesionistaScreen() {
   };
 
   return (
-    <View style={styles.root}>
-      
-      <ScrollView contentContainerStyle={styles.scroll}>
+    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <NavbarProfesionista />
+      <View style={styles.root}>
+        
+        <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.container}>
-          <Text style={styles.title}>Mis Reseñas</Text>
-          <Text style={styles.subtitle}>Descubre lo que tus clientes opinan de tus servicios.</Text>
+          <Text style={styles.title}>{t('misResenas')}</Text>
+          <Text style={styles.subtitle}>{t('descubreOpiniones')}</Text>
 
           {cargando ? (
             <ActivityIndicator size="large" color={Colors.primary[600]} style={{ marginTop: 40 }} />
@@ -121,7 +126,7 @@ export default function ReseñasProfesionistaScreen() {
                   </View>
                 </View>
                 <Text style={styles.promedioTxt}>
-                  Basado en {reseñas.length} {reseñas.length === 1 ? 'reseña' : 'reseñas'}
+                  {t('basadoEn')} {reseñas.length} {reseñas.length === 1 ? t('resenaUnica') : t('resenasMultiples')}
                 </Text>
               </View>
 
@@ -129,7 +134,7 @@ export default function ReseñasProfesionistaScreen() {
               {reseñas.length === 0 ? (
                 <View style={styles.emptyBox}>
                   <Ionicons name="chatbubble-ellipses-outline" size={48} color={Colors.text.disabled} />
-                  <Text style={styles.emptyTxt}>Aún no tienes reseñas. ¡Sigue ofreciendo un gran servicio!</Text>
+                  <Text style={styles.emptyTxt}>{t('noTienesResenas')}</Text>
                 </View>
               ) : (
                 <View style={styles.lista}>
@@ -145,7 +150,7 @@ export default function ReseñasProfesionistaScreen() {
                             </Text>
                           </View>
                           <View style={styles.headerText}>
-                            <Text style={styles.clienteNombre}>{r.clientes?.full_name || 'Cliente Anónimo'}</Text>
+                            <Text style={styles.clienteNombre}>{r.clientes?.full_name || t('clienteAnonimo')}</Text>
                             <Text style={styles.fecha}>{fechaFormat}</Text>
                           </View>
                           <View style={styles.estrellasRow}>
@@ -154,13 +159,13 @@ export default function ReseñasProfesionistaScreen() {
                         </View>
                         
                         <View style={styles.servicioBadge}>
-                          <Text style={styles.servicioTxt}>Servicio: {r.service_name}</Text>
+                          <Text style={styles.servicioTxt}>{t('servicio')}: {r.service_name}</Text>
                         </View>
 
                         {r.comment ? (
                           <Text style={styles.comentario}>{r.comment}</Text>
                         ) : (
-                          <Text style={styles.comentarioVacio}>Sin comentarios.</Text>
+                          <Text style={styles.comentarioVacio}>{t('sinComentarios')}</Text>
                         )}
                       </View>
                     );
@@ -171,6 +176,7 @@ export default function ReseñasProfesionistaScreen() {
           )}
         </View>
       </ScrollView>
+    </View>
     </View>
   );
 }

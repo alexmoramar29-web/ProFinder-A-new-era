@@ -1,8 +1,12 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/supabase';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import NavbarProfesionista from '@/components/NavbarProfesionista';
+import { Colors } from '../../theme/Colors';
+import { Radius, Shadow, Spacing } from '../../theme/Spacing';
+import { Typography } from '../../theme/Typography';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -11,17 +15,15 @@ export default function DashboardScreen() {
   const [nombreUsuario, setNombreUsuario] = useState('');
   const [citasHoy, setCitasHoy] = useState(0);
 
-  // Datos simulados para la gráfica (Más adelante los conectaremos a tus cobros reales)
   const datosGrafica = [
-    { mes: 'Ene', valor: 3200 },
-    { mes: 'Feb', valor: 4500 },
-    { mes: 'Mar', valor: 2800 },
-    { mes: 'Abr', valor: 5100 },
-    { mes: 'May', valor: 6300 },
-    { mes: 'Jun', valor: 4900 },
+    { mes: t('Ene'), valor: 12 },
+    { mes: t('Feb'), valor: 15 },
+    { mes: t('Mar'), valor: 9 },
+    { mes: t('Abr'), valor: 22 },
+    { mes: t('May'), valor: 18 },
+    { mes: t('Jun'), valor: 25 },
   ];
 
-  // Calculamos matemáticamente cuál fue el mes que más ganaste para ajustar la altura de las barras
   const valorMaximo = Math.max(...datosGrafica.map(d => d.valor));
 
   useEffect(() => {
@@ -34,7 +36,6 @@ export default function DashboardScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // 1. Obtener el nombre del profesionista
       const { data: perfil } = await supabase
         .from('professionals')
         .select('full_name')
@@ -42,17 +43,15 @@ export default function DashboardScreen() {
         .single();
         
       if (perfil) {
-        // Cortamos el nombre para mostrar solo el primer nombre (Ej: "Juan Pérez" -> "Juan")
         const primerNombre = perfil.full_name.split(' ')[0];
         setNombreUsuario(primerNombre);
       }
 
-      // 2. Contar cuántas citas pendientes hay (Estado 1 = Pendiente)
       const { count } = await supabase
         .from('appointments')
         .select('*', { count: 'exact', head: true })
         .eq('prof_id', user.id)
-        .eq('status', 1);
+        .eq('status', 0);
 
       setCitasHoy(count || 0);
 
@@ -64,13 +63,15 @@ export default function DashboardScreen() {
   };
 
   if (cargando) {
-    return <View style={styles.centro}><ActivityIndicator size="large" color="#5c4b8a" /></View>;
+    return <View style={styles.centro}><ActivityIndicator size="large" color={Colors.primary[600]} /></View>;
   }
 
   return (
-    <ScrollView style={styles.contenedorFondo} contentContainerStyle={styles.scroll}>
-      
-      {/* SECCIÓN 1: Saludo y Bienvenida */}
+    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <NavbarProfesionista />
+      <ScrollView style={styles.contenedorFondo} contentContainerStyle={styles.scroll}>
+        
+        {/* SECCIÓN 1: Saludo y Bienvenida */}
       <View style={styles.seccionSaludo}>
         <Text style={styles.textoSaludo}>{t('bienvenidoDeNuevo')}</Text>
         <Text style={styles.textoNombre}>{nombreUsuario || t('profesionalDefault')}</Text>
@@ -79,9 +80,9 @@ export default function DashboardScreen() {
       {/* SECCIÓN 2: Tarjetas de Resumen Rápido */}
       <View style={styles.contenedorTarjetas}>
         <View style={styles.tarjetaPrimaria}>
-          <Text style={styles.tituloTarjetaBlanco}>{t('ingresosDelMes')}</Text>
-          <Text style={styles.valorTarjetaBlanco}>$4,900.00</Text>
-          <Text style={styles.subtextoTarjetaBlanco}>{t('vsMesAnterior')}</Text>
+          <Text style={styles.tituloTarjetaBlanco}>{t('citasCompletadasMes')}</Text>
+          <Text style={styles.valorTarjetaBlanco}>25</Text>
+          <Text style={styles.subtextoTarjetaBlanco}>{t('vsMesAnteriorCitas')}</Text>
         </View>
 
         <View style={styles.columnaTarjetasSecundarias}>
@@ -102,16 +103,14 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      {/* SECCIÓN 3: Gráfica de Rendimiento Financiero */}
+      {/* SECCIÓN 3: Gráfica de Rendimiento */}
       <View style={styles.contenedorGrafica}>
-        <Text style={styles.tituloSeccion}>{t('rendimientoFinanciero')}</Text>
-        <Text style={styles.subtituloSeccion}>{t('historialIngresos')}</Text>
+        <Text style={styles.tituloSeccion}>{t('rendimientoCitas')}</Text>
+        <Text style={styles.subtituloSeccion}>{t('historialCitas')}</Text>
         
         <View style={styles.areaGrafica}>
           {datosGrafica.map((dato, index) => {
-            // Regla de tres simple para calcular la altura de cada barra (Porcentaje respecto al valor más alto)
             const alturaPorcentaje = (dato.valor / valorMaximo) * 100;
-            
             return (
               <View key={index} style={styles.columnaBarra}>
                 <View style={styles.barraFondo}>
@@ -136,44 +135,44 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       </View>
 
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
-// Estilos enfocados en limpieza, elegancia y proporciones exactas
 const styles = StyleSheet.create({
-  centro: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFAFC' },
-  contenedorFondo: { flex: 1, backgroundColor: '#FAFAFC' },
-  scroll: { padding: 20, paddingBottom: 50 },
+  centro: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FA' },
+  contenedorFondo: { flex: 1, backgroundColor: '#F8F9FA' },
+  scroll: { padding: Spacing[5], paddingBottom: Spacing[10] },
   
-  seccionSaludo: { marginBottom: 25 },
-  textoSaludo: { fontSize: 16, color: '#8E8E93', marginBottom: 4 },
-  textoNombre: { fontSize: 28, fontWeight: 'bold', color: '#1C1C1E' },
+  seccionSaludo: { marginBottom: Spacing[6] },
+  textoSaludo: { ...Typography.styles.body, color: Colors.text.secondary, marginBottom: 4 },
+  textoNombre: { ...Typography.styles.h2, color: Colors.text.primary, fontWeight: '800' },
   
-  contenedorTarjetas: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 },
+  contenedorTarjetas: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing[4], marginBottom: Spacing[6] },
   
-  tarjetaPrimaria: { flex: 1, backgroundColor: '#5c4b8a', borderRadius: 16, padding: 20, marginRight: 15, justifyContent: 'center', elevation: 4, shadowColor: '#5c4b8a', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6 },
-  tituloTarjetaBlanco: { color: '#E8E0FF', fontSize: 14, fontWeight: '600', marginBottom: 10 },
-  valorTarjetaBlanco: { color: '#FFFFFF', fontSize: 26, fontWeight: 'bold', marginBottom: 8 },
-  subtextoTarjetaBlanco: { color: '#D1C4E9', fontSize: 12 },
+  tarjetaPrimaria: { flex: 1, backgroundColor: Colors.primary[600], borderRadius: Radius.xl, padding: Spacing[5], justifyContent: 'center', ...Shadow.brand },
+  tituloTarjetaBlanco: { ...Typography.styles.label, color: Colors.primary[100], fontWeight: '600', marginBottom: Spacing[2] },
+  valorTarjetaBlanco: { ...Typography.styles.h1, color: '#FFFFFF', fontWeight: '800', marginBottom: 4 },
+  subtextoTarjetaBlanco: { ...Typography.styles.caption, color: Colors.primary[200] },
   
-  columnaTarjetasSecundarias: { flex: 0.8, justifyContent: 'space-between' },
-  tarjetaSecundaria: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 15, borderWidth: 1, borderColor: '#E5E5EA', flex: 1, marginBottom: 10, justifyContent: 'center' },
-  tituloTarjetaOscuro: { color: '#8E8E93', fontSize: 12, fontWeight: '600', marginBottom: 4 },
-  valorTarjetaOscuro: { color: '#1C1C1E', fontSize: 20, fontWeight: 'bold', marginBottom: 2 },
-  subtextoTarjetaOscuro: { color: '#8E8E93', fontSize: 11 },
+  columnaTarjetasSecundarias: { flex: 0.8, justifyContent: 'space-between', gap: Spacing[3] },
+  tarjetaSecundaria: { backgroundColor: '#FFFFFF', borderRadius: Radius.lg, padding: Spacing[4], borderWidth: 1, borderColor: Colors.border.default, flex: 1, justifyContent: 'center', ...Shadow.sm },
+  tituloTarjetaOscuro: { ...Typography.styles.label, color: Colors.text.secondary, fontWeight: '600', marginBottom: 2 },
+  valorTarjetaOscuro: { ...Typography.styles.h3, color: Colors.text.primary, fontWeight: '800', marginBottom: 2 },
+  subtextoTarjetaOscuro: { ...Typography.styles.caption, color: Colors.text.disabled },
   
-  contenedorGrafica: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, marginBottom: 30, borderWidth: 1, borderColor: '#E5E5EA', elevation: 2 },
-  tituloSeccion: { fontSize: 18, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 4 },
-  subtituloSeccion: { fontSize: 13, color: '#8E8E93', marginBottom: 20 },
+  contenedorGrafica: { backgroundColor: '#FFFFFF', borderRadius: Radius.xl, padding: Spacing[5], marginBottom: Spacing[6], borderWidth: 1, borderColor: Colors.border.default, ...Shadow.md },
+  tituloSeccion: { ...Typography.styles.h4, fontWeight: '700', color: Colors.text.primary, marginBottom: 4 },
+  subtituloSeccion: { ...Typography.styles.bodySm, color: Colors.text.secondary, marginBottom: Spacing[5] },
   
   areaGrafica: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 180, paddingTop: 10 },
   columnaBarra: { alignItems: 'center', flex: 1 },
-  barraFondo: { width: 14, height: 140, backgroundColor: '#F2F2F7', borderRadius: 7, justifyContent: 'flex-end', overflow: 'hidden', marginBottom: 10 },
-  barraRelleno: { width: '100%', backgroundColor: '#5c4b8a', borderRadius: 7 },
-  textoMes: { fontSize: 12, color: '#8E8E93', fontWeight: '600' },
+  barraFondo: { width: 16, height: 140, backgroundColor: '#F3F4F6', borderRadius: 999, justifyContent: 'flex-end', overflow: 'hidden', marginBottom: Spacing[2] },
+  barraRelleno: { width: '100%', backgroundColor: Colors.primary[600], borderRadius: 999 },
+  textoMes: { ...Typography.styles.caption, color: Colors.text.secondary, fontWeight: '600' },
   
-  contenedorAcciones: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-  botonAccion: { flex: 1, backgroundColor: '#FFFFFF', paddingVertical: 14, borderRadius: 10, borderWidth: 1, borderColor: '#E5E5EA', alignItems: 'center', marginHorizontal: 5 },
-  textoBotonAccion: { color: '#5c4b8a', fontWeight: '600', fontSize: 14 }
+  contenedorAcciones: { flexDirection: 'row', justifyContent: 'space-between', marginTop: Spacing[3], gap: Spacing[3] },
+  botonAccion: { flex: 1, backgroundColor: '#FFFFFF', paddingVertical: Spacing[4], borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.border.default, alignItems: 'center', ...Shadow.sm },
+  textoBotonAccion: { ...Typography.styles.btn, color: Colors.primary[600], fontWeight: '700' }
 });

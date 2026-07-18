@@ -21,8 +21,10 @@ import { supabase } from '../../../lib/supabase';
 import { Colors } from '../../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Typography } from '../../../theme/Typography';
+import { useTranslation } from 'react-i18next';
 
 export default function ChatIndividualProfesionistaScreen() {
+  const { t } = useTranslation();
   const { id, nombre, inicial, foto } = useLocalSearchParams();
   const router = useRouter();
   const navigation = useNavigation();
@@ -269,6 +271,19 @@ export default function ChatIndividualProfesionistaScreen() {
         }]);
       
       if (error) throw error;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error: notifError } = await supabase.from('notifications').insert([{
+        user_id: id,
+        type: 'chat_new',
+        content: t('nuevoMensajeDe', { defaultValue: 'Tienes un nuevo mensaje de {{name}}', name: user?.user_metadata?.full_name || user?.user_metadata?.name || 'el profesionista' }),
+        related_id: miId
+      }]);
+      
+      if (notifError) {
+        console.error('Error insertando notificacion de chat:', notifError);
+      }
+
       } catch (err) {
         console.log('Error enviando mensaje:', err);
         // Revertir optimista si falla
@@ -430,20 +445,26 @@ export default function ChatIndividualProfesionistaScreen() {
             <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
           </Pressable>
           
-          <View style={styles.chatHeaderAvatarWrap}>
-            {foto ? (
-              <Image source={{ uri: foto as string }} style={styles.chatHeaderAvatarImg} />
-            ) : (
-              <View style={styles.chatHeaderAvatar}><Text style={styles.chatHeaderAvatarTxt}>{inicial}</Text></View>
-            )}
-            {isOnline && <View style={[styles.onlineDotLg, { backgroundColor: Colors.primary[600] }]} />}
-          </View>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={styles.chatHeaderNombre}>{nombre}</Text>
+          <TouchableOpacity 
+            style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 }}
+            onPress={() => router.push(`/(profesionista)/cliente/${id}` as any)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.chatHeaderAvatarWrap}>
+              {foto ? (
+                <Image source={{ uri: foto as string }} style={styles.chatHeaderAvatarImg} />
+              ) : (
+                <View style={styles.chatHeaderAvatar}><Text style={styles.chatHeaderAvatarTxt}>{inicial}</Text></View>
+              )}
+              {isOnline && <View style={[styles.onlineDotLg, { backgroundColor: Colors.primary[600] }]} />}
             </View>
-            {isOnline && <Text style={[styles.chatHeaderStatus, { color: Colors.primary[600] }]}>● Online</Text>}
-          </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.chatHeaderNombre}>{nombre}</Text>
+              </View>
+              {isOnline && <Text style={[styles.chatHeaderStatus, { color: Colors.primary[600] }]}>● Online</Text>}
+            </View>
+          </TouchableOpacity>
           <View style={{ flexDirection: 'row', gap: 4 }}>
             <Pressable style={styles.chatActionBtn} onPress={mostrarOpcionesChat}>
               <Ionicons name="ellipsis-horizontal-outline" size={20} color={Colors.text.secondary} />

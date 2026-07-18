@@ -4,7 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Colors } from '@/theme/Colors';
+import { Typography } from '@/theme/Typography';
+import { Radius, Shadow, Spacing } from '@/theme/Spacing';
 import { ActivityIndicator, Image, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
+import NavbarProfesionista from '@/components/NavbarProfesionista';
 import MapaWeb from '@/components/shared/MapaWeb';
 
 export default function PerfilScreen() {
@@ -40,7 +44,7 @@ export default function PerfilScreen() {
   if (cargando) {
     return (
       <View style={styles.cargandoContainer}>
-        <ActivityIndicator size="large" color="#5c4b8a" />
+        <ActivityIndicator size="large" color={Colors.primary[600]} />
       </View>
     );
   }
@@ -56,13 +60,13 @@ export default function PerfilScreen() {
   const esAprobado = estadoLimpio === 'verificado' || estadoLimpio === 'aprobado' || estadoLimpio === 'perfil aprobado';
 
   if (esAprobado) {
-    colorEtiqueta = '#28a745'; 
+    colorEtiqueta = Colors.success.main; 
     textoEtiqueta = t('perfilAprobado');
   } else if (estadoLimpio === 'en revision' || estadoLimpio === 'en revisión') {
-    colorEtiqueta = '#ffc107'; 
+    colorEtiqueta = Colors.warning.main; 
     textoEtiqueta = t('documentosEnRevision');
   } else if (estadoLimpio === 'rechazado') {
-    colorEtiqueta = '#dc3545'; 
+    colorEtiqueta = Colors.error.main; 
     textoEtiqueta = t('documentosRechazados');
   }
 
@@ -95,7 +99,8 @@ export default function PerfilScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <NavbarProfesionista />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         
         {perfilPausado && (
@@ -180,7 +185,7 @@ export default function PerfilScreen() {
                     </View>
                   </TouchableOpacity>
                   {Platform.OS === 'web' && (
-                    <Text style={{ fontSize: 11, color: '#888', textAlign: 'center', marginTop: 4, fontStyle: 'italic' }}>
+                    <Text style={{ fontSize: 11, color: Colors.text.disabled, textAlign: 'center', marginTop: 4, fontStyle: 'italic' }}>
                       Al hacer clic se abrirá Google Maps con la ubicación exacta.
                     </Text>
                   )}
@@ -208,7 +213,7 @@ export default function PerfilScreen() {
 
           <View style={styles.contenedorBotones}>
             <TouchableOpacity style={styles.botonSecundario} onPress={() => router.push('/(profesionista)/perfil/editar')}>
-              <Text style={styles.textoBoton}>{t('editarPerfil')}</Text>
+              <Text style={styles.textoBotonSecundario}>{t('editarPerfil')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.botonPrimario} onPress={() => router.push('/(profesionista)/completar-registro')}>
@@ -238,59 +243,57 @@ export default function PerfilScreen() {
 
 const styles = StyleSheet.create({
   cargandoContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scrollContainer: { flexGrow: 1, backgroundColor: '#f4f4f4' },
-  bannerPausado: { backgroundColor: '#6c757d', padding: 10, width: '100%', alignItems: 'center' },
+  scrollContainer: { flexGrow: 1, backgroundColor: Colors.neutral[50] },
+  bannerPausado: { backgroundColor: Colors.text.secondary, padding: Spacing[3], width: '100%', alignItems: 'center' },
   textoBannerPausado: { color: '#fff', fontWeight: 'bold', fontSize: 12, textAlign: 'center' },
-  container: { flex: 1, padding: 20, alignItems: 'center' },
-  fotoContainer: { marginBottom: 15, position: 'relative' },
-  foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#ddd' },
-  fotoVacia: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' },
-  textoFotoVacia: { color: '#666', fontWeight: 'bold' },
+  container: { flex: 1, padding: Spacing[5], alignItems: 'center' },
+  fotoContainer: { marginBottom: Spacing[4], position: 'relative' },
+  foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: Colors.neutral[200] },
+  fotoVacia: { width: 120, height: 120, borderRadius: 60, backgroundColor: Colors.neutral[200], justifyContent: 'center', alignItems: 'center' },
+  textoFotoVacia: { color: Colors.text.secondary, fontWeight: 'bold' },
   
-  // PASO 2: Las reglas mágicas para acomodar el círculo morado encima de la foto
   circuloVerificado: {
     position: 'absolute',
     bottom: 0,
     right: 4,
-    backgroundColor: '#5c4b8a', // Tu color morado principal
+    backgroundColor: Colors.primary[600],
     width: 28,
     height: 28,
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#f4f4f4', // Una pequeña orilla clara para que resalte hermoso
+    borderColor: Colors.neutral[50],
   },
 
   nombreContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 5 },
-  nombreTexto: { fontSize: 24, fontWeight: 'bold', color: '#333', textAlign: 'center' },
+  nombreTexto: { ...Typography.styles.h2, color: Colors.text.primary, textAlign: 'center', fontWeight: '800' },
   
-  // PASO 3: Reducimos el tamaño del texto y ajustamos la etiqueta
-  etiquetaVerificacion: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginBottom: 20 },
-  textoEtiqueta: { color: '#fff', fontWeight: 'bold', fontSize: 10 }, // Texto más pequeño y fino
+  etiquetaVerificacion: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.full, marginBottom: Spacing[5] },
+  textoEtiqueta: { color: '#fff', fontWeight: '700', fontSize: 11, textTransform: 'uppercase' },
   
-  datosCard: { width: '100%', backgroundColor: '#fff', padding: 20, borderRadius: 10, elevation: 3, marginBottom: 20 },
-  datoTitulo: { fontSize: 12, color: '#888', marginTop: 10, fontWeight: 'bold' },
-  datoValor: { fontSize: 16, color: '#333', marginBottom: 5 },
+  datosCard: { width: '100%', backgroundColor: '#fff', padding: Spacing[5], borderRadius: Radius.lg, ...Shadow.md, marginBottom: Spacing[5], borderWidth: 1, borderColor: Colors.border.default },
+  datoTitulo: { ...Typography.styles.overline, color: Colors.text.disabled, marginTop: 10, letterSpacing: 0.5 },
+  datoValor: { ...Typography.styles.body, color: Colors.text.primary, marginBottom: 5, fontWeight: '500' },
   
-  mapaContenedor: { width: '100%', backgroundColor: '#fff', padding: 20, borderRadius: 10, elevation: 3, marginBottom: 20 },
-  mapaPequeno: { height: 150, width: '100%', borderRadius: 12, overflow: 'hidden', marginTop: 15 },
-  mapa: { flex: 1 },
-  mapaPlaceholder: { width: '100%', height: 100, backgroundColor: '#e9ecef', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderWidth: 2, borderColor: '#ccc', borderStyle: 'dashed' },
-  textoMapa: { color: '#6c757d', fontWeight: 'bold', fontSize: 14 },
-  etiquetaAbrirMapa: { position: 'absolute', bottom: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 15 },
-  textoAbrirMapa: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  mapaContenedor: { width: '100%', backgroundColor: '#fff', padding: Spacing[5], borderRadius: Radius.lg, ...Shadow.md, marginBottom: Spacing[5], borderWidth: 1, borderColor: Colors.border.default },
+  mapaPequeno: { height: 150, width: '100%', borderRadius: Radius.md, overflow: 'hidden', marginTop: 15 },
+  mapaPlaceholder: { width: '100%', height: 100, backgroundColor: Colors.neutral[100], borderRadius: Radius.md, justifyContent: 'center', alignItems: 'center', marginBottom: Spacing[5], borderWidth: 2, borderColor: Colors.border.default, borderStyle: 'dashed' },
+  textoMapa: { color: Colors.text.secondary, fontWeight: 'bold', fontSize: 14 },
+  etiquetaAbrirMapa: { position: 'absolute', bottom: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.full },
+  textoAbrirMapa: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
   
-  portafolioContenedor: { width: '100%', marginBottom: 20 },
-  tituloSeccion: { fontSize: 16, fontWeight: 'bold', color: '#5c4b8a', marginBottom: 10, alignSelf: 'flex-start' },
+  portafolioContenedor: { width: '100%', marginBottom: Spacing[5] },
+  tituloSeccion: { ...Typography.styles.h4, color: Colors.primary[700], marginBottom: Spacing[3], alignSelf: 'flex-start', fontWeight: '700' },
   carrusel: { flexDirection: 'row' },
-  fotoTrabajo: { width: 120, height: 120, borderRadius: 10, marginRight: 15, backgroundColor: '#ddd', borderWidth: 1, borderColor: '#ccc' },
-  contenedorBotones: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
-  botonPrimario: { flex: 1, backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center', marginLeft: 5 },
-  botonSecundario: { flex: 1, backgroundColor: '#007bff', padding: 15, borderRadius: 8, alignItems: 'center', marginRight: 5 },
-  textoBoton: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-  modalFondoOscuro: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.9)', justifyContent: 'center', alignItems: 'center' },
-  botonCerrarModal: { position: 'absolute', top: 50, right: 20, padding: 10, backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 5, zIndex: 10 },
+  fotoTrabajo: { width: 120, height: 120, borderRadius: Radius.md, marginRight: Spacing[4], backgroundColor: Colors.neutral[200], borderWidth: 1, borderColor: Colors.border.default },
+  contenedorBotones: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', gap: Spacing[3], marginBottom: Spacing[6] },
+  botonPrimario: { flex: 1, backgroundColor: Colors.primary[600], paddingVertical: Spacing[4], borderRadius: Radius.md, alignItems: 'center', ...Shadow.brand },
+  botonSecundario: { flex: 1, backgroundColor: Colors.neutral[100], paddingVertical: Spacing[4], borderRadius: Radius.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border.default },
+  textoBoton: { ...Typography.styles.btn, color: '#fff', fontWeight: '700' },
+  textoBotonSecundario: { ...Typography.styles.btn, color: Colors.text.primary, fontWeight: '700' },
+  modalFondoOscuro: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.95)', justifyContent: 'center', alignItems: 'center' },
+  botonCerrarModal: { position: 'absolute', top: 50, right: 20, padding: 10, backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: Radius.button, zIndex: 10 },
   textoCerrarModal: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   fotoGigante: { width: '90%', height: '80%' }
 });

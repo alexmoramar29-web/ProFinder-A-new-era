@@ -21,8 +21,10 @@ import { supabase } from '../../../lib/supabase';
 import { Colors } from '../../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Typography } from '../../../theme/Typography';
+import { useTranslation } from 'react-i18next';
 
 export default function ChatDetalleClienteScreen() {
+  const { t } = useTranslation();
   const { id, nombre, inicial, verificado, foto } = useLocalSearchParams();
   const router = useRouter();
   const navigation = useNavigation();
@@ -59,6 +61,7 @@ export default function ChatDetalleClienteScreen() {
   const [mostrarMenu, setMostrarMenu] = useState(false);
   const [estaBloqueado, setEstaBloqueado] = useState(false);
   const [yoLoBloquee, setYoLoBloquee] = useState(false);
+  const [esFavorito, setEsFavorito] = useState(false);
   const [escribiendo, setEscribiendo] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -96,6 +99,10 @@ export default function ChatDetalleClienteScreen() {
           .eq('prof_id', id)
           .maybeSingle();
 
+        // 3. Verificar favoritos
+        const { data: fav } = await supabase.from('favorite_professionals').select('prof_id').eq('user_id', session.user.id).eq('prof_id', id).maybeSingle();
+        setEsFavorito(!!fav);
+
         await fetchMensajes(session.user.id, clearance?.cleared_at || null);
       } catch (err) {
         console.log('Error init chat:', err);
@@ -104,6 +111,17 @@ export default function ChatDetalleClienteScreen() {
 
     initChat();
   }, [id]);
+
+  const alternarFavorito = async () => {
+    if (!userId) return;
+    if (esFavorito) {
+      await supabase.from('favorite_professionals').delete().eq('user_id', userId).eq('prof_id', id);
+      setEsFavorito(false);
+    } else {
+      await supabase.from('favorite_professionals').insert([{ user_id: userId, prof_id: id }]);
+      setEsFavorito(true);
+    }
+  };
 
   // Suscripción a Realtime y Presencia
   useEffect(() => {
@@ -269,6 +287,20 @@ export default function ChatDetalleClienteScreen() {
         }]);
       
       if (error) throw error;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error: notifError } = await supabase.from('notifications').insert([{
+        user_id: id,
+        type: 'chat_new',
+        content: t('nuevoMensajeDe', { defaultValue: 'Tienes un nuevo mensaje de {{name}}', name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'un cliente' }),
+        related_id: userId
+      }]);
+      
+      if (notifError) {
+        console.error('Error insertando notificacion de chat:', notifError);
+      }
+
+
     } catch (err) {
       console.log('Error enviando mensaje:', err);
       // Revertir optimista si falla
@@ -446,9 +478,12 @@ export default function ChatDetalleClienteScreen() {
               )}
               <Text style={styles.chatHeaderNombre}>{nombre}</Text>
             </View>
-            {isOnline && <Text style={[styles.chatHeaderStatus, { color: Colors.primary[600] }]}>● Online</Text>}
+            {isOnline && <Text style={[styles.chatHeaderStatus, { color: Colors.primary[600] }]}>{t('● Online')}</Text>}
           </Pressable>
             <View style={{ flexDirection: 'row', gap: 4 }}>
+              <Pressable style={styles.chatActionBtn} onPress={alternarFavorito}>
+                <Ionicons name={esFavorito ? "heart" : "heart-outline"} size={22} color={esFavorito ? Colors.primary[600] : Colors.text.secondary} />
+              </Pressable>
               <Pressable style={styles.chatActionBtn} onPress={mostrarOpcionesChat}>
                 <Ionicons name="ellipsis-horizontal-outline" size={20} color={Colors.text.secondary} />
               </Pressable>
@@ -502,7 +537,7 @@ export default function ChatDetalleClienteScreen() {
               <View style={[styles.msgRow, { opacity: 0.7 }]}>
                 <View style={styles.msgAvatar}><Text style={styles.msgAvatarTxt}>{inicial}</Text></View>
                 <View style={[styles.msgBubble, styles.msgBubbleEllos, { paddingHorizontal: 12, paddingVertical: 8 }]}>
-                  <Text style={[styles.msgTxt, { fontStyle: 'italic', fontSize: 12 }]}>escribiendo...</Text>
+                  <Text style={[styles.msgTxt, { fontStyle: 'italic', fontSize: 12 }]}>{t('escribiendo...')}</Text>
                 </View>
               </View>
             )}
@@ -538,13 +573,13 @@ export default function ChatDetalleClienteScreen() {
           <Pressable style={[StyleSheet.absoluteFill, { zIndex: 99 }]} onPress={() => setMostrarMenu(false)}>
             <View style={styles.dropdownMenu}>
               <TouchableOpacity style={styles.dropdownMenuItem} onPress={() => { setMostrarMenu(false); router.push(`/servicios/${id}` as any); }}>
-                <Text style={styles.dropdownMenuText}>Ver Perfil del Profesionista</Text>
+                <Text style={styles.dropdownMenuText}>{t('Ver Perfil del Profesionista')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.dropdownMenuItem} onPress={vaciarChat}>
-                <Text style={styles.dropdownMenuText}>Vaciar Chat local</Text>
+                <Text style={styles.dropdownMenuText}>{t('Vaciar Chat local')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.dropdownMenuItem} onPress={manejarReporte}>
-                <Text style={styles.dropdownMenuText}>Reportar Usuario</Text>
+                <Text style={styles.dropdownMenuText}>{t('Reportar Usuario')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.dropdownMenuItem, { borderBottomWidth: 0 }]} onPress={manejarBloqueo}>
                 <Text style={[styles.dropdownMenuText, { color: Colors.error.main }]}>{yoLoBloquee ? 'Desbloquear Usuario' : 'Bloquear Usuario'}</Text>

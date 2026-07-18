@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacit
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/Colors';
 import { Radius, Shadow } from '@/theme/Spacing';
+import NavbarProfesionista from '@/components/NavbarProfesionista';
 
 interface Cita {
   appointment_id: number;
@@ -53,8 +54,8 @@ export default function CalendarioScreen() {
         .from('appointments')
         .select(`
           *,
-          clientes:client_id(full_name),
-          services:service_id(service_name, base_price)
+          clientes:users!fk_appointments_client(full_name),
+          services(service_name, base_price)
         `)
         .eq('prof_id', user.id)
         .in('status', estadosBuscados)
@@ -70,21 +71,37 @@ export default function CalendarioScreen() {
     }
   };
 
-  const actualizarEstadoCita = async (idCita: number, nuevoEstado: number) => {
+  const actualizarEstadoCita = async (cita: Cita, nuevoEstado: number) => {
     try {
       const { error } = await supabase
         .from('appointments')
         .update({ status: nuevoEstado })
-        .eq('appointment_id', idCita);
+        .eq('appointment_id', cita.appointment_id);
 
       if (error) throw error;
 
-      let mensaje = 'Operación completada.';
-      if (nuevoEstado === 1) mensaje = 'Cita aceptada.';
-      if (nuevoEstado === 2) mensaje = 'Cita rechazada.';
-      if (nuevoEstado === 3) mensaje = 'Trabajo marcado en curso.';
-      if (nuevoEstado === 4) mensaje = 'Trabajo finalizado.';
-      if (nuevoEstado === 5) mensaje = 'Cita cancelada.';
+      if (nuevoEstado === 1) {
+        const { data: { user } } = await supabase.auth.getUser();
+        const profName = user?.user_metadata?.full_name || user?.user_metadata?.name || 'El profesionista';
+        
+        const { error: notifError } = await supabase.from('notifications').insert([{
+          user_id: cita.client_id,
+          type: 'appointment_accepted',
+          content: t('citaAceptadaNotif', { defaultValue: '{{name}} ha aceptado tu solicitud de cita.', name: profName }),
+          related_id: cita.appointment_id.toString()
+        }]);
+
+        if (notifError) {
+          console.error('Error insertando notificacion de aceptacion:', notifError);
+        }
+      }
+
+      let mensaje = t('operacionCompletada') || 'Operación completada.';
+      if (nuevoEstado === 1) mensaje = t('citaAceptada') || 'Cita aceptada.';
+      if (nuevoEstado === 2) mensaje = t('citaRechazada') || 'Cita rechazada.';
+      if (nuevoEstado === 3) mensaje = t('trabajoMarcadoEnCurso') || 'Trabajo marcado en curso.';
+      if (nuevoEstado === 4) mensaje = t('trabajoFinalizado') || 'Trabajo finalizado.';
+      if (nuevoEstado === 5) mensaje = t('citaCancelada') || 'Cita cancelada.';
 
       mostrarMensaje('exito', mensaje);
       obtenerCitas();
@@ -101,16 +118,16 @@ export default function CalendarioScreen() {
       if (ahora < fechaCita) {
         setModalConfirmacion({
           visible: true,
-          titulo: 'Cambio Inesperado',
-          mensaje: 'Esta cita está programada para más tarde. ¿Ocurrió un cambio inesperado y el cliente ya está listo para empezar?',
-          textoConfirmar: 'Sí, empezar ahora',
+          titulo: t('cambioInesperadoTitulo') || 'Cambio Inesperado',
+          mensaje: t('cambioInesperadoMensaje') || 'Esta cita está programada para más tarde. ¿Ocurrió un cambio inesperado y el cliente ya está listo para empezar?',
+          textoConfirmar: t('siEmpezarAhora') || 'Sí, empezar ahora',
           onConfirmar: () => {
             setModalConfirmacion(null);
-            actualizarEstadoCita(cita.appointment_id, 3);
+            actualizarEstadoCita(cita, 3);
           }
         });
       } else {
-        actualizarEstadoCita(cita.appointment_id, 3);
+        actualizarEstadoCita(cita, 3);
       }
     };
 
@@ -118,9 +135,9 @@ export default function CalendarioScreen() {
     if (hayEnCurso) {
       setModalConfirmacion({
         visible: true,
-        titulo: 'Atención',
-        mensaje: 'Ya tienes un trabajo EN CURSO. ¿Estás seguro de que quieres empezar este también sin finalizar el anterior?',
-        textoConfirmar: 'Empezar de todos modos',
+        titulo: t('atencionTitulo') || 'Atención',
+        mensaje: t('yaTienesTrabajoEnCurso') || 'Ya tienes un trabajo EN CURSO. ¿Estás seguro de que quieres empezar este también sin finalizar el anterior?',
+        textoConfirmar: t('empezarDeTodosModos') || 'Empezar de todos modos',
         onConfirmar: () => {
           setModalConfirmacion(null);
           verificarTiempo();
@@ -132,9 +149,11 @@ export default function CalendarioScreen() {
   };
 
   return (
-    <View style={styles.contenedorFondo}>
-      <View style={styles.cabecera}>
-        <Text style={styles.tituloSeccion}>Gestión de Citas</Text>
+    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <NavbarProfesionista />
+      <View style={styles.contenedorFondo}>
+        <View style={styles.cabecera}>
+        <Text style={styles.tituloSeccion}>{t('gestionDeCitas')}</Text>
       </View>
       
       <View style={styles.contenedorPestañas}>
@@ -143,7 +162,7 @@ export default function CalendarioScreen() {
           onPress={() => setPestañaActiva('pendientes')}
         >
           <Text style={[styles.textoPestaña, pestañaActiva === 'pendientes' && styles.textoPestañaActiva]}>
-            Pendientes
+            {t('pendientes')}
           </Text>
         </TouchableOpacity>
 
@@ -152,7 +171,7 @@ export default function CalendarioScreen() {
           onPress={() => setPestañaActiva('aceptadas')}
         >
           <Text style={[styles.textoPestaña, pestañaActiva === 'aceptadas' && styles.textoPestañaActiva]}>
-            Próximos Trabajos
+            {t('proximosTrabajos')}
           </Text>
         </TouchableOpacity>
 
@@ -161,7 +180,7 @@ export default function CalendarioScreen() {
           onPress={() => setPestañaActiva('historial')}
         >
           <Text style={[styles.textoPestaña, pestañaActiva === 'historial' && styles.textoPestañaActiva]}>
-            Historial
+            {t('historial')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -172,7 +191,7 @@ export default function CalendarioScreen() {
         <ScrollView contentContainerStyle={styles.scroll}>
           {citas.length === 0 ? (
             <Text style={styles.textoVacio}>
-              No tienes {pestañaActiva === 'pendientes' ? 'citas pendientes por revisar.' : pestañaActiva === 'aceptadas' ? 'trabajos próximos agendados.' : 'trabajos finalizados.'}
+              {pestañaActiva === 'pendientes' ? t('noCitasPendientes') : pestañaActiva === 'aceptadas' ? t('noCitasProximas') : t('noCitasFinalizadas')}
             </Text>
           ) : (
             citas.map((cita) => {
@@ -181,15 +200,15 @@ export default function CalendarioScreen() {
                 <View key={cita.appointment_id} style={[styles.tarjetaCita, esEnCurso && styles.tarjetaEnCurso]}>
                   
                   <View style={styles.tarjetaCabecera}>
-                    <Text style={styles.nombreCliente}>{cita.clientes?.full_name || 'Cliente'}</Text>
+                    <Text style={styles.nombreCliente}>{cita.clientes?.full_name || t('clienteAnonimo')}</Text>
                     {esEnCurso && (
                       <View style={styles.badgeEnCurso}>
-                        <Text style={styles.badgeTxtEnCurso}>EN CURSO</Text>
+                        <Text style={styles.badgeTxtEnCurso}>{t('enCursoBadge')}</Text>
                       </View>
                     )}
                     {cita.status === 4 && (
                       <View style={styles.badgeFinalizado}>
-                        <Text style={styles.badgeTxtFinalizado}>FINALIZADO</Text>
+                        <Text style={styles.badgeTxtFinalizado}>{t('finalizadoBadge')}</Text>
                       </View>
                     )}
                   </View>
@@ -211,7 +230,7 @@ export default function CalendarioScreen() {
                     ) : null}
                     {cita.notes ? (
                       <View style={styles.notasBox}>
-                        <Text style={styles.notasLabel}>Notas del cliente:</Text>
+                        <Text style={styles.notasLabel}>{t('notasDelCliente')}</Text>
                         <Text style={styles.notasTexto}>{cita.notes}</Text>
                       </View>
                     ) : null}
@@ -221,16 +240,16 @@ export default function CalendarioScreen() {
                     <View style={styles.filaBotones}>
                       <TouchableOpacity 
                         style={styles.botonRechazar} 
-                        onPress={() => actualizarEstadoCita(cita.appointment_id, 2)}
+                        onPress={() => actualizarEstadoCita(cita, 2)}
                       >
                         <Text style={styles.textoBotonRechazar}>{t('rechazar')}</Text>
                       </TouchableOpacity>
                       
                       <TouchableOpacity 
                         style={styles.botonAceptar} 
-                        onPress={() => actualizarEstadoCita(cita.appointment_id, 1)}
+                        onPress={() => actualizarEstadoCita(cita, 1)}
                       >
-                        <Text style={styles.textoBotonAceptar}>Aceptar Cita</Text>
+                        <Text style={styles.textoBotonAceptar}>{t('aceptarCita')}</Text>
                       </TouchableOpacity>
                     </View>
                   ) : pestañaActiva === 'aceptadas' ? (
@@ -239,24 +258,24 @@ export default function CalendarioScreen() {
                         <>
                           <TouchableOpacity 
                             style={styles.botonRechazar} 
-                            onPress={() => actualizarEstadoCita(cita.appointment_id, 5)}
+                            onPress={() => actualizarEstadoCita(cita, 5)}
                           >
-                            <Text style={styles.textoBotonRechazar}>Cancelar</Text>
+                            <Text style={styles.textoBotonRechazar}>{t('cancelar')}</Text>
                           </TouchableOpacity>
 
                           <TouchableOpacity 
                             style={styles.botonEnCurso} 
                             onPress={() => intentarIniciarTrabajo(cita)}
                           >
-                            <Text style={styles.textoBotonEnCurso}>Empezar Trabajo</Text>
+                            <Text style={styles.textoBotonEnCurso}>{t('empezarTrabajo')}</Text>
                           </TouchableOpacity>
                         </>
                       ) : (
                         <TouchableOpacity 
                           style={styles.botonFinalizar} 
-                          onPress={() => actualizarEstadoCita(cita.appointment_id, 4)}
+                          onPress={() => actualizarEstadoCita(cita, 4)}
                         >
-                          <Text style={styles.textoBotonFinalizar}>Finalizar Trabajo</Text>
+                          <Text style={styles.textoBotonFinalizar}>{t('finalizarTrabajo')}</Text>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -288,7 +307,7 @@ export default function CalendarioScreen() {
                 style={styles.modalBotonCancelar} 
                 onPress={() => setModalConfirmacion(null)}
               >
-                <Text style={styles.modalTextoCancelar}>Cancelar</Text>
+                <Text style={styles.modalTextoCancelar}>{t('cancelar')}</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.modalBotonAceptar} 
@@ -301,6 +320,7 @@ export default function CalendarioScreen() {
         </View>
       )}
 
+    </View>
     </View>
   );
 }

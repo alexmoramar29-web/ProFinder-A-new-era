@@ -7,8 +7,10 @@ module.exports = {
   options: {
     debug: true,
     func: { list: ['t'], extensions: ['.js', '.jsx', '.ts', '.tsx'] },
-    lngs: ['en', 'es'], // Los idiomas que quieres
+    lngs: ['en', 'es'],
     defaultNs: 'translation',
+    keySeparator: false,
+    nsSeparator: false,
     resource: {
       loadPath: 'src/locales/{{lng}}/{{ns}}.json',
       savePath: 'src/locales/{{lng}}/{{ns}}.json',

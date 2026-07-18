@@ -20,12 +20,19 @@ export default function EditarPerfilClienteScreen() {
   const cargarDatos = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from('clientes').select('*').eq('id', user.id).single();
+    const { data } = await supabase.from('users').select('*').eq('user_id', user.id).single();
     if (data) {
       setFullName(data.full_name || '');
       setUsername(data.username || '');
       setPhone(data.phone || '');
-      if (data.avatar_url) setFotoPerfil({ uri: data.avatar_url, esNueva: false });
+      const pic = data.profile_picture || user.user_metadata?.avatar_url || user.user_metadata?.picture;
+      if (pic) setFotoPerfil({ uri: pic, esNueva: false });
+    } else {
+      // Fallback
+      setFullName(user.user_metadata?.full_name || '');
+      setUsername(user.email?.split('@')[0] || '');
+      const avatarFallback = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+      if (avatarFallback) setFotoPerfil({ uri: avatarFallback, esNueva: false });
     }
     setCargando(false);
   };
@@ -69,13 +76,13 @@ export default function EditarPerfilClienteScreen() {
 
       // USO DE UPSERT: Si el ID existe, actualiza; si no, inserta.
       const { error: upsertError } = await supabase
-        .from('clientes')
+        .from('users')
         .upsert({ 
-          id: user.id,
+          user_id: user.id,
           full_name: fullName,
           username: username,
           phone: phone,
-          avatar_url: urlFinal 
+          profile_picture: urlFinal 
         });
 
       if (upsertError) throw upsertError;
@@ -109,17 +116,28 @@ export default function EditarPerfilClienteScreen() {
         </TouchableOpacity>
 
         <Text style={styles.label}>Nombre</Text>
-        <TextInput style={styles.input} value={fullName} onChangeText={setFullName} />
+        <TextInput style={styles.input} value={fullName} onChangeText={setFullName} maxLength={100} />
         
         <Text style={styles.label}>Usuario</Text>
-        <TextInput style={styles.input} value={username} onChangeText={setUsername} />
+        <TextInput style={styles.input} value={username} onChangeText={setUsername} autoCapitalize="none" maxLength={50} />
         
         <Text style={styles.label}>Teléfono</Text>
-        <TextInput style={styles.input} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+        <TextInput 
+          style={styles.input} 
+          value={phone} 
+          onChangeText={(texto) => setPhone(texto.replace(/[^0-9]/g, ''))} 
+          keyboardType="phone-pad" 
+          maxLength={10} 
+        />
 
-        <TouchableOpacity style={styles.botonGuardar} onPress={handleGuardar} disabled={guardando}>
-          <Text style={styles.textoBotonGuardar}>{guardando ? 'Guardando...' : 'Guardar'}</Text>
-        </TouchableOpacity>
+        <View style={styles.contenedorBotonesAccion}>
+          <TouchableOpacity style={styles.botonCancelar} onPress={() => router.replace('/(cliente)/perfil')} disabled={guardando}>
+            <Text style={styles.textoBotonCancelar}>Cancelar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.botonGuardar} onPress={handleGuardar} disabled={guardando}>
+            <Text style={styles.textoBotonGuardar}>{guardando ? 'Guardando...' : 'Guardar'}</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -133,6 +151,9 @@ const styles = StyleSheet.create({
   textoCambiarFoto: { color: '#007bff', marginTop: 10, fontWeight: 'bold' },
   label: { fontWeight: 'bold', marginBottom: 5 },
   input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 15, borderRadius: 8, fontSize: 16 },
-  botonGuardar: { backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 20 },
-  textoBotonGuardar: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
+  contenedorBotonesAccion: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, gap: 15 },
+  botonGuardar: { flex: 1, backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center' },
+  botonCancelar: { flex: 1, backgroundColor: '#f4f3f4', padding: 15, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#ccc' },
+  textoBotonGuardar: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  textoBotonCancelar: { color: '#333', fontWeight: 'bold', fontSize: 16 }
 });

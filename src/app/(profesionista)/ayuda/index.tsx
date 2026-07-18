@@ -1,24 +1,24 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Colors } from '@/theme/Colors';
+import { Typography } from '@/theme/Typography';
+import { Radius, Shadow, Spacing } from '@/theme/Spacing';
+import NavbarProfesionista from '@/components/NavbarProfesionista';
 
 // 1. Aquí están tus preguntas, ahora separadas por categorías
 export default function AyudaScreen() {
   const { t } = useTranslation();
 
   const listaPreguntas = [
-    { id: 1, categoria: t('catPanel'), pregunta: t('faq1q'), respuesta: t('faq1a') },
-    { id: 2, categoria: t('catPanel'), pregunta: t('faq2q'), respuesta: t('faq2a') },
-    { id: 3, categoria: t('catServicios'), pregunta: t('faq3q'), respuesta: t('faq3a') },
-    { id: 4, categoria: t('catServicios'), pregunta: t('faq4q'), respuesta: t('faq4a') },
-    { id: 5, categoria: t('catCuenta'), pregunta: t('faq5q'), respuesta: t('faq5a') },
-    { id: 6, categoria: t('catCuenta'), pregunta: t('faq6q'), respuesta: t('faq6a') },
-    { id: 7, categoria: t('catCuenta'), pregunta: t('faq7q'), respuesta: t('faq7a') },
-    { id: 8, categoria: t('catPagos'), pregunta: t('faq8q'), respuesta: t('faq8a') },
-    { id: 9, categoria: t('catPagos'), pregunta: t('faq9q'), respuesta: t('faq9a') }
+    { id: 1, categoria: t('catCuenta'), pregunta: t('¿Cómo actualizo mi información de perfil?'), respuesta: t('En el menú lateral, selecciona "Perfil" para actualizar tu foto, biografía y demás datos de contacto.') },
+    { id: 2, categoria: t('catServicios'), pregunta: t('¿Cómo agrego un nuevo servicio?'), respuesta: t('Ve a la pestaña "Servicios", pulsa el botón "+" y completa el formulario con el título, descripción y precio base.') },
+    { id: 3, categoria: t('catCitas'), pregunta: t('¿Cómo acepto o rechazo una solicitud de cita?'), respuesta: t('En la pestaña "Solicitudes" verás las citas pendientes. Abre los detalles de cada cliente y usa los botones de "Aceptar" o "Rechazar".') },
+    { id: 4, categoria: t('catCitas'), pregunta: t('¿Cómo indico que ya terminé un trabajo?'), respuesta: t('Entra al detalle de la cita aceptada en tu calendario y cambia su estado a "Finalizado".') },
+    { id: 5, categoria: t('catChat'), pregunta: t('¿Cómo funciona el chat con el cliente?'), respuesta: t('Al aceptar una solicitud de cita, se abrirá un chat privado en la pestaña "Chat" para coordinar los últimos detalles.') },
   ];
 
-  const categorias = [t('catTodas'), t('catCuenta'), t('catPanel'), t('catServicios'), t('catPagos')];
+  const categorias = [t('catTodas'), t('catCuenta'), t('catServicios'), t('catCitas'), t('catChat')];
 
   const [preguntaAbierta, setPreguntaAbierta] = useState<number | null>(null);
   const [categoriaActiva, setCategoriaActiva] = useState<string>(t('catTodas'));
@@ -62,7 +62,9 @@ export default function AyudaScreen() {
     : listaPreguntas.filter((item) => item.categoria === categoriaActiva);
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll} style={styles.contenedorFondo}>
+    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <NavbarProfesionista />
+      <ScrollView contentContainerStyle={styles.scroll} style={styles.contenedorFondo}>
       
       <View style={styles.cabecera}>
         <Text style={styles.tituloSeccion}>{t('centroAyudaTitulo')}</Text>
@@ -129,41 +131,42 @@ export default function AyudaScreen() {
         );
       })}
 
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  contenedorFondo: { flex: 1, backgroundColor: '#FAFAFC' },
-  scroll: { padding: 20, paddingBottom: 50 },
-  cabecera: { marginBottom: 20 },
-  tituloSeccion: { fontSize: 26, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 5 },
-  subtituloSeccion: { fontSize: 15, color: '#8E8E93', lineHeight: 20 },
-  tarjetaSoporte: { backgroundColor: '#5c4b8a', borderRadius: 12, padding: 20, marginBottom: 25, elevation: 2 },
-  tituloTarjetaSoporte: { color: '#FFFFFF', fontSize: 18, fontWeight: 'bold', marginBottom: 6 },
-  textoSoporte: { color: '#E8E0FF', fontSize: 14, lineHeight: 20, marginBottom: 15 },
+  contenedorFondo: { flex: 1, backgroundColor: Colors.neutral[50] },
+  scroll: { padding: Spacing[5], paddingBottom: 50 },
+  cabecera: { marginBottom: Spacing[5] },
+  tituloSeccion: { ...Typography.styles.h2, fontWeight: '800', color: Colors.primary[700], marginBottom: 5 },
+  subtituloSeccion: { ...Typography.styles.body, color: Colors.text.secondary, lineHeight: 20 },
+  tarjetaSoporte: { backgroundColor: Colors.primary[600], borderRadius: Radius.lg, padding: Spacing[5], marginBottom: Spacing[6], ...Shadow.md },
+  tituloTarjetaSoporte: { color: '#FFFFFF', ...Typography.styles.h4, fontWeight: 'bold', marginBottom: 6 },
+  textoSoporte: { color: Colors.primary[100], ...Typography.styles.body, lineHeight: 20, marginBottom: 15 },
   
   // Acomodo de los dos botones en fila
-  contenedorBotonesContacto: { flexDirection: 'row', justifyContent: 'space-between' },
-  botonContacto: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  botonWhatsApp: { backgroundColor: '#25D366', marginRight: 10 },
-  botonCorreo: { backgroundColor: '#FFFFFF', marginLeft: 10 },
+  contenedorBotonesContacto: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing[3] },
+  botonContacto: { flex: 1, paddingVertical: Spacing[3], borderRadius: Radius.md, alignItems: 'center', ...Shadow.sm },
+  botonWhatsApp: { backgroundColor: '#25D366' },
+  botonCorreo: { backgroundColor: '#FFFFFF' },
   textoBotonWhatsApp: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 15 },
-  textoBotonCorreo: { color: '#5c4b8a', fontWeight: 'bold', fontSize: 15 },
+  textoBotonCorreo: { color: Colors.primary[600], fontWeight: 'bold', fontSize: 15 },
   
-  tituloPreguntas: { fontSize: 18, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 15 },
+  tituloPreguntas: { ...Typography.styles.h5, fontWeight: 'bold', color: Colors.text.primary, marginBottom: 15 },
   
   // Estilos de los botones de categoría
-  contenedorFiltros: { flexDirection: 'row', marginBottom: 15, maxHeight: 40 },
-  botonFiltro: { backgroundColor: '#E5E5EA', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginRight: 10, justifyContent: 'center' },
-  botonFiltroActivo: { backgroundColor: '#5c4b8a' },
-  textoFiltro: { color: '#636366', fontSize: 14, fontWeight: '600' },
+  contenedorFiltros: { flexDirection: 'row', marginBottom: Spacing[4], maxHeight: 40 },
+  botonFiltro: { backgroundColor: Colors.neutral[200], paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radius.full, marginRight: 10, justifyContent: 'center' },
+  botonFiltroActivo: { backgroundColor: Colors.primary[600] },
+  textoFiltro: { color: Colors.text.secondary, fontSize: 14, fontWeight: '600' },
   textoFiltroActivo: { color: '#FFFFFF' },
   
-  contenedorAcordeon: { backgroundColor: '#FFFFFF', borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#E5E5EA', overflow: 'hidden' },
-  botonPregunta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#FFFFFF' },
-  textoPregunta: { fontSize: 15, fontWeight: '600', color: '#1C1C1E', flex: 0.9 },
-  flecha: { fontSize: 14, color: '#5c4b8a', fontWeight: 'bold' },
-  contenedorRespuesta: { padding: 16, paddingTop: 0, backgroundColor: '#FAFAFC', borderTopWidth: 1, borderTopColor: '#F2F2F7' },
-  textoRespuesta: { fontSize: 14, color: '#48484A', lineHeight: 22 }
+  contenedorAcordeon: { backgroundColor: '#FFFFFF', borderRadius: Radius.lg, marginBottom: 12, borderWidth: 1, borderColor: Colors.border.default, overflow: 'hidden', ...Shadow.sm },
+  botonPregunta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Spacing[4], backgroundColor: '#FFFFFF' },
+  textoPregunta: { ...Typography.styles.body, fontWeight: '600', color: Colors.text.primary, flex: 0.9 },
+  flecha: { fontSize: 14, color: Colors.primary[600], fontWeight: 'bold' },
+  contenedorRespuesta: { padding: Spacing[4], paddingTop: 0, backgroundColor: Colors.neutral[50], borderTopWidth: 1, borderTopColor: Colors.neutral[100] },
+  textoRespuesta: { ...Typography.styles.body, color: Colors.text.secondary, lineHeight: 22 }
 });

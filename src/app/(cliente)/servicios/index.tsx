@@ -7,8 +7,10 @@ import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import NavbarCliente from '../../../components/NavbarCliente';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 export default function ServiciosClienteScreen() {
+  const { t } = useTranslation();
   const [pestañaActiva, setPestañaActiva] = useState<'pendientes' | 'proximas' | 'historial'>('pendientes');
   const [citas, setCitas] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -75,7 +77,7 @@ export default function ServiciosClienteScreen() {
 
   const guardarReseña = async () => {
     if (estrellas === 0) {
-      Alert.alert('Faltan datos', 'Por favor selecciona una calificación de 1 a 5 estrellas.');
+      Alert.alert(t('Faltan datos'), t('Por favor selecciona una calificación de 1 a 5 estrellas.'));
       return;
     }
     
@@ -100,12 +102,23 @@ export default function ServiciosClienteScreen() {
 
       if (error) throw error;
 
-      mostrarMensaje('exito', '¡Gracias! Tu reseña ha sido guardada.');
+      const { error: notifError } = await supabase.from('notifications').insert([{
+        user_id: modalReseña?.cita.prof_id,
+        type: 'review_new',
+        content: t('nuevaResenaNotif', { defaultValue: 'Has recibido una nueva reseña de {{estrellas}} estrellas de {{name}}.', estrellas, name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'un cliente' }),
+        related_id: modalReseña?.cita.appointment_id?.toString()
+      }]);
+
+      if (notifError) {
+        console.error('Error insertando notificacion de reseña:', notifError);
+      }
+
+      mostrarMensaje('exito', t('¡Gracias! Tu reseña ha sido guardada.'));
       setModalReseña(null);
       setConfirmandoReseña(false);
       cargarCitas(); // Refrescar para que aparezca "Reseña ya hecha"
     } catch (e: any) {
-      mostrarMensaje('error', 'Error al guardar la reseña: ' + e.message);
+      mostrarMensaje('error', t('Error al guardar la reseña:') + ' ' + e.message);
       setConfirmandoReseña(false);
     } finally {
       setGuardandoReseña(false);
@@ -136,34 +149,28 @@ export default function ServiciosClienteScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.container}>
           
-          <Text style={styles.title}>Mis Citas</Text>
-          <Text style={styles.subtitle}>Haz seguimiento a tus solicitudes y próximos servicios.</Text>
+          <Text style={styles.title}>{t('Mis Citas')}</Text>
+          <Text style={styles.subtitle}>{t('Haz seguimiento a tus solicitudes y próximos servicios.')}</Text>
 
           <View style={styles.tabsContainer}>
             <TouchableOpacity 
               style={[styles.tab, pestañaActiva === 'pendientes' && styles.tabActiva]}
               onPress={() => setPestañaActiva('pendientes')}
             >
-              <Text style={[styles.tabTxt, pestañaActiva === 'pendientes' && styles.tabTxtActiva]}>
-                Solicitudes Pendientes
-              </Text>
+              <Text style={[styles.tabTxt, pestañaActiva === 'pendientes' && styles.tabTxtActiva]}>{t('Solicitudes Pendientes')}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={[styles.tab, pestañaActiva === 'proximas' && styles.tabActiva]}
               onPress={() => setPestañaActiva('proximas')}
             >
-              <Text style={[styles.tabTxt, pestañaActiva === 'proximas' && styles.tabTxtActiva]}>
-                Próximos Trabajos
-              </Text>
+              <Text style={[styles.tabTxt, pestañaActiva === 'proximas' && styles.tabTxtActiva]}>{t('Próximos Trabajos')}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.tab, pestañaActiva === 'historial' && styles.tabActiva]}
               onPress={() => setPestañaActiva('historial')}
             >
-              <Text style={[styles.tabTxt, pestañaActiva === 'historial' && styles.tabTxtActiva]}>
-                Historial
-              </Text>
+              <Text style={[styles.tabTxt, pestañaActiva === 'historial' && styles.tabTxtActiva]}>{t('Historial')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -172,7 +179,7 @@ export default function ServiciosClienteScreen() {
           ) : citas.length === 0 ? (
             <View style={styles.emptyBox}>
               <Ionicons name="calendar-outline" size={48} color={Colors.text.disabled} />
-              <Text style={styles.emptyTxt}>No tienes citas en esta sección.</Text>
+              <Text style={styles.emptyTxt}>{t('No tienes citas en esta sección.')}</Text>
             </View>
           ) : (
             <View style={styles.lista}>
@@ -192,22 +199,22 @@ export default function ServiciosClienteScreen() {
                       <Text style={styles.tarjetaTitulo}>{nombreServicio}</Text>
                       {cita.status === 3 && (
                         <View style={styles.badgeEnCurso}>
-                          <Text style={styles.badgeTxtEnCurso}>EN CURSO</Text>
+                          <Text style={styles.badgeTxtEnCurso}>{t('EN CURSO')}</Text>
                         </View>
                       )}
                       {cita.status === 4 && (
                         <View style={styles.badgeFinalizado}>
-                          <Text style={styles.badgeTxtFinalizado}>FINALIZADO</Text>
+                          <Text style={styles.badgeTxtFinalizado}>{t('FINALIZADO')}</Text>
                         </View>
                       )}
                       {cita.status === 0 && (
                         <View style={styles.badgePendiente}>
-                          <Text style={styles.badgeTxtPendiente}>ESPERANDO RESPUESTA</Text>
+                          <Text style={styles.badgeTxtPendiente}>{t('ESPERANDO RESPUESTA')}</Text>
                         </View>
                       )}
                     </View>
 
-                    <Text style={styles.profTxt}>Con: {nombreProf}</Text>
+                    <Text style={styles.profTxt}>{t('Con:')} {nombreProf}</Text>
 
                     <View style={styles.detallesRow}>
                       <View style={styles.detalleItem}>
@@ -233,7 +240,7 @@ export default function ServiciosClienteScreen() {
                       yaReseñado ? (
                         <View style={styles.reseñaHechaBox}>
                           <Ionicons name="checkmark-circle" size={18} color={Colors.success.main} />
-                          <Text style={styles.reseñaHechaTxt}>Reseña ya hecha</Text>
+                          <Text style={styles.reseñaHechaTxt}>{t('Reseña ya hecha')}</Text>
                         </View>
                       ) : (
                         <TouchableOpacity 
@@ -246,7 +253,7 @@ export default function ServiciosClienteScreen() {
                           }}
                         >
                           <Ionicons name="star" size={18} color="#fff" />
-                          <Text style={styles.reseñaBtnTxt}>Dejar una Reseña</Text>
+                          <Text style={styles.reseñaBtnTxt}>{t('Dejar una Reseña')}</Text>
                         </TouchableOpacity>
                       )
                     )}
@@ -263,39 +270,39 @@ export default function ServiciosClienteScreen() {
       {modalReseña && modalReseña.visible && (
         <View style={styles.modalFondo}>
           <View style={styles.modalCaja}>
-            <Text style={styles.modalTitulo}>Calificar Servicio</Text>
+            <Text style={styles.modalTitulo}>{t('Calificar Servicio')}</Text>
             <Text style={styles.modalSub}>¿Cómo te fue con "{modalReseña.cita.services?.service_name}"?</Text>
             
             <View style={styles.estrellasCaja}>
-              {[1, 2, 3, 4, 5].map(num => (
-                <View key={num} style={{ position: 'relative', width: 40, height: 40 }}>
-                  {/* Mitad izquierda para el medio punto (X.5) */}
-                  <TouchableOpacity 
-                    style={{ position: 'absolute', left: 0, width: 20, height: 40, zIndex: 10 }}
+              {[1, 2, 3, 4, 5].map((num) => (
+                <View key={num} style={{ flexDirection: 'row' }}>
+                  <TouchableOpacity
+                    style={{ position: 'absolute', left: 0, width: 20, height: 40, zIndex: 1 }}
                     onPress={() => setEstrellas(num - 0.5)}
                   />
-                  {/* Mitad derecha para el punto completo (X.0) */}
-                  <TouchableOpacity 
-                    style={{ position: 'absolute', right: 0, width: 20, height: 40, zIndex: 10 }}
+                  <TouchableOpacity
+                    style={{ position: 'absolute', right: 0, width: 20, height: 40, zIndex: 1 }}
                     onPress={() => setEstrellas(num)}
                   />
                   <Ionicons 
                     name={estrellas >= num ? 'star' : (estrellas >= num - 0.5 ? 'star-half' : 'star-outline')} 
                     size={40} 
-                    color={estrellas >= num - 0.5 ? '#eab308' : Colors.text.disabled} 
+                    color={estrellas >= num - 0.5 ? Colors.primary[600] : Colors.text.disabled} 
                   />
                 </View>
               ))}
             </View>
 
-            <Text style={styles.calificacionTexto}>
-              {estrellas > 0 ? `${estrellas} Estrellas` : 'Toca para calificar'}
-            </Text>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.primary[600] }}>
+                {estrellas > 0 ? `${estrellas} ${t('Estrellas')}` : t('Toca para calificar')}
+              </Text>
+            </View>
 
-            <Text style={styles.inputLabel}>Tu opinión (opcional):</Text>
+            <Text style={styles.inputLabel}>{t('Tu opinión (opcional):')}</Text>
             <TextInput
               style={styles.inputComentario}
-              placeholder="Cuéntanos tu experiencia..."
+              placeholder={t('Cuéntanos tu experiencia...')}
               multiline
               numberOfLines={3}
               value={comentario}
@@ -311,7 +318,7 @@ export default function ServiciosClienteScreen() {
                   setConfirmandoReseña(false);
                 }}
               >
-                <Text style={styles.modalTxtCancelar}>Cancelar</Text>
+                <Text style={styles.modalTxtCancelar}>{t('Cancelar')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -326,9 +333,9 @@ export default function ServiciosClienteScreen() {
                 {guardandoReseña ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : confirmandoReseña ? (
-                  <Text style={styles.modalTxtGuardar}>¿Estás seguro?</Text>
+                  <Text style={styles.modalTxtGuardar}>{t('¿Estás seguro?')}</Text>
                 ) : (
-                  <Text style={styles.modalTxtGuardar}>Enviar Reseña</Text>
+                  <Text style={styles.modalTxtGuardar}>{t('Enviar Reseña')}</Text>
                 )}
               </TouchableOpacity>
             </View>

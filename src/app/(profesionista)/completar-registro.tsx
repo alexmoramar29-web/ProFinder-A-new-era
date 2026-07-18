@@ -8,6 +8,10 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Colors } from '@/theme/Colors';
+import { Typography } from '@/theme/Typography';
+import { Radius, Shadow, Spacing } from '@/theme/Spacing';
+import NavbarProfesionista from '@/components/NavbarProfesionista';
 
 export default function CompletarRegistroScreen() {
   const router = useRouter();
@@ -115,12 +119,14 @@ export default function CompletarRegistroScreen() {
     finally { setGuardando(false); setTextoEstado(''); }
   };
 
-  if (cargandoInicial) return <View style={styles.centro}><ActivityIndicator size="large" color="#5c4b8a" /></View>;
+  if (cargandoInicial) return <View style={styles.centro}><ActivityIndicator size="large" color={Colors.primary[600]} /></View>;
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll}>
-      <View style={styles.container}>
-        <Text style={styles.titulo}>{t('verificacionProfesional')}</Text>
+    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <NavbarProfesionista />
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.container}>
+          <Text style={styles.titulo}>{t('verificacionProfesional')}</Text>
         <Text style={styles.label}>{t('seleccionaTuProfesion')}</Text>
         <View style={styles.pickerContainer}>
           <Picker selectedValue={speciality} onValueChange={(item) => setSpeciality(item)} enabled={!guardando}>
@@ -166,29 +172,30 @@ export default function CompletarRegistroScreen() {
 
       </View>
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  centro: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { flexGrow: 1, backgroundColor: '#f9f9f9' },
-  container: { padding: 25 },
-  titulo: { fontSize: 24, fontWeight: 'bold', color: '#5c4b8a', textAlign: 'center', marginBottom: 20 },
-  label: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
-  pickerContainer: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, marginBottom: 20 },
-  tarjeta: { backgroundColor: '#fff', padding: 15, borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: '#eee' },
+  centro: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.neutral[50] },
+  scroll: { flexGrow: 1, backgroundColor: Colors.neutral[50] },
+  container: { padding: Spacing[5], maxWidth: 800, width: '100%', alignSelf: 'center' },
+  titulo: { ...Typography.styles.h2, fontWeight: 'bold', color: Colors.primary[800], textAlign: 'center', marginBottom: Spacing[5] },
+  label: { ...Typography.styles.label, fontWeight: 'bold', color: Colors.text.primary, marginBottom: 10 },
+  pickerContainer: { backgroundColor: '#fff', borderWidth: 1, borderColor: Colors.border.default, borderRadius: Radius.md, marginBottom: Spacing[5], ...Shadow.sm },
+  tarjeta: { backgroundColor: '#fff', padding: Spacing[4], borderRadius: Radius.md, marginBottom: Spacing[3], borderWidth: 1, borderColor: Colors.border.default, ...Shadow.sm },
   headerTarjeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  nombreDoc: { fontSize: 14, fontWeight: 'bold', color: '#444' },
-  linkVer: { color: '#007bff', fontSize: 13, textDecorationLine: 'underline' },
-  btn: { backgroundColor: '#777', padding: 10, borderRadius: 5, alignItems: 'center' },
-  btnOk: { backgroundColor: '#28a745' },
-  txtBtn: { color: '#fff', fontWeight: 'bold' },
-  textoCargando: { color: '#5c4b8a', fontWeight: 'bold', textAlign: 'center', marginVertical: 15 },
+  nombreDoc: { ...Typography.styles.body, fontWeight: 'bold', color: Colors.text.primary },
+  linkVer: { color: Colors.info.main, fontSize: 13, textDecorationLine: 'underline' },
+  btn: { backgroundColor: Colors.neutral[400], padding: Spacing[3], borderRadius: Radius.button, alignItems: 'center' },
+  btnOk: { backgroundColor: Colors.success.main },
+  txtBtn: { color: '#fff', fontWeight: 'bold', ...Typography.styles.btn },
+  textoCargando: { color: Colors.primary[700], fontWeight: 'bold', textAlign: 'center', marginVertical: Spacing[4] },
   
-  contenedorBotonesAccion: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
-  botonCancelar: { flex: 1, backgroundColor: '#6c757d', padding: 15, borderRadius: 8, alignItems: 'center', marginRight: 10 },
-  textoBotonCancelar: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  botonGuardar: { flex: 1, backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center', marginLeft: 10 },
-  botonDeshabilitado: { backgroundColor: '#aaa' },
-  textoBotonGuardar: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
+  contenedorBotonesAccion: { flexDirection: 'row', justifyContent: 'space-between', marginTop: Spacing[6] },
+  botonCancelar: { flex: 1, backgroundColor: Colors.neutral[200], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginRight: Spacing[2], ...Shadow.sm },
+  textoBotonCancelar: { color: Colors.text.primary, fontWeight: 'bold', ...Typography.styles.btn },
+  botonGuardar: { flex: 1, backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginLeft: Spacing[2], ...Shadow.brand },
+  botonDeshabilitado: { backgroundColor: Colors.text.disabled },
+  textoBotonGuardar: { color: '#fff', fontWeight: 'bold', ...Typography.styles.btn }
 });

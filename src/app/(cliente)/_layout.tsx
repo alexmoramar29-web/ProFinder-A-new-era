@@ -6,8 +6,10 @@ import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { supabase } from '../../lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 function MenuPersonalizado(props: DrawerContentComponentProps) {
+  const { t } = useTranslation();
   const router = useRouter();
 
   const salirDeLaCuenta = async () => {
@@ -52,25 +54,25 @@ function MenuPersonalizado(props: DrawerContentComponentProps) {
 
       <View style={styles.contenedorFijoAbajo}>
         <DrawerItem
-          label="Modo Profesionista"
+          label={t('Modo Profesionista')}
           icon={({ color, size }) => <Ionicons name="briefcase-outline" size={size} color={color} />}
           onPress={alternarModo}
           labelStyle={styles.textoMenuAbajo}
         />
         <DrawerItem
-          label="Configuración"
+          label={t('Configuración')}
           icon={({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />}
           onPress={() => router.push('/(cliente)/configuracion' as any)}
           labelStyle={styles.textoMenuAbajo}
         />
         <DrawerItem
-          label="Ayuda"
+          label={t('Ayuda')}
           icon={({ color, size }) => <Ionicons name="help-circle-outline" size={size} color={color} />}
           onPress={() => router.push('/(cliente)/ayuda' as any)}
           labelStyle={styles.textoMenuAbajo}
         />
         <DrawerItem
-          label="Cerrar sesión"
+          label={t('Cerrar sesión')}
           icon={({ color, size }) => <Ionicons name="log-out-outline" size={size} color="#FF3B30" />}
           onPress={salirDeLaCuenta}
           labelStyle={styles.textoSalir}
@@ -81,6 +83,7 @@ function MenuPersonalizado(props: DrawerContentComponentProps) {
 }
 
 export default function ClienteLayout() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [verificando, setVerificando] = useState(true);
   const [fotoGlobal, setFotoGlobal] = useState<string | null>(null);
@@ -147,11 +150,11 @@ export default function ClienteLayout() {
           drawerLabelStyle: { fontSize: 16, fontWeight: '500' },
         }}
       >
-        <Drawer.Screen name="index" options={{ drawerLabel: 'Inicio' }} />
-        <Drawer.Screen name="chat/index" options={{ drawerLabel: 'Mensajes' }} />
-        <Drawer.Screen name="favoritos/index" options={{ drawerLabel: 'Favoritos' }} />
-        <Drawer.Screen name="perfil/index" options={{ drawerLabel: 'Perfil' }} />
-        <Drawer.Screen name="servicios/index" options={{ drawerLabel: 'Servicios Contratados' }} />
+        <Drawer.Screen name="index" options={{ drawerLabel: t('Inicio'), drawerIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} /> }} />
+        <Drawer.Screen name="chat/index" options={{ drawerLabel: t('Chat'), drawerIcon: ({ color, size }) => <Ionicons name="chatbubbles-outline" size={size} color={color} /> }} />
+        <Drawer.Screen name="favoritos/index" options={{ drawerLabel: t('Favoritos'), drawerIcon: ({ color, size }) => <Ionicons name="heart-outline" size={size} color={color} /> }} />
+        <Drawer.Screen name="perfil/index" options={{ drawerLabel: t('Perfil'), drawerIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} /> }} />
+        <Drawer.Screen name="servicios/index" options={{ drawerLabel: t('Citas'), drawerIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} /> }} />
         
         {/* PANTALLAS OCULTAS DEL MENÚ */}
         <Drawer.Screen name="perfil/editar" options={{ drawerItemStyle: { display: 'none' } }} />
@@ -160,7 +163,9 @@ export default function ClienteLayout() {
         <Drawer.Screen name="profesionista/[id]" options={{ drawerItemStyle: { display: 'none' } }} />
         <Drawer.Screen name="agendar/[id]" options={{ drawerItemStyle: { display: 'none' } }} />
         <Drawer.Screen name="configuracion/index" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="configuracion/cambiar-contrasena" options={{ drawerItemStyle: { display: 'none' } }} />
         <Drawer.Screen name="ayuda/index" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="notificaciones" options={{ drawerItemStyle: { display: 'none' } }} />
       </Drawer>
     </GestureHandlerRootView>
   );

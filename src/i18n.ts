@@ -3,12 +3,12 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 // Importamos nuestros diccionarios
-import ingles from '../locales/en.json';
-import espanol from '../locales/es.json';
+import ingles from './locales/en/translation.json';
+import espanol from './locales/es/translation.json';
 
 const recursos = {
-  en: { translation: ingles.traduccion },
-  es: { translation: espanol.traduccion }
+  en: { translation: ingles },
+  es: { translation: espanol }
 };
 
 i18n
@@ -17,6 +17,8 @@ i18n
     resources: recursos,
     lng: Localization.getLocales()[0].languageCode ?? 'es', 
     fallbackLng: 'es', // Si el celular está en un idioma raro, usa español por defecto
+    keySeparator: false,
+    nsSeparator: false,
     interpolation: {
       escapeValue: false 
     }

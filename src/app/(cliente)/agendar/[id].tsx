@@ -8,6 +8,7 @@ import { supabase } from '../../../lib/supabase';
 import { Colors } from '../../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Typography } from '../../../theme/Typography';
+import { useTranslation } from 'react-i18next';
 
 LocaleConfig.locales['es'] = {
   monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
@@ -41,6 +42,7 @@ const generateTimeSlots = (start: string, end: string) => {
 };
 
 export default function AgendarCitaScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams();
   const router = useRouter();
   
@@ -216,6 +218,19 @@ export default function AgendarCitaScreen() {
       }]);
 
       if (error) throw error;
+
+      // Crear notificación para el profesionista
+      const { error: notifError } = await supabase.from('notifications').insert([{
+        user_id: id,
+        type: 'appointment_new',
+        content: t('nuevaSolicitudCita', { defaultValue: 'Tienes una nueva solicitud de cita de {{name}}', name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'un cliente' }),
+        related_id: String(selectedService)
+      }]);
+      
+      if (notifError) {
+        console.error('Error insertando notificacion de cita:', notifError);
+      }
+      
       
       mostrarMensaje('exito', 'Tu solicitud de cita ha sido enviada.');
       
@@ -251,17 +266,17 @@ export default function AgendarCitaScreen() {
           
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={20} color={Colors.text.primary} />
-            <Text style={styles.backTxt}>Volver al perfil</Text>
+            <Text style={styles.backTxt}>{t('Volver al perfil')}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.title}>Agendar Cita</Text>
+          <Text style={styles.title}>{t('Agendar Cita')}</Text>
           <Text style={styles.subtitle}>con {profesional?.full_name}</Text>
 
           {/* 1. Seleccionar Servicio (AHORA OBLIGATORIO) */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>1. ¿Qué servicio necesitas?</Text>
+            <Text style={styles.sectionTitle}>{t('1. ¿Qué servicio necesitas?')}</Text>
             {servicios.length === 0 ? (
-              <Text style={{ color: Colors.text.disabled }}>Este profesionista no tiene servicios disponibles.</Text>
+              <Text style={{ color: Colors.text.disabled }}>{t('Este profesionista no tiene servicios disponibles.')}</Text>
             ) : (
               <View style={styles.serviceList}>
                 {servicios.map(s => (
@@ -309,7 +324,7 @@ export default function AgendarCitaScreen() {
           {/* 2. Seleccionar Fecha */}
           {selectedService && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>2. Selecciona la fecha</Text>
+              <Text style={styles.sectionTitle}>{t('2. Selecciona la fecha')}</Text>
               <View style={styles.calendarWrap}>
                 <Calendar
                   onDayPress={(day: DateData) => {
@@ -333,17 +348,17 @@ export default function AgendarCitaScreen() {
           {/* 3. Seleccionar Hora */}
           {selectedService && selectedDate ? (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>3. Selecciona el horario</Text>
+              <Text style={styles.sectionTitle}>{t('3. Selecciona el horario')}</Text>
               
               {dayOff ? (
                 <View style={styles.alertBox}>
                   <Ionicons name="information-circle-outline" size={20} color={Colors.text.secondary} />
-                  <Text style={styles.alertTxt}>El profesionista no atiende este servicio en este día. Selecciona otra fecha.</Text>
+                  <Text style={styles.alertTxt}>{t('El profesionista no atiende este servicio en este día. Selecciona otra fecha.')}</Text>
                 </View>
               ) : availableSlots.length === 0 ? (
                 <View style={styles.alertBox}>
                   <Ionicons name="information-circle-outline" size={20} color={Colors.text.secondary} />
-                  <Text style={styles.alertTxt}>No hay horarios configurados para este servicio hoy.</Text>
+                  <Text style={styles.alertTxt}>{t('No hay horarios configurados para este servicio hoy.')}</Text>
                 </View>
               ) : (
                 <View style={styles.timeGrid}>
@@ -364,10 +379,10 @@ export default function AgendarCitaScreen() {
           ) : null}
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Notas Adicionales (Opcional)</Text>
+            <Text style={styles.sectionTitle}>{t('Notas Adicionales (Opcional)')}</Text>
             <TextInput
               style={styles.inputArea}
-              placeholder="Describe brevemente lo que necesitas o algún detalle para el profesionista..."
+              placeholder={t('Describe brevemente lo que necesitas o algún detalle para el profesionista...')}
               multiline
               numberOfLines={4}
               value={notes}
@@ -384,7 +399,7 @@ export default function AgendarCitaScreen() {
             {guardando ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.submitBtnTxt}>Confirmar Cita</Text>
+              <Text style={styles.submitBtnTxt}>{t('Confirmar Cita')}</Text>
             )}
           </TouchableOpacity>
 

@@ -17,8 +17,10 @@ import { Colors } from '../../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Typography } from '../../../theme/Typography';
 import NavbarCliente from '../../../components/NavbarCliente';
+import { useTranslation } from 'react-i18next';
 
 export default function ChatIndexScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const navigation = useNavigation();
   const [nombreUsuario, setNombreUsuario] = useState('Mi cuenta');
@@ -135,7 +137,7 @@ export default function ChatIndexScreen() {
       <View style={styles.body}>
         <View style={styles.sidebar}>
           <View style={styles.sidebarHeader}>
-            <Text style={styles.sidebarTitle}>Messages</Text>
+            <Text style={styles.sidebarTitle}>{t('Messages')}</Text>
             <Pressable><Ionicons name="create-outline" size={20} color={Colors.primary[600]} /></Pressable>
           </View>
 
@@ -143,7 +145,7 @@ export default function ChatIndexScreen() {
             <Ionicons name="search-outline" size={15} color={Colors.text.disabled} />
             <TextInput 
               style={styles.searchInput} 
-              placeholder="Search conversations" 
+              placeholder={t('Search conversations')} 
               placeholderTextColor={Colors.text.disabled} 
               value={busqueda} 
               onChangeText={setBusqueda} 
@@ -153,7 +155,7 @@ export default function ChatIndexScreen() {
           {cargando ? (
             <ActivityIndicator style={{ marginTop: 40 }} size="large" color={Colors.primary[600]} />
           ) : conversaciones.length === 0 ? (
-            <Text style={{ textAlign: 'center', marginTop: 40, color: Colors.text.disabled }}>No tienes conversaciones aún.</Text>
+            <Text style={{ textAlign: 'center', marginTop: 40, color: Colors.text.disabled }}>{t('No tienes conversaciones aún.')}</Text>
           ) : (
             <FlatList
               data={convFiltradas}

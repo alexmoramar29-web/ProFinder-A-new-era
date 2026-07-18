@@ -1,0 +1,10 @@
+const fs = require('fs'); 
+const fileEs = 'src/locales/es/translation.json'; 
+const es = JSON.parse(fs.readFileSync(fileEs, 'utf8')); 
+const missing = ['Soporte', 'Ve a la sección de Configuración > Seguridad. Ahí encontrarás la opción para ingresar tu contraseña actual y establecer una nueva de manera segura.', '¿Cómo agrego un servicio nuevo a mi perfil?', 'Para dar de alta un nuevo servicio, ve a la pestaña de "Servicios" en tu panel de control, pulsa el botón "+" y completa el formulario con el título, la descripción detallada y el precio base.', '¿Cómo y cuándo puedo retirar mis ganancias?', 'Tus ingresos por citas completadas se reflejan en tu balance general. ProFinder realiza cortes semanales y deposita automáticamente tus ganancias en la cuenta bancaria o tarjeta que hayas vinculado en la sección de Pagos.', '¿Cómo puedo verificar mi cuenta profesional?', 'Para obtener la insignia de "Verificado", debes subir una identificación oficial y documentación que respalde tu experiencia en el área. Nuestro equipo lo revisará en un lapso de 48 horas.', '¿Qué pasa si el cliente cancela la cita?', 'Si un cliente cancela con menos de 24 horas de anticipación, se te reembolsará el 50% del valor del servicio como compensación. Las cancelaciones con mayor anticipación no tienen penalidad.', '¿Cómo puedo contactar a soporte si tengo un problema grave?', 'En la parte superior de esta pantalla encontrarás un botón directo a nuestro chat de WhatsApp para atención rápida, o bien, un botón de correo para reportes detallados. Estamos disponibles 24/7.']; 
+missing.forEach(k => { if (!es[k]) es[k] = k; }); 
+fs.writeFileSync(fileEs, JSON.stringify(es, null, 2)); 
+const fileEn = 'src/locales/en/translation.json'; 
+const en = JSON.parse(fs.readFileSync(fileEn, 'utf8')); 
+missing.forEach(k => { if (!en[k]) en[k] = k; }); 
+fs.writeFileSync(fileEn, JSON.stringify(en, null, 2));

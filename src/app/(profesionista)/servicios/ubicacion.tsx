@@ -6,6 +6,10 @@ import * as Location from 'expo-location';
 import { supabase } from '../../../lib/supabase'; // <-- Tu conexión a la base de datos
 import MapaWeb from '../../../components/shared/MapaWeb'; // <-- El mapa universal (Web + Móvil)
 import { NominatimService } from '../../../utils/geocodingService'; // <-- Servicio de geolocalización extraído
+import { Colors } from '@/theme/Colors';
+import { Typography } from '@/theme/Typography';
+import { Radius, Shadow, Spacing } from '@/theme/Spacing';
+import NavbarProfesionista from '@/components/NavbarProfesionista';
 
 export default function UbicacionServiciosScreen() {
   const router = useRouter();
@@ -168,9 +172,11 @@ export default function UbicacionServiciosScreen() {
   };
 
   return (
-    <View style={styles.contenedorFondo}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <NavbarProfesionista />
+      <View style={styles.contenedorFondo}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <View style={styles.container}>
           
           <TouchableOpacity onPress={() => router.replace('/(profesionista)/servicios')} style={styles.botonAtrasInline}>
             <Text style={styles.flechaAtras}>❮</Text>
@@ -265,37 +271,38 @@ export default function UbicacionServiciosScreen() {
         </TouchableOpacity>
       </View>
     </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  contenedorFondo: { flex: 1, backgroundColor: '#fcfcfc' },
-  scroll: { paddingBottom: 100 },
-  container: { padding: 20 },
-  botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
-  flechaAtras: { fontSize: 20, color: '#5c4b8a', fontWeight: 'bold', marginRight: 5 },
-  textoAtrasInline: { fontSize: 16, color: '#5c4b8a', fontWeight: 'bold' },
-  titulo: { fontSize: 24, fontWeight: 'bold', color: '#5c4b8a', textAlign: 'center' },
-  subtitulo: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20, marginTop: 5 },
+  contenedorFondo: { flex: 1, backgroundColor: Colors.neutral[50] },
+  scroll: { paddingBottom: Spacing[10] },
+  container: { padding: Spacing[5], maxWidth: 800, width: '100%', alignSelf: 'center' },
+  botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing[4] },
+  flechaAtras: { fontSize: 20, color: Colors.primary[700], fontWeight: 'bold', marginRight: 5 },
+  textoAtrasInline: { ...Typography.styles.body, color: Colors.primary[700], fontWeight: '700' },
+  titulo: { ...Typography.styles.h2, fontWeight: 'bold', color: Colors.primary[800], textAlign: 'center' },
+  subtitulo: { ...Typography.styles.body, color: Colors.text.secondary, textAlign: 'center', marginBottom: Spacing[6], marginTop: Spacing[1] },
   
   // Nuevos estilos para el mapa
-  mapaContenedor: { marginBottom: 25 },
-  mapa: { height: 350, width: '100%', borderRadius: 12, overflow: 'hidden' },
-  textoMapaSub: { color: '#888', fontSize: 12, marginTop: 8, textAlign: 'center', fontStyle: 'italic' },
+  mapaContenedor: { marginBottom: Spacing[6] },
+  mapa: { height: 350, width: '100%', borderRadius: Radius.lg, overflow: 'hidden' },
+  textoMapaSub: { color: Colors.text.secondary, fontSize: 12, marginTop: 8, textAlign: 'center', fontStyle: 'italic' },
 
-  label: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 5, marginTop: 10 },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 12, borderRadius: 8, backgroundColor: '#f9f9f9', fontSize: 16 },
+  label: { ...Typography.styles.label, fontWeight: 'bold', color: Colors.text.primary, marginBottom: 5, marginTop: Spacing[3] },
+  input: { borderWidth: 1, borderColor: Colors.border.default, padding: Spacing[3], borderRadius: Radius.md, backgroundColor: '#fff', ...Typography.styles.body, ...Shadow.sm },
   textArea: { height: 80, textAlignVertical: 'top' },
-  filaDivisora: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+  filaDivisora: { flexDirection: 'row', justifyContent: 'space-between', marginTop: Spacing[2] },
   mitad: { width: '48%' },
 
-  botonSecundarioLleno: { backgroundColor: '#e9ecef', padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 15, borderWidth: 1, borderColor: '#ccc' },
-  textoBotonSecundarioLleno: { color: '#333', fontWeight: 'bold', fontSize: 14 },
+  botonSecundarioLleno: { backgroundColor: Colors.neutral[100], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', marginTop: Spacing[4], borderWidth: 1, borderColor: Colors.border.default, ...Shadow.sm },
+  textoBotonSecundarioLleno: { color: Colors.text.primary, fontWeight: 'bold', ...Typography.styles.body },
 
-  botonGPS: { backgroundColor: '#2196F3', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 15, shadowColor: '#2196F3', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 4 },
-  textoBotonGPS: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  botonGPS: { backgroundColor: Colors.info.main, padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginBottom: Spacing[4], ...Shadow.md },
+  textoBotonGPS: { color: '#fff', fontWeight: 'bold', ...Typography.styles.btn },
 
-  contenedorFijoAbajo: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: '#fcfcfc', borderTopWidth: 1, borderTopColor: '#e0e0e0' },
-  botonPrimario: { backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center' },
-  textoBotonPrimario: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
+  contenedorFijoAbajo: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing[5], backgroundColor: Colors.neutral[50], borderTopWidth: 1, borderTopColor: Colors.border.default },
+  botonPrimario: { backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', ...Shadow.brand },
+  textoBotonPrimario: { color: '#fff', fontWeight: 'bold', ...Typography.styles.btn }
 });

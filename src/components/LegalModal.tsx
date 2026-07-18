@@ -4,6 +4,7 @@ import { Colors } from '../theme/Colors';
 import { Typography } from '../theme/Typography';
 import { Radius, Shadow, Spacing } from '../theme/Spacing';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 interface LegalModalProps {
   visible: boolean;
@@ -13,6 +14,7 @@ interface LegalModalProps {
 }
 
 export default function LegalModal({ visible, titulo, contenido, onClose }: LegalModalProps) {
+  const { t } = useTranslation();
   if (!visible) return null;
 
   return (
@@ -31,7 +33,7 @@ export default function LegalModal({ visible, titulo, contenido, onClose }: Lega
 
         <View style={styles.modalFooter}>
           <TouchableOpacity style={styles.btnAceptar} onPress={onClose}>
-            <Text style={styles.btnAceptarTxt}>Entendido</Text>
+            <Text style={styles.btnAceptarTxt}>{t('entendido', 'Entendido')}</Text>
           </TouchableOpacity>
         </View>
       </View>

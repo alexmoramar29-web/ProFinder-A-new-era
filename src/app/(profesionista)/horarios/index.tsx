@@ -5,6 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/Colors';
+import { Typography } from '@/theme/Typography';
+import { Radius, Shadow, Spacing } from '@/theme/Spacing';
+import NavbarProfesionista from '@/components/NavbarProfesionista';
 
 const HORAS_DISPONIBLES = [
   '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
@@ -229,19 +232,24 @@ export default function HorariosScreen() {
 
   if (servicios.length === 0) {
     return (
-      <View style={styles.centro}>
-        <Ionicons name="briefcase-outline" size={60} color={Colors.text.disabled} />
-        <Text style={[styles.titulo, { marginTop: 20 }]}>Sin servicios</Text>
-        <Text style={[styles.subtitulo, { paddingHorizontal: 40 }]}>
-          Necesitas agregar al menos un servicio en tu catálogo para poder asignarle un horario.
-        </Text>
+      <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+        <NavbarProfesionista />
+        <View style={styles.centro}>
+          <Ionicons name="briefcase-outline" size={60} color={Colors.text.disabled} />
+          <Text style={[styles.titulo, { marginTop: 20 }]}>Sin servicios</Text>
+          <Text style={[styles.subtitulo, { paddingHorizontal: 40 }]}>
+            Necesitas agregar al menos un servicio en tu catálogo para poder asignarle un horario.
+          </Text>
+        </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.contenedorFondo}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <NavbarProfesionista />
+      <View style={styles.contenedorFondo}>
+        <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.container}>
           <Text style={styles.titulo}>Horarios por Servicio</Text>
           <Text style={styles.subtitulo}>Agrega bloques de horario y asígnales los servicios que realizas.</Text>
@@ -338,6 +346,7 @@ export default function HorariosScreen() {
           {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoBotonPrimario}>Guardar Calendario</Text>}
         </TouchableOpacity>
       </View>
+      </View>
     </View>
   );
 }
@@ -346,40 +355,40 @@ const styles = StyleSheet.create({
   centro: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   contenedorFondo: { flex: 1, backgroundColor: Colors.neutral[50] },
   scroll: { paddingBottom: 100 },
-  container: { padding: 20 },
-  titulo: { fontSize: 24, fontWeight: 'bold', color: Colors.primary[800], textAlign: 'center' },
-  subtitulo: { fontSize: 14, color: Colors.text.secondary, textAlign: 'center', marginBottom: 20, marginTop: 5 },
+  container: { padding: Spacing[5] },
+  titulo: { ...Typography.styles.h2, color: Colors.primary[700], textAlign: 'center', fontWeight: '800' },
+  subtitulo: { ...Typography.styles.body, color: Colors.text.secondary, textAlign: 'center', marginBottom: Spacing[6], marginTop: Spacing[1] },
   
-  tarjetaDia: { backgroundColor: '#fff', borderRadius: 12, padding: 15, marginBottom: 15, elevation: 1, borderWidth: 1, borderColor: Colors.border.default },
-  tarjetaApagada: { backgroundColor: '#f9f9f9', borderColor: Colors.border.default },
+  tarjetaDia: { backgroundColor: '#fff', borderRadius: Radius.lg, padding: Spacing[4], marginBottom: Spacing[4], ...Shadow.md, borderWidth: 1, borderColor: Colors.border.default },
+  tarjetaApagada: { backgroundColor: Colors.neutral[100], borderColor: Colors.border.default, ...Shadow.sm },
   
-  filaDiaCabecera: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  textoDia: { fontSize: 18, fontWeight: 'bold', color: Colors.text.primary },
+  filaDiaCabecera: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing[2] },
+  textoDia: { ...Typography.styles.h4, fontWeight: '700', color: Colors.text.primary },
   
-  botonAgregar: { flexDirection: 'row', backgroundColor: Colors.primary[600], paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, alignItems: 'center', gap: 4 },
+  botonAgregar: { flexDirection: 'row', backgroundColor: Colors.primary[600], paddingHorizontal: Spacing[3], paddingVertical: 6, borderRadius: Radius.md, alignItems: 'center', gap: 4 },
   textoAgregar: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
 
-  textoDescanso: { color: Colors.text.disabled, fontStyle: 'italic', marginTop: 5 },
+  textoDescanso: { ...Typography.styles.caption, color: Colors.text.disabled, fontStyle: 'italic', marginTop: 5 },
 
-  cajaBloque: { backgroundColor: Colors.neutral[50], padding: 10, borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: Colors.border.default },
+  cajaBloque: { backgroundColor: Colors.neutral[50], padding: Spacing[3], borderRadius: Radius.md, marginBottom: Spacing[3], borderWidth: 1, borderColor: Colors.border.default },
   
   filaServicio: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  bordePickerFull: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, backgroundColor: '#fff', height: 40, justifyContent: 'center', overflow: 'hidden' },
+  bordePickerFull: { flex: 1, borderWidth: 1, borderColor: Colors.border.default, borderRadius: Radius.md, backgroundColor: '#fff', height: 40, justifyContent: 'center', overflow: 'hidden' },
   
-  botonEliminar: { padding: 8, backgroundColor: Colors.error.light, borderRadius: 8 },
+  botonEliminar: { padding: 8, backgroundColor: Colors.error.light, borderRadius: Radius.md },
 
   filaTiempo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  bordePickerMitad: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, backgroundColor: '#fff', height: 40, justifyContent: 'center', overflow: 'hidden' },
+  bordePickerMitad: { flex: 1, borderWidth: 1, borderColor: Colors.border.default, borderRadius: Radius.md, backgroundColor: '#fff', height: 40, justifyContent: 'center', overflow: 'hidden' },
   separadorHora: { marginHorizontal: 10, fontWeight: 'bold', color: Colors.text.secondary },
 
   picker: { width: '100%', height: '100%' },
 
-  mensajeToast: { position: 'absolute', bottom: 100, left: 20, right: 20, padding: 15, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 10, elevation: 5, zIndex: 999 },
+  mensajeToast: { position: 'absolute', bottom: 100, left: 20, right: 20, padding: Spacing[4], borderRadius: Radius.md, flexDirection: 'row', alignItems: 'center', gap: 10, elevation: 5, zIndex: 999 },
   toastExito: { backgroundColor: Colors.success.main },
   toastError: { backgroundColor: Colors.error.main },
-  mensajeToastTxt: { color: '#fff', fontWeight: 'bold', fontSize: 14, flex: 1 },
+  mensajeToastTxt: { ...Typography.styles.body, color: '#fff', fontWeight: 'bold', flex: 1 },
 
-  contenedorFijoAbajo: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: Colors.border.default },
-  botonPrimario: { backgroundColor: Colors.primary[600], padding: 15, borderRadius: 8, alignItems: 'center' },
-  textoBotonPrimario: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
+  contenedorFijoAbajo: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing[5], backgroundColor: Colors.neutral[50], borderTopWidth: 1, borderTopColor: Colors.border.default },
+  botonPrimario: { backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', ...Shadow.brand },
+  textoBotonPrimario: { ...Typography.styles.btn, color: '#fff', fontWeight: '700' }
 });

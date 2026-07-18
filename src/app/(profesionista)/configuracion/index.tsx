@@ -3,7 +3,10 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
-
+import { Colors } from '@/theme/Colors';
+import { Typography } from '@/theme/Typography';
+import { Radius, Shadow, Spacing } from '@/theme/Spacing';
+import NavbarProfesionista from '@/components/NavbarProfesionista';
 
 export default function ConfiguracionScreen() {
   const { t, i18n } = useTranslation();
@@ -27,7 +30,9 @@ export default function ConfiguracionScreen() {
   };
 
   return (
-    <ScrollView style={styles.contenedorFondo} contentContainerStyle={styles.scroll}>
+    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <NavbarProfesionista />
+      <ScrollView style={styles.contenedorFondo} contentContainerStyle={styles.scroll}>
       
       <View style={styles.cabecera}>
         <Text style={styles.tituloSeccion}>{t('configuracionTitulo')}</Text>
@@ -41,8 +46,8 @@ export default function ConfiguracionScreen() {
           <Switch 
             value={modoOscuro} 
             onValueChange={setModoOscuro}
-            trackColor={{ false: '#E5E5EA', true: '#5c4b8a' }}
-            thumbColor={'#FFFFFF'}
+            trackColor={{ false: Colors.neutral[200], true: Colors.primary[300] }}
+            thumbColor={modoOscuro ? Colors.primary[600] : '#FFFFFF'}
           />
         </View>
         <TouchableOpacity style={styles.filaAjuste} onPress={cambiarIdioma}>
@@ -62,8 +67,8 @@ export default function ConfiguracionScreen() {
           <Switch 
             value={notificaciones} 
             onValueChange={setNotificaciones}
-            trackColor={{ false: '#E5E5EA', true: '#5c4b8a' }}
-            thumbColor={'#FFFFFF'}
+            trackColor={{ false: Colors.neutral[200], true: Colors.primary[300] }}
+            thumbColor={notificaciones ? Colors.primary[600] : '#FFFFFF'}
           />
         </View>
       </View>
@@ -80,26 +85,27 @@ export default function ConfiguracionScreen() {
         </View>
       </View>
 
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  contenedorFondo: { flex: 1, backgroundColor: '#FAFAFC' },
-  scroll: { padding: 20, paddingBottom: 50 },
+  contenedorFondo: { flex: 1, backgroundColor: Colors.neutral[50] },
+  scroll: { padding: Spacing[5], paddingBottom: 50 },
   
-  cabecera: { marginBottom: 25 },
-  tituloSeccion: { fontSize: 26, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 5 },
-  subtituloSeccion: { fontSize: 15, color: '#8E8E93' },
+  cabecera: { marginBottom: Spacing[6] },
+  tituloSeccion: { ...Typography.styles.h2, fontWeight: '800', color: Colors.primary[700], marginBottom: 5 },
+  subtituloSeccion: { ...Typography.styles.body, color: Colors.text.secondary },
 
-  tituloBloque: { fontSize: 14, fontWeight: 'bold', color: '#8E8E93', textTransform: 'uppercase', marginBottom: 8, marginLeft: 5 },
+  tituloBloque: { ...Typography.styles.overline, color: Colors.text.disabled, textTransform: 'uppercase', marginBottom: Spacing[2], marginLeft: Spacing[2] },
   
-  bloqueAjustes: { backgroundColor: '#FFFFFF', borderRadius: 12, marginBottom: 25, borderWidth: 1, borderColor: '#E5E5EA', overflow: 'hidden' },
+  bloqueAjustes: { backgroundColor: '#FFFFFF', borderRadius: Radius.lg, marginBottom: Spacing[6], borderWidth: 1, borderColor: Colors.border.default, ...Shadow.sm, overflow: 'hidden' },
   
-  filaAjuste: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, backgroundColor: '#FFFFFF' },
-  lineaDivisora: { borderBottomWidth: 1, borderBottomColor: '#F2F2F7' },
+  filaAjuste: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing[4], paddingHorizontal: Spacing[4], backgroundColor: '#FFFFFF' },
+  lineaDivisora: { borderBottomWidth: 1, borderBottomColor: Colors.neutral[100] },
   
-  textoFila: { fontSize: 16, color: '#1C1C1E', fontWeight: '500' },
-  textoSecundario: { fontSize: 16, color: '#8E8E93' },
-  flecha: { fontSize: 16, color: '#C7C7CC', fontWeight: 'bold' }
+  textoFila: { ...Typography.styles.body, color: Colors.text.primary, fontWeight: '600' },
+  textoSecundario: { ...Typography.styles.body, color: Colors.text.secondary },
+  flecha: { fontSize: 16, color: Colors.text.disabled, fontWeight: 'bold' }
 });

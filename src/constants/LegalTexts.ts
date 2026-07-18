@@ -89,3 +89,95 @@ El cliente podrá ver la siguiente información: Su nombre completo, su especial
 Usted puede ejercer sus derechos de acceso, rectificación, cancelación u oposición al tratamiento de sus datos personales enviando un correo a certificacion@profinder.com. Si decide borrar su cuenta, todos los archivos PDF asociados serán destruidos de nuestros servidores permanentemente.`
   }
 };
+
+export const LEGAL_TEXTS_EN = {
+  cliente: {
+    terminos: `TERMS AND CONDITIONS FOR PROFINDER CLIENTS
+
+Last updated: July 16, 2026
+
+1. ACCEPTANCE OF TERMS
+By registering as a "Client" on ProFinder, you agree to be bound by these Terms and Conditions. If you do not agree, please do not use the platform. ProFinder acts solely as a technological intermediary connecting clients with independent professionals.
+
+2. USE OF THE PLATFORM AND LIABILITY
+2.1. Accuracy of Information: You agree to provide truthful information about the services you require and their location.
+2.2. ProFinder is not an employer: Professionals are independent contractors. ProFinder does not control or direct the work of the Professionals and is not liable for any damages, theft, or negligence arising from the service provided, although we provide a review system to audit quality.
+2.3. Transactions outside the platform: Any payment or agreement made outside the tools provided by ProFinder exempts the platform from any mediation or refund liability.
+
+3. CANCELLATION POLICY
+You may cancel a service before its status changes to "In Progress". Recurrent cancellations without justification may result in temporary or permanent suspension of your account.
+
+4. REVIEW SYSTEM
+The client agrees to leave honest and respectful reviews. ProFinder reserves the right to remove comments containing hate speech, threats, or verifiable defamation.`,
+
+    privacidad: `PRIVACY NOTICE FOR PROFINDER CLIENTS
+
+Last updated: July 16, 2026
+
+1. DATA CONTROLLER
+ProFinder ("We" or "The Platform") is responsible for the use and protection of your personal data.
+
+2. DATA WE COLLECT
+We collect the following personal information upon your registration and use of the platform:
+- Full name.
+- Username.
+- Email address.
+- Phone number.
+- Appointment and review history.
+
+3. PURPOSE OF DATA PROCESSING
+Your data will be used exclusively and strictly to:
+a) Create and manage your account.
+b) Connect you with trained professionals for your required services.
+c) Share your name and phone number with the professional *only* when an appointment has been accepted.
+d) Send you notifications related to your appointments.
+
+4. DATA TRANSFER
+ProFinder DOES NOT sell, rent, or share your data with third parties for advertising purposes. Your contact data is only visible to the Professional to whom you have sent an active request.
+
+5. ARCO RIGHTS (Access, Rectification, Cancellation, and Opposition)
+You have the right to know what data we hold about you, as well as to request its rectification or the total deletion of your account at any time by contacting us at privacy@profinder.com.`
+  },
+  
+  profesionista: {
+    terminos: `TERMS AND CONDITIONS FOR PROFINDER PROFESSIONALS
+
+Last updated: July 16, 2026
+
+1. ACCEPTANCE OF TERMS
+By registering as a "Professional" on ProFinder, you agree to be bound by these Terms and Conditions, which regulate the offering and provision of your independent services through our platform.
+
+2. NATURE OF THE RELATIONSHIP
+You acknowledge that you use ProFinder as an independent contractor. There is no employment, subordination, association, or franchise relationship between you and ProFinder. You are solely responsible for paying your taxes, social security contributions, and professional insurance.
+
+3. PROFESSIONAL'S OBLIGATIONS
+3.1. Document Veracity: You guarantee that the official ID (INE/Passport), Professional License, and/or Certificates uploaded to the platform are authentic and valid. Falsification of documents will result in immediate blocking and potential legal action.
+3.2. Quality and Punctuality: You agree to provide services with the highest level of professionalism, arriving on time for your appointments scheduled through the calendar.
+3.3. Proper Use: It is strictly prohibited to use the platform to promote illegal activities or unauthorized services.
+
+4. ACCOUNT SUSPENSION
+ProFinder reserves the right to deactivate profiles that accumulate multiple complaints, consistently obtain low average ratings, or violate the rules of coexistence and respect with clients.`,
+
+    privacidad: `PRIVACY NOTICE FOR PROFINDER PROFESSIONALS
+
+Last updated: July 16, 2026
+
+1. DATA CONTROLLER
+ProFinder is responsible for collecting your personal and sensitive data, the use given to them, and their protection.
+
+2. DATA COLLECTED
+In addition to basic data (name, email, phone), you voluntarily provide sensitive and official data for the validation of your identity and professionalism:
+- Official ID (INE / Passport).
+- Professional License or proof of studies.
+- Technical certifications.
+
+3. HANDLING OF SENSITIVE DOCUMENTS
+Your official documents (ID, License) are stored encrypted in secure vaults (Supabase Storage). **These documents are NOT public** and are not shared with clients. They are exclusively used for internal validation and profile certification ("Verified") by the ProFinder administrative team.
+
+4. PUBLIC DATA ON YOUR PROFILE
+The client will be able to see the following information: Your full name, your specialty, your average rating, and the reviews left by other users. Once you accept an appointment, the client will be able to see your phone number to coordinate the service.
+
+5. EXERCISE OF ARCO RIGHTS
+You may exercise your rights of access, rectification, cancellation, or opposition to the processing of your personal data by sending an email to certification@profinder.com. If you decide to delete your account, all associated PDF files will be permanently destroyed from our servers.`
+  }
+};

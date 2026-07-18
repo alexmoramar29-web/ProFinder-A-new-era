@@ -9,8 +9,10 @@ import { Colors } from '../../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Typography } from '../../../theme/Typography';
 import MapaWeb from '../../../components/shared/MapaWeb';
+import { useTranslation } from 'react-i18next';
 
 export default function PerfilProfesionistaScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -26,6 +28,8 @@ export default function PerfilProfesionistaScreen() {
   const [cargando, setCargando] = useState(true);
   const [miUbicacion, setMiUbicacion] = useState<{ latitude: number; longitude: number } | null>(null);
   const [fotoAmpliada, setFotoAmpliada] = useState<string | null>(null);
+  const [esFavorito, setEsFavorito] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -70,6 +74,13 @@ export default function PerfilProfesionistaScreen() {
 
           const { data: fotos } = await supabase.from('professional_images').select('*').eq('prof_id', id);
           if (fotos) setPortafolio(fotos);
+
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            setCurrentUserId(user.id);
+            const { data: fav } = await supabase.from('favorite_professionals').select('*').eq('user_id', user.id).eq('prof_id', id).maybeSingle();
+            setEsFavorito(!!fav);
+          }
         } catch (e) {
           console.log("Error al cargar profesional:", e);
         } finally {
@@ -80,6 +91,18 @@ export default function PerfilProfesionistaScreen() {
       cargarPerfil();
     }, [id])
   );
+
+  const alternarFavorito = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    if (esFavorito) {
+      await supabase.from('favorite_professionals').delete().eq('user_id', user.id).eq('prof_id', id);
+      setEsFavorito(false);
+    } else {
+      await supabase.from('favorite_professionals').insert([{ user_id: user.id, prof_id: id }]);
+      setEsFavorito(true);
+    }
+  };
 
   const iniciarChat = () => {
     if (!profesional) return;
@@ -107,9 +130,9 @@ export default function PerfilProfesionistaScreen() {
       <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
         <NavbarCliente />
         <View style={styles.centerContainer}>
-          <Text style={{ ...Typography.styles.h5, color: Colors.text.disabled }}>No se encontró el profesionista</Text>
+          <Text style={{ ...Typography.styles.h5, color: Colors.text.disabled }}>{t('No se encontró el profesionista')}</Text>
           <TouchableOpacity style={styles.backBtnFallback} onPress={() => router.back()}>
-            <Text style={{ color: '#fff' }}>Volver</Text>
+            <Text style={{ color: '#fff' }}>{t('Volver')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -124,10 +147,14 @@ export default function PerfilProfesionistaScreen() {
         <View style={{ maxWidth: 800, width: '100%', alignSelf: 'center' }}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={20} color={Colors.text.primary} />
-            <Text style={styles.backTxt}>Volver</Text>
+            <Text style={styles.backTxt}>{t('Volver')}</Text>
           </TouchableOpacity>
 
           <View style={styles.card}>
+            <TouchableOpacity style={{ position: 'absolute', top: Spacing[4], right: Spacing[4], zIndex: 10, padding: 4 }} onPress={alternarFavorito}>
+              <Ionicons name={esFavorito ? "heart" : "heart-outline"} size={28} color={esFavorito ? Colors.primary[600] : Colors.text.secondary} />
+            </TouchableOpacity>
+
           <View style={styles.header}>
             <View style={styles.avatarWrap}>
               <TouchableOpacity onPress={() => { if (profesional.profile_picture) setFotoAmpliada(profesional.profile_picture); }} activeOpacity={0.8}>
@@ -160,7 +187,7 @@ export default function PerfilProfesionistaScreen() {
             {showVerificationInfo && (
               <View style={styles.verificationTooltip}>
                 <Ionicons name="shield-checkmark" size={16} color={Colors.primary[700]} />
-                <Text style={styles.verificationTooltipTxt}>Perfil y documentos verificados por ProFinder</Text>
+                <Text style={styles.verificationTooltipTxt}>{t('Perfil y documentos verificados por ProFinder')}</Text>
               </View>
             )}
 
@@ -182,23 +209,25 @@ export default function PerfilProfesionistaScreen() {
           </View>
 
           {/* Sección 6 y 7: Botones de Acción (Agendar y Mensaje) */}
-          <View style={{ marginBottom: Spacing[6] }}>
-            <TouchableOpacity style={styles.agendarBtn} onPress={() => router.push(`/(cliente)/agendar/${profesional.prof_id}` as any)}>
-              <Ionicons name="calendar-outline" size={22} color={Colors.primary[700]} />
-              <Text style={styles.agendarBtnTxt}>Agendar Cita</Text>
-            </TouchableOpacity>
+          {currentUserId !== profesional.prof_id && (
+            <View style={{ marginBottom: Spacing[6] }}>
+              <TouchableOpacity style={styles.agendarBtn} onPress={() => router.push(`/(cliente)/agendar/${profesional.prof_id}` as any)}>
+                <Ionicons name="calendar-outline" size={22} color={Colors.primary[700]} />
+                <Text style={styles.agendarBtnTxt}>{t('Agendar Cita')}</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity style={styles.chatBtn} onPress={iniciarChat}>
-              <Ionicons name="chatbubbles-outline" size={22} color="#fff" />
-              <Text style={styles.chatBtnTxt}>Enviar Mensaje</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity style={styles.chatBtn} onPress={iniciarChat}>
+                <Ionicons name="chatbubbles-outline" size={22} color="#fff" />
+                <Text style={styles.chatBtnTxt}>{t('Enviar Mensaje')}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={styles.divider} />
 
           {/* Sección 8: Descripción */}
           <View style={{ marginBottom: Spacing[6] }}>
-            <Text style={styles.sectionTitle}>Acerca de</Text>
+            <Text style={styles.sectionTitle}>{t('Acerca de')}</Text>
             <Text style={styles.desc}>
               {profesional.profile_description || 'Este profesionista aún no ha agregado una descripción a su perfil.'}
             </Text>
@@ -207,7 +236,7 @@ export default function PerfilProfesionistaScreen() {
           {/* Sección 9: Trabajos */}
           {portafolio.length > 0 && (
             <View style={{ marginBottom: Spacing[6] }}>
-              <Text style={styles.sectionTitle}>Trabajos</Text>
+              <Text style={styles.sectionTitle}>{t('Trabajos')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -Spacing[4] }} contentContainerStyle={{ paddingHorizontal: Spacing[4], gap: 12 }}>
                 {portafolio.map((item) => (
                   <TouchableOpacity key={item.image_id} onPress={() => setFotoAmpliada(item.image_url)} activeOpacity={0.8}>
@@ -221,7 +250,7 @@ export default function PerfilProfesionistaScreen() {
           {/* Sección 10: Ubicación */}
           {profesional.latitude && profesional.longitude && (
             <View style={{ marginBottom: Spacing[2] }}>
-              <Text style={styles.sectionTitle}>Ubicación de Trabajo</Text>
+              <Text style={styles.sectionTitle}>{t('Ubicación de Trabajo')}</Text>
               <Text style={{ ...Typography.styles.body, color: Colors.text.secondary, marginBottom: Spacing[3] }}>
                 {(() => {
                   if (profesional.address && profesional.address.includes('|||')) {
@@ -271,7 +300,7 @@ export default function PerfilProfesionistaScreen() {
                   >
                      <View style={styles.mapOverlayBtn}>
                        <Ionicons name="expand-outline" size={20} color="#fff" />
-                       <Text style={styles.mapOverlayBtnTxt}>Tocar para interactuar</Text>
+                       <Text style={styles.mapOverlayBtnTxt}>{t('Tocar para interactuar')}</Text>
                      </View>
                   </TouchableOpacity>
                 )}
@@ -287,7 +316,7 @@ export default function PerfilProfesionistaScreen() {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Ubicación de Trabajo</Text>
+              <Text style={styles.modalTitle}>{t('Ubicación de Trabajo')}</Text>
               <TouchableOpacity onPress={() => setIsMapModalOpen(false)} style={styles.modalCloseBtn}>
                 <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>
@@ -327,7 +356,7 @@ export default function PerfilProfesionistaScreen() {
       <Modal visible={fotoAmpliada !== null} transparent={true} animationType="fade" onRequestClose={() => setFotoAmpliada(null)}>
         <View style={styles.imageModalBackdrop}>
           <TouchableOpacity style={styles.imageModalCloseBtn} onPress={() => setFotoAmpliada(null)}>
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Cerrar</Text>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>{t('Cerrar')}</Text>
           </TouchableOpacity>
           {fotoAmpliada && (
             <Image source={{ uri: fotoAmpliada }} style={styles.imageModalImg} resizeMode="contain" />

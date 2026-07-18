@@ -3,6 +3,10 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Colors } from '@/theme/Colors';
+import { Typography } from '@/theme/Typography';
+import { Radius, Shadow, Spacing } from '@/theme/Spacing';
+import NavbarProfesionista from '@/components/NavbarProfesionista';
 
 export default function ServiciosScreen() {
   const router = useRouter();
@@ -70,12 +74,14 @@ export default function ServiciosScreen() {
   };
 
   if (cargando) {
-    return <View style={styles.centro}><ActivityIndicator size="large" color="#5c4b8a" /></View>;
+    return <View style={styles.centro}><ActivityIndicator size="large" color={Colors.primary[600]} /></View>;
   }
 
   return (
-    <View style={styles.contenedorFondo}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <NavbarProfesionista />
+      <View style={styles.contenedorFondo}>
+        <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.container}>
           <Text style={styles.titulo}>{t('misServiciosTitulo')}</Text>
           <Text style={styles.subtitulo}>{t('administraServiciosSubtitulo')}</Text>
@@ -155,63 +161,64 @@ export default function ServiciosScreen() {
         </TouchableOpacity>
       </View>
     </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   centro: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  contenedorFondo: { flex: 1, backgroundColor: '#fcfcfc' }, 
-  scroll: { paddingBottom: 80 },
-  container: { padding: 20 },
-  titulo: { fontSize: 24, fontWeight: 'bold', color: '#5c4b8a', textAlign: 'center' }, 
-  subtitulo: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20, marginTop: 5 },
-  cajaVacia: { backgroundColor: '#fff', padding: 30, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#e0e0e0' },
-  textoVacio: { color: '#888', fontStyle: 'italic' },
+  contenedorFondo: { flex: 1, backgroundColor: Colors.neutral[50] }, 
+  scroll: { paddingBottom: 100 },
+  container: { padding: Spacing[5] },
+  titulo: { ...Typography.styles.h2, color: Colors.primary[700], textAlign: 'center', fontWeight: '800' }, 
+  subtitulo: { ...Typography.styles.body, color: Colors.text.secondary, textAlign: 'center', marginBottom: Spacing[6], marginTop: Spacing[1] },
+  cajaVacia: { backgroundColor: '#fff', padding: Spacing[8], borderRadius: Radius.lg, alignItems: 'center', borderWidth: 1, borderColor: Colors.border.default },
+  textoVacio: { ...Typography.styles.body, color: Colors.text.disabled, fontStyle: 'italic' },
   
   tarjeta: { 
     flexDirection: 'row', 
     backgroundColor: '#fff', 
-    padding: 15, 
-    borderRadius: 12, 
-    marginBottom: 15, 
-    elevation: 2, 
+    padding: Spacing[4], 
+    borderRadius: Radius.lg, 
+    marginBottom: Spacing[4], 
+    ...Shadow.md, 
     borderWidth: 1, 
-    borderColor: '#e0e0e0',
+    borderColor: Colors.border.default,
     alignItems: 'center' 
   },
-  tarjetaPausada: { opacity: 0.65, backgroundColor: '#f9f9f9' }, // Estilo cuando está apagado
+  tarjetaPausada: { opacity: 0.65, backgroundColor: Colors.neutral[100] },
   
-  imagenServicio: { width: 85, height: 85, borderRadius: 8, marginRight: 15, backgroundColor: '#e0e0e0' },
+  imagenServicio: { width: 85, height: 85, borderRadius: Radius.md, marginRight: Spacing[4], backgroundColor: Colors.neutral[200] },
   infoTarjeta: { flex: 1 },
   encabezadoTarjeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4, paddingRight: 5 },
-  nombreServicio: { fontSize: 16, fontWeight: 'bold', color: '#5c4b8a', flex: 1, marginRight: 5 }, 
-  textoGris: { color: '#888' }, // Vuelve gris el texto si está apagado
-
-  etiquetasContainer: { flexDirection: 'row', alignItems: 'center' },
-  etiquetaModalidad: { backgroundColor: '#f4f1fa', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginLeft: 5 },
-  textoModalidad: { fontSize: 10, fontWeight: 'bold', color: '#5c4b8a' },
+  nombreServicio: { ...Typography.styles.h5, color: Colors.primary[700], flex: 1, marginRight: 5, fontWeight: '700' }, 
+  textoGris: { color: Colors.text.secondary },
   
-  etiquetaPausado: { backgroundColor: '#ffe6e6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  textoPausado: { fontSize: 10, fontWeight: 'bold', color: '#d9534f' },
+  etiquetasContainer: { flexDirection: 'row', alignItems: 'center' },
+  etiquetaModalidad: { backgroundColor: Colors.primary[100], paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.full, marginLeft: 5 },
+  textoModalidad: { fontSize: 10, fontWeight: 'bold', color: Colors.primary[700] },
+  
+  etiquetaPausado: { backgroundColor: Colors.error.light, paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.full },
+  textoPausado: { fontSize: 10, fontWeight: 'bold', color: Colors.error.main },
 
-  descripcionServicio: { fontSize: 13, color: '#666', marginBottom: 8 },
-  filaDatos: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  precioTexto: { fontSize: 15, fontWeight: 'bold', color: '#28a745', marginRight: 15 },
-  tiempoTexto: { fontSize: 13, color: '#888' },
+  descripcionServicio: { ...Typography.styles.caption, color: Colors.text.secondary, marginBottom: Spacing[2] },
+  filaDatos: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing[3] },
+  precioTexto: { ...Typography.styles.h5, color: Colors.success.main, marginRight: Spacing[4], fontWeight: '800' },
+  tiempoTexto: { ...Typography.styles.caption, color: Colors.text.disabled },
   
   filaBotones: { flexDirection: 'row', justifyContent: 'flex-start' },
-  botonEditar: { backgroundColor: '#f0f0f0', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 6, marginRight: 10 },
-  textoEditar: { color: '#333', fontWeight: 'bold', fontSize: 12 },
-  botonBorrar: { backgroundColor: 'transparent', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 6, borderWidth: 1, borderColor: '#ff4d4d' },
-  textoBorrar: { color: '#ff4d4d', fontWeight: 'bold', fontSize: 12 },
+  botonEditar: { backgroundColor: Colors.neutral[100], paddingHorizontal: 15, paddingVertical: 8, borderRadius: Radius.md, marginRight: 10 },
+  textoEditar: { color: Colors.text.primary, fontWeight: 'bold', fontSize: 12 },
+  botonBorrar: { backgroundColor: 'transparent', paddingHorizontal: 15, paddingVertical: 8, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.error.main },
+  textoBorrar: { color: Colors.error.main, fontWeight: 'bold', fontSize: 12 },
   
-  contenedorFijoAbajo: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: '#fcfcfc', borderTopWidth: 1, borderTopColor: '#e0e0e0' },
-  botonPrimario: { backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center' },
-  textoBotonPrimario: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  contenedorFijoAbajo: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing[5], backgroundColor: Colors.neutral[50], borderTopWidth: 1, borderTopColor: Colors.border.default },
+  botonPrimario: { backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', ...Shadow.brand },
+  textoBotonPrimario: { ...Typography.styles.btn, color: '#fff', fontWeight: '700' },
   
-  contenedorFijoAbajoDosBotones: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: '#fcfcfc', borderTopWidth: 1, borderTopColor: '#e0e0e0', flexDirection: 'row', justifyContent: 'space-between' },
-  botonPrimarioMitad: { backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center', width: '48%' },
-  textoBotonPrimarioMitad: { color: '#fff', fontWeight: 'bold', fontSize: 13, textAlign: 'center' },
-  botonSecundarioMitad: { backgroundColor: '#f4f1fa', padding: 15, borderRadius: 8, alignItems: 'center', width: '48%', borderWidth: 1, borderColor: '#5c4b8a' },
-  textoBotonSecundarioMitad: { color: '#5c4b8a', fontWeight: 'bold', fontSize: 13, textAlign: 'center' }
+  contenedorFijoAbajoDosBotones: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing[5], backgroundColor: Colors.neutral[50], borderTopWidth: 1, borderTopColor: Colors.border.default, flexDirection: 'row', justifyContent: 'space-between', gap: Spacing[3] },
+  botonPrimarioMitad: { backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', flex: 1, ...Shadow.brand },
+  textoBotonPrimarioMitad: { ...Typography.styles.btn, color: '#fff', fontWeight: '700', textAlign: 'center' },
+  botonSecundarioMitad: { backgroundColor: Colors.primary[100], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', flex: 1, borderWidth: 1, borderColor: Colors.primary[300] },
+  textoBotonSecundarioMitad: { ...Typography.styles.btn, color: Colors.primary[700], fontWeight: '700', textAlign: 'center' }
 });

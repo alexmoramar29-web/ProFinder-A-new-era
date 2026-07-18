@@ -1,101 +1,138 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 import NavbarCliente from '../../../components/NavbarCliente';
+import { Colors } from '../../../theme/Colors';
+import { Typography } from '../../../theme/Typography';
+import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 
 export default function PerfilScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [zoomVisible, setZoomVisible] = useState(false); // Estado para el zoom
   const [cargando, setCargando] = useState(true);
   const [datos, setDatos] = useState<any>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [fotoAmpliada, setFotoAmpliada] = useState<string | null>(null);
 
   const cargarDatos = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) {
-    const { data, error } = await supabase.from('clientes').select('*').eq('id', user.id).single();
-    
-    if (data) {
-      setDatos(data);
-      setAvatarUrl(data.avatar_url);
-    } else {
-      // Fallback: Si no está en la tabla, usa los datos de autenticación de Google
-      setDatos({
-        full_name: user.user_metadata.full_name || 'Nuevo Usuario',
-        username: user.email?.split('@')[0],
-        phone: ''
-      });
-      setAvatarUrl(user.user_metadata.avatar_url);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data, error } = await supabase.from('users').select('*').eq('user_id', user.id).single();
+      
+      if (data) {
+        setDatos({ ...data, email: user.email });
+        setAvatarUrl(data.profile_picture || user.user_metadata?.avatar_url || user.user_metadata?.picture);
+      } else {
+        // Fallback: Si no está en la tabla, usa los datos de autenticación de Google
+        setDatos({
+          full_name: user.user_metadata?.full_name || t('Nuevo Usuario', 'Nuevo Usuario'),
+          username: user.email?.split('@')[0],
+          phone: '',
+          email: user.email
+        });
+        setAvatarUrl(user.user_metadata?.avatar_url || user.user_metadata?.picture);
+      }
     }
-  }
-  setCargando(false);
-};
+    setCargando(false);
+  };
 
   useFocusEffect(useCallback(() => { cargarDatos(); }, []));
 
   const fotoPerfil = avatarUrl || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
-  const menuItems = [
-    { title: 'Inicio', route: '/(cliente)' },
-    { title: 'Chat', route: '/(cliente)/chat' },
-    { title: 'Mi Perfil', route: '/(cliente)/perfil' },
-    { title: 'Configuración', route: '/(cliente)/configuracion' },
-    { title: 'Ayuda', route: '/(cliente)/ayuda' },
-  ];
+  if (cargando) {
+    return (
+      <View style={styles.cargandoContainer}>
+        <ActivityIndicator size="large" color={Colors.primary[600]} />
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
       <NavbarCliente />
-
- {/* ZOOM IMAGEN */}
-{/* Cambiamos animationType a 'fade' para evitar el error de TypeScript */}
-<Modal visible={zoomVisible} transparent={true} animationType="fade">
-  <TouchableWithoutFeedback onPress={() => setZoomVisible(false)}>
-    <View style={styles.zoomBackground}>
-      {/* Puedes agregar un transform: [{scale: 1}] si quieres animar la entrada */}
-      <Image source={{ uri: fotoPerfil }} style={styles.fotoZoom} />
-    </View>
-  </TouchableWithoutFeedback>
-</Modal>
-
-      {/* CONTENIDO */}
-      {cargando ? (
-        <ActivityIndicator size="large" style={{ marginTop: 50 }} />
-      ) : (
-        <ScrollView contentContainerStyle={styles.content}>
-          <TouchableOpacity onPress={() => setZoomVisible(true)}>
-            <Image source={{ uri: fotoPerfil }} style={styles.fotoGrande} />
-          </TouchableOpacity>
-          <Text style={styles.label}>Nombre: {datos?.full_name}</Text>
-          <Text style={styles.label}>Usuario: {datos?.username}</Text>
-          <Text style={styles.label}>Teléfono: {datos?.phone}</Text>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        
+        <View style={styles.container}>
           
-          <TouchableOpacity style={styles.botonEditar} onPress={() => router.push('/(cliente)/perfil/editar')}>
-            <Text style={{ color: '#fff' }}>Editar Perfil</Text>
+          <View style={styles.fotoContainer}>
+            <TouchableOpacity onPress={() => setFotoAmpliada(fotoPerfil)} activeOpacity={0.8}>
+              {fotoPerfil ? (
+                <Image source={{ uri: fotoPerfil }} style={styles.foto} />
+              ) : (
+                <View style={styles.fotoVacia}>
+                  <Text style={styles.textoFotoVacia}>{t('sinFoto', 'Sin foto')}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.nombreContainer}>
+            <Text style={styles.nombreTexto}>{datos?.full_name || t('nombreNoDisponible', 'Nombre no disponible')}</Text>
+          </View>
+
+          <View style={styles.datosCard}>
+            <Text style={styles.datoTitulo}>{t('nombreUsuarioDato', 'USUARIO')}</Text>
+            <Text style={styles.datoValor}>@{datos?.username}</Text>
+
+            <Text style={styles.datoTitulo}>{t('correoDato', 'CORREO ELECTRÓNICO')}</Text>
+            <Text style={styles.datoValor}>{datos?.email || t('sinCorreo', 'Sin correo')}</Text>
+
+            <Text style={styles.datoTitulo}>{t('telefonoDato', 'TELÉFONO')}</Text>
+            <Text style={styles.datoValor}>{datos?.phone || t('sinTelefono', 'Sin teléfono registrado')}</Text>
+          </View>
+
+          <View style={styles.contenedorBotones}>
+            <TouchableOpacity style={styles.botonSecundario} onPress={() => router.push('/(cliente)/perfil/editar')}>
+              <Text style={styles.textoBotonSecundario}>{t('Editar Perfil')}</Text>
+            </TouchableOpacity>
+          </View>
+
+        </View>
+      </ScrollView>
+
+      {/* MODAL ZOOM FOTO */}
+      <Modal visible={fotoAmpliada !== null} transparent={true} animationType="fade">
+        <View style={styles.modalFondoOscuro}>
+          <TouchableOpacity style={styles.botonCerrarModal} onPress={() => setFotoAmpliada(null)}>
+            <Text style={styles.textoCerrarModal}>{t('cerrarModal', 'Cerrar')}</Text>
           </TouchableOpacity>
-        </ScrollView>
-      )}
+          
+          {fotoAmpliada && (
+            <Image source={{ uri: fotoAmpliada }} style={styles.fotoGigante} resizeMode="contain" />
+          )}
+        </View>
+      </Modal>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  navbar: { height: 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, borderBottomWidth: 1, borderColor: '#eee' },
-  navbarTitle: { fontSize: 18, fontWeight: 'bold' },
-  rightHeaderContainer: { flexDirection: 'row', alignItems: 'center' },
-  profileCircle: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#eee', borderWidth: 1, borderColor: '#ccc' },
-  modalContainer: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end' },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' },
-  sideMenu: { width: 220, backgroundColor: '#fff', padding: 20, paddingTop: 60, elevation: 10 },
-  menuItem: { paddingVertical: 10 },
-  menuText: { fontSize: 16, color: '#333' },
-  content: { padding: 20, alignItems: 'center', maxWidth: 600, width: '100%', alignSelf: 'center' },
-  fotoGrande: { width: 150, height: 150, borderRadius: 75, marginBottom: 20 },
-  label: { fontSize: 16, marginBottom: 10 },
-  botonEditar: { backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, marginTop: 20, width: '100%', alignItems: 'center' },
-  zoomBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
-  fotoZoom: { width: 300, height: 300, borderRadius: 150 }
+  cargandoContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  scrollContainer: { flexGrow: 1, backgroundColor: Colors.neutral[50] },
+  container: { flex: 1, padding: Spacing[5], alignItems: 'center' },
+  
+  fotoContainer: { marginBottom: Spacing[4], position: 'relative' },
+  foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: Colors.neutral[200] },
+  fotoVacia: { width: 120, height: 120, borderRadius: 60, backgroundColor: Colors.neutral[200], justifyContent: 'center', alignItems: 'center' },
+  textoFotoVacia: { color: Colors.text.secondary, fontWeight: 'bold' },
+  
+  nombreContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: Spacing[5] },
+  nombreTexto: { ...Typography.styles.h2, color: Colors.text.primary, textAlign: 'center', fontWeight: '800' },
+  
+  datosCard: { width: '100%', backgroundColor: '#fff', padding: Spacing[5], borderRadius: Radius.lg, ...Shadow.md, marginBottom: Spacing[6], borderWidth: 1, borderColor: Colors.border.default },
+  datoTitulo: { ...Typography.styles.overline, color: Colors.text.disabled, marginTop: 10, letterSpacing: 0.5 },
+  datoValor: { ...Typography.styles.body, color: Colors.text.primary, marginBottom: 5, fontWeight: '500' },
+  
+  contenedorBotones: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', gap: Spacing[3], marginBottom: Spacing[6] },
+  botonSecundario: { flex: 1, backgroundColor: Colors.neutral[100], paddingVertical: Spacing[4], borderRadius: Radius.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border.default },
+  textoBotonSecundario: { ...Typography.styles.btn, color: Colors.text.primary, fontWeight: '700' },
+  
+  modalFondoOscuro: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.95)', justifyContent: 'center', alignItems: 'center' },
+  botonCerrarModal: { position: 'absolute', top: 50, right: 20, padding: 10, backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: Radius.button, zIndex: 10 },
+  textoCerrarModal: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  fotoGigante: { width: '90%', height: '80%' }
 });

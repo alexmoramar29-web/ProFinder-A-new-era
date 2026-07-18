@@ -4,6 +4,9 @@ import { Drawer } from 'expo-router/drawer';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Colors } from '../../theme/Colors';
+import { Typography } from '../../theme/Typography';
+import { Spacing } from '../../theme/Spacing';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PerfilProvider, usePerfil } from '../../context/PerfilContext';
 import { supabase } from '../../lib/supabase';
@@ -146,46 +149,22 @@ function EnrutadorProfesionista() {
       <Drawer
         drawerContent={(props) => <MenuPersonalizado {...props} />}
         screenOptions={{
-          headerStyle: { backgroundColor: '#5c4b8a' }, 
-          headerTintColor: '#fff',
-          drawerActiveTintColor: '#5c4b8a',
+          headerShown: false,
+          drawerActiveTintColor: Colors.primary[700],
+          drawerActiveBackgroundColor: Colors.primary[100],
+          drawerInactiveTintColor: Colors.text.secondary,
           drawerPosition: 'right',
-          headerTitleAlign: 'center',
-          headerTitle: '',
-          drawerStyle: { width: 260 },
-          drawerLabelStyle: { fontSize: 16, fontWeight: '500' },
-          headerLeft: () => (
-            <View style={styles.contenedorIzquierdo}>
-              <TouchableOpacity onPress={() => router.push('/(profesionista)')}>
-                <Image 
-                  source={logoProfinder} 
-                  style={styles.logoImagen} 
-                />
-              </TouchableOpacity>
-            </View>
-          ),
-          headerRight: () => (
-            <View style={styles.contenedorDerecho}>
-              <TouchableOpacity onPress={() => router.push('/(profesionista)/perfil' as any)}>
-                <Image 
-                  source={{ uri: fotoMostrar }} 
-                  style={styles.fotoPerfil} 
-                />
-              </TouchableOpacity>
-              <View style={styles.contenedorMenuBoton}>
-                <DrawerToggleButton tintColor="#fff" />
-              </View>
-            </View>
-          ),
+          drawerStyle: { width: 280, backgroundColor: Colors.neutral[50] },
+          drawerLabelStyle: { ...Typography.styles.body, fontWeight: '600' },
         }}
       >
-        <Drawer.Screen name="index" options={{ drawerLabel: t('Inicio') }} />
-        <Drawer.Screen name="perfil/index" options={{ drawerLabel: t('Perfil') }} />
-        <Drawer.Screen name="calendario/index" options={{ drawerLabel: t('Citas') }} />
-        <Drawer.Screen name="servicios/index" options={{ drawerLabel: t('Servicios') }} />
-        <Drawer.Screen name="horarios/index" options={{ drawerLabel: t('Horarios') }} />
-        <Drawer.Screen name="chat/index" options={{ drawerLabel: t('Chat') }} />
-        <Drawer.Screen name="reseñas/index" options={{ drawerLabel: t('Reseñas') }} />
+        <Drawer.Screen name="index" options={{ drawerLabel: t('Inicio'), drawerIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} /> }} />
+        <Drawer.Screen name="perfil/index" options={{ drawerLabel: t('Perfil'), drawerIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} /> }} />
+        <Drawer.Screen name="calendario/index" options={{ drawerLabel: t('Citas'), drawerIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} /> }} />
+        <Drawer.Screen name="servicios/index" options={{ drawerLabel: t('Servicios'), drawerIcon: ({ color, size }) => <Ionicons name="briefcase-outline" size={size} color={color} /> }} />
+        <Drawer.Screen name="horarios/index" options={{ drawerLabel: t('Horarios'), drawerIcon: ({ color, size }) => <Ionicons name="time-outline" size={size} color={color} /> }} />
+        <Drawer.Screen name="chat/index" options={{ drawerLabel: t('Chat'), drawerIcon: ({ color, size }) => <Ionicons name="chatbubbles-outline" size={size} color={color} /> }} />
+        <Drawer.Screen name="reseñas/index" options={{ drawerLabel: t('Reseñas'), drawerIcon: ({ color, size }) => <Ionicons name="star-outline" size={size} color={color} /> }} />
         
         {/* PANTALLAS OCULTAS DEL MENÚ */}
         <Drawer.Screen name="servicios/agregar" options={{ drawerItemStyle: { display: 'none' } }} />
@@ -198,6 +177,8 @@ function EnrutadorProfesionista() {
         <Drawer.Screen name="ayuda/index" options={{ drawerItemStyle: { display: 'none' } }} />
         <Drawer.Screen name="configuracion/cambiar-contrasena" options={{ drawerItemStyle: { display: 'none' } }} />
         <Drawer.Screen name="configuracion/privacidad" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="notificaciones" options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="cliente/[id]" options={{ drawerItemStyle: { display: 'none' } }} />
       </Drawer>
     </GestureHandlerRootView>
   );
@@ -214,13 +195,13 @@ export default function ProfesionistaLayout() {
 
 // 4. Estilos visuales
 const styles = StyleSheet.create({
-  contenedorPrincipal: { flex: 1 },
-  contenedorFijoAbajo: { borderTopWidth: 1, borderTopColor: '#E5E5EA', paddingBottom: 25, paddingTop: 5, backgroundColor: '#FAFAFC' },
-  textoMenuAbajo: { color: '#1C1C1E', fontWeight: '500', fontSize: 16 },
-  textoSalir: { color: '#FF3B30', fontWeight: 'bold', fontSize: 16 },
+  contenedorPrincipal: { flex: 1, backgroundColor: Colors.neutral[50] },
+  contenedorFijoAbajo: { borderTopWidth: 1, borderTopColor: Colors.border.default, paddingBottom: 25, paddingTop: Spacing[3], backgroundColor: '#fff' },
+  textoMenuAbajo: { ...Typography.styles.body, color: Colors.text.primary, fontWeight: '600' },
+  textoSalir: { ...Typography.styles.body, color: Colors.error.main, fontWeight: '700' },
   contenedorIzquierdo: { marginLeft: 20, justifyContent: 'center' },
   logoImagen: { width: 42, height: 42, borderRadius: 21, overflow: 'hidden', resizeMode: 'cover' },
   contenedorDerecho: { flexDirection: 'row', alignItems: 'center', marginRight: 15 },
-  fotoPerfil: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: '#ffffff', marginRight: 15, backgroundColor: '#ccc', overflow: 'hidden' },
+  fotoPerfil: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: '#ffffff', marginRight: 15, backgroundColor: Colors.neutral[200], overflow: 'hidden' },
   contenedorMenuBoton: { transform: [{ scale: 1.1 }], justifyContent: 'center', alignItems: 'center' }
 });

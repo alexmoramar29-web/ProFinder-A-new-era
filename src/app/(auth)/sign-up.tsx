@@ -15,7 +15,7 @@ import { Colors } from '../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../theme/Spacing';
 import { Typography } from '../../theme/Typography';
 import LegalModal from '../../components/LegalModal';
-import { LEGAL_TEXTS } from '../../constants/LegalTexts';
+import { LEGAL_TEXTS, LEGAL_TEXTS_EN } from '../../constants/LegalTexts';
 
 let HCaptchaWeb: any;
 if (Platform.OS === 'web') {
@@ -24,7 +24,7 @@ if (Platform.OS === 'web') {
 
 export default function SignUpScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // ── Todo el estado original intacto ─────────────────────────
   const [rol, setRol] = useState<'cliente' | 'profesionista'>('cliente');
@@ -88,10 +88,10 @@ export default function SignUpScreen() {
     const correoLimpio = email.trim();
     const usuarioLimpio = username.trim();
     if (!usuarioLimpio || !fullName || !correoLimpio || !password || !confirmPassword) return setMensajeError('Faltan datos: Todos los campos son obligatorios.');
-    if (password.length < 8) return setMensajeError('Contrasena debil: Debe tener minimo 8 caracteres.');
-    if (password !== confirmPassword) return setMensajeError('Las contrasenas no coinciden: Escribe exactamente lo mismo en ambas cajas.');
-    if (rol === 'profesionista' && (!ineDoc || !cedulaDoc || !certificadoDoc)) return setMensajeError('Documentos incompletos: Sube los archivos PDF de tu INE, Cedula y Certificado.');
-    if (!aceptaTerminos) return setMensajeError('Debes aceptar los Términos y Condiciones y el Aviso de Privacidad para continuar.');
+    if (password.length < 8) return setMensajeError(t('errContrasenaDebil'));
+    if (password !== confirmPassword) return setMensajeError(t('errContrasenaNoCoincide'));
+    if (rol === 'profesionista' && (!ineDoc || !cedulaDoc || !certificadoDoc)) return setMensajeError(t('errDocsIncompletos'));
+    if (!aceptaTerminos) return setMensajeError(t('errAceptaTerminos'));
     if (process.env.EXPO_PUBLIC_TEST_MODE === 'true') { ejecutarRegistro('dummy-token-para-pruebas'); return; }
     if (Platform.OS === 'web') captchaRef.current?.execute();
     else captchaRef.current?.show();
@@ -105,16 +105,17 @@ export default function SignUpScreen() {
     try {
       let urlIneFinal = null, urlCedulaFinal = null, urlCertificadoFinal = null;
       if (rol === 'profesionista') {
-        setMensajeExito('Guardando documentos en la bodega segura...');
+        setMensajeExito(t('msgGuardandoDocs'));
         const tiempo = Date.now();
         urlIneFinal = await subirDocumentoAlAlmacen(ineDoc, `ine_${usuarioLimpio}_${tiempo}.pdf`);
         urlCedulaFinal = await subirDocumentoAlAlmacen(cedulaDoc, `cedula_${usuarioLimpio}_${tiempo}.pdf`);
         urlCertificadoFinal = await subirDocumentoAlAlmacen(certificadoDoc, `cert_${usuarioLimpio}_${tiempo}.pdf`);
       }
-      setMensajeExito('Creando tu gafete oficial...');
+      setMensajeExito(t('msgCreandoGafete'));
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: correoLimpio, password,
         options: {
+          emailRedirectTo: 'profinder://',
           captchaToken: tokenCaptcha,
           data: {
             rol_temporal: rol, username_temporal: usuarioLimpio, fullname_temporal: fullName,
@@ -123,11 +124,16 @@ export default function SignUpScreen() {
           }
         }
       });
-      if (authError) { if (authError.message.includes('already registered')) throw new Error('Ese correo ya existe.'); throw authError; }
-      if (!authData.user) throw new Error('No pudimos crear la cuenta. Es muy probable que este correo ya esté registrado en el sistema, o hayas excedido el límite de registros de prueba (3 por hora). Intenta con un correo diferente.');
-      setMensajeExito('Cuenta creada. Por favor, revisa tu Gmail y dale clic al enlace para verificar tu cuenta.');
-      setTimeout(() => router.replace('/(auth)/sign-in'), 3500);
-    } catch (error: any) { setMensajeError(error.message || 'Error inesperado.');
+      if (authError) { if (authError.message.includes('already registered')) throw new Error(t('errCorreoExiste')); throw authError; }
+      if (!authData.user) throw new Error(t('errCuentaLimite'));
+      
+      if (authData.session) {
+        setMensajeExito(t('msgCuentaCreadaDirecto'));
+      } else {
+        setMensajeExito(t('msgCuentaCreadaCorreo'));
+        setTimeout(() => router.replace('/(auth)/sign-in'), 4000);
+      }
+    } catch (error: any) { setMensajeError(error.message || t('errInesperado'));
     } finally { setCargando(false); }
   };
 
@@ -141,7 +147,7 @@ export default function SignUpScreen() {
         {/* Cabecera */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{t('creaTuCuenta') || 'Crea tu cuenta'}</Text>
-          <Text style={styles.headerSub}>Únete a la red de profesionales más grande</Text>
+          <Text style={styles.headerSub}>{t('uneteRed', 'Únete a la red de profesionales más grande')}</Text>
         </View>
 
         {/* Card */}
@@ -207,14 +213,14 @@ export default function SignUpScreen() {
               <Text style={styles.inputLabel}>{t('seleccionaProfesion') || 'Selecciona tu profesión'}</Text>
               <View style={styles.pickerWrap}>
                 <Picker selectedValue={speciality} onValueChange={(v: string) => setSpeciality(v)} enabled={!cargando} style={styles.picker}>
-                  <Picker.Item label="Doctor" value="Doctor" />
-                  <Picker.Item label="Abogado" value="Abogado" />
-                  <Picker.Item label="Dentista" value="Dentista" />
-                  <Picker.Item label="Ingeniero en Sistemas (Hardware)" value="Ingeniero en Sistemas Hardware" />
-                  <Picker.Item label="Ingeniero en Sistemas (Software)" value="Ingeniero en Sistemas Software" />
-                  <Picker.Item label="Ingeniero Civil" value="Ingeniero Civil" />
-                  <Picker.Item label="Arquitecto" value="Arquitecto" />
-                  <Picker.Item label="Otro" value="Otro" />
+                  <Picker.Item label={t('Doctor', 'Doctor')} value="Doctor" />
+                  <Picker.Item label={t('Abogado', 'Abogado')} value="Abogado" />
+                  <Picker.Item label={t('Dentista', 'Dentista')} value="Dentista" />
+                  <Picker.Item label={t('Ingeniero en Sistemas (Hardware)', 'Ingeniero en Sistemas (Hardware)')} value="Ingeniero en Sistemas Hardware" />
+                  <Picker.Item label={t('Ingeniero en Sistemas (Software)', 'Ingeniero en Sistemas (Software)')} value="Ingeniero en Sistemas Software" />
+                  <Picker.Item label={t('Ingeniero Civil', 'Ingeniero Civil')} value="Ingeniero Civil" />
+                  <Picker.Item label={t('Arquitecto', 'Arquitecto')} value="Arquitecto" />
+                  <Picker.Item label={t('Otro', 'Otro')} value="Otro" />
                 </Picker>
               </View>
             </View>
@@ -225,7 +231,7 @@ export default function SignUpScreen() {
             <Text style={styles.inputLabel}>{t('contrasenaMinimo') || 'Contraseña'}</Text>
             <View style={styles.inputWrap}>
               <Ionicons name="lock-closed-outline" size={16} color={Colors.text.disabled} style={styles.inputIcon} />
-              <TextInput style={styles.input} placeholder="Mínimo 8 caracteres" placeholderTextColor={Colors.text.disabled} value={password} onChangeText={setPassword} secureTextEntry={!mostrarPass} maxLength={50} editable={!cargando} />
+              <TextInput style={styles.input} placeholder={t('min8caracteres', 'Mínimo 8 caracteres')} placeholderTextColor={Colors.text.disabled} value={password} onChangeText={setPassword} secureTextEntry={!mostrarPass} maxLength={50} editable={!cargando} />
               <Pressable onPress={() => setMostrarPass(v => !v)} style={styles.eyeBtn}>
                 <Ionicons name={mostrarPass ? 'eye-off-outline' : 'eye-outline'} size={16} color={Colors.text.disabled} />
               </Pressable>
@@ -237,7 +243,7 @@ export default function SignUpScreen() {
             <Text style={styles.inputLabel}>{t('confirmarContrasena') || 'Confirmar contraseña'}</Text>
             <View style={styles.inputWrap}>
               <Ionicons name="lock-closed-outline" size={16} color={Colors.text.disabled} style={styles.inputIcon} />
-              <TextInput style={styles.input} placeholder="Repite tu contraseña" placeholderTextColor={Colors.text.disabled} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={!mostrarConfirm} maxLength={50} editable={!cargando} />
+              <TextInput style={styles.input} placeholder={t('repiteNuevaClave', 'Repite tu contraseña')} placeholderTextColor={Colors.text.disabled} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={!mostrarConfirm} maxLength={50} editable={!cargando} />
               <Pressable onPress={() => setMostrarConfirm(v => !v)} style={styles.eyeBtn}>
                 <Ionicons name={mostrarConfirm ? 'eye-off-outline' : 'eye-outline'} size={16} color={Colors.text.disabled} />
               </Pressable>
@@ -284,21 +290,21 @@ export default function SignUpScreen() {
               </View>
             </Pressable>
             <Text style={styles.terminosTxt} onPress={() => setAceptaTerminos(v => !v)}>
-              Acepto los{' '}
+              {t('aceptoLos', 'Acepto los')}{' '}
               <Text 
                 style={styles.terminosLink} 
                 onPress={(e) => { e.stopPropagation(); setModalLegal({ visible: true, tipo: 'terminos' }); }}
               >
-                Términos y Condiciones
+                {t('terminosCondiciones', 'Términos y Condiciones')}
               </Text>{' '}
-              y el{' '}
+              {t('yEl', 'y el')}{' '}
               <Text 
                 style={styles.terminosLink} 
                 onPress={(e) => { e.stopPropagation(); setModalLegal({ visible: true, tipo: 'privacidad' }); }}
               >
-                Aviso de Privacidad
+                {t('avisoPrivacidad', 'Aviso de Privacidad')}
               </Text>{' '}
-              de ProFinder.
+              {t('deProFinder', 'de ProFinder.')}
             </Text>
           </View>
 
@@ -323,7 +329,7 @@ export default function SignUpScreen() {
 
           {/* Link a sign in */}
           <View style={styles.loginRow}>
-            <Text style={styles.loginTxt}>¿Ya tienes una cuenta? </Text>
+            <Text style={styles.loginTxt}>{t('yaTienesCuenta', '¿Ya tienes una cuenta?')} </Text>
             <TouchableOpacity onPress={() => router.replace('/(auth)/sign-in')} disabled={cargando}>
               <Text style={styles.loginLink}>{t('yaTengoCuenta') || 'Inicia Sesión'}</Text>
             </TouchableOpacity>
@@ -350,18 +356,18 @@ export default function SignUpScreen() {
           )}
         </View>
 
-        <Text style={styles.footer}>© 2024 ProFinder. Connecting visionaries with experts.</Text>
+        <Text style={styles.footer}>{t('footerText', '© 2024 ProFinder. Conectando visionarios con expertos.')}</Text>
       </ScrollView>
 
       {/* Modal de Textos Legales movido fuera del ScrollView para que sea fijo */}
       <LegalModal
         visible={modalLegal.visible}
-        titulo={modalLegal.tipo === 'terminos' ? 'Términos y Condiciones' : 'Aviso de Privacidad'}
+        titulo={modalLegal.tipo === 'terminos' ? (t('terminosCondiciones') || 'Términos y Condiciones') : (t('avisoPrivacidad') || 'Aviso de Privacidad')}
         contenido={
           modalLegal.tipo === 'terminos' 
-            ? LEGAL_TEXTS[rol].terminos 
+            ? (i18n.language === 'en' ? LEGAL_TEXTS_EN[rol].terminos : LEGAL_TEXTS[rol].terminos) 
             : modalLegal.tipo === 'privacidad' 
-              ? LEGAL_TEXTS[rol].privacidad 
+              ? (i18n.language === 'en' ? LEGAL_TEXTS_EN[rol].privacidad : LEGAL_TEXTS[rol].privacidad) 
               : ''
         }
         onClose={() => setModalLegal({ visible: false, tipo: null })}

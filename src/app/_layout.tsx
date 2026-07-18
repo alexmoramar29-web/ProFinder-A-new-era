@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider } from '@/context/AuthProvider';
+import { NotificationProvider } from '@/context/NotificationContext';
 import { Slot } from 'expo-router';
 import Head from 'expo-router/head';
 import React, { useEffect } from 'react';
@@ -28,10 +29,12 @@ export default function LayoutPrincipal() {
       </Head>
 
       <AuthProvider>
-        {/* Envolvemos la app en una caja que NO puede crecer más allá de la pantalla */}
-        <View style={styles.cajaEstricta}>
-          <Slot />
-        </View>
+        <NotificationProvider>
+          {/* Envolvemos la app en una caja que NO puede crecer más allá de la pantalla */}
+          <View style={styles.cajaEstricta}>
+            <Slot />
+          </View>
+        </NotificationProvider>
       </AuthProvider>
     </>
   );

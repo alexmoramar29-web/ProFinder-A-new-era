@@ -9,10 +9,12 @@ import { supabase } from '../../lib/supabase';
 import { Colors } from '../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../theme/Spacing';
 import { Typography } from '../../theme/Typography';
+import { useTranslation } from 'react-i18next';
 
 const RATINGS_OPTS = ['1+', '2+', '3+', '4+', '4.5+'];
 
 export default function ClienteDashboard() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isMobileLayout = width < 768;
@@ -27,7 +29,9 @@ export default function ClienteDashboard() {
   const [soloVerificados, setSoloVerificados] = useState(false);
   const [buscado, setBuscado] = useState(false);
   const [resultados, setResultados] = useState<any[]>([]);
+  const [favoritos, setFavoritos] = useState<string[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const [miUbicacion, setMiUbicacion] = useState<any>(null);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
@@ -52,7 +56,26 @@ export default function ClienteDashboard() {
       let query = supabase.from('professionals').select('*, services(reviews(rating))');
 
       if (termino.trim()) {
-        query = query.or(`speciality.ilike.%${termino}%,full_name.ilike.%${termino}%,profile_description.ilike.%${termino}%`);
+        const terminoLower = termino.toLowerCase().trim();
+        const predefinedSpecialities = ['Ingeniero Civil', 'Doctor', 'Ingeniero en Sistemas Software', 'Por definir'];
+        const matchedSpecialities = predefinedSpecialities.filter(spec => 
+          t(spec).toLowerCase().includes(terminoLower)
+        );
+
+        let orConditions = [];
+        
+        if (matchedSpecialities.length > 0) {
+          matchedSpecialities.forEach(spec => {
+            orConditions.push(`speciality.ilike.%${spec}%`);
+          });
+        } else {
+          orConditions.push(`speciality.ilike.%${termino}%`);
+        }
+        
+        orConditions.push(`full_name.ilike.%${termino}%`);
+        orConditions.push(`profile_description.ilike.%${termino}%`);
+        
+        query = query.or(orConditions.join(','));
       }
       
       const { data, error } = await query;
@@ -66,8 +89,29 @@ export default function ClienteDashboard() {
   };
 
   useEffect(() => {
-    buscarProfesionales('');
+    const initData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUserId(session.user.id);
+        const { data: favs } = await supabase.from('favorite_professionals').select('prof_id').eq('user_id', session.user.id);
+        if (favs) setFavoritos(favs.map(f => f.prof_id));
+      }
+      buscarProfesionales('');
+    };
+    initData();
   }, []);
+
+  const alternarFavorito = async (profId: string) => {
+    if (!userId) return;
+    const esFav = favoritos.includes(profId);
+    if (esFav) {
+      await supabase.from('favorite_professionals').delete().eq('user_id', userId).eq('prof_id', profId);
+      setFavoritos(prev => prev.filter(id => id !== profId));
+    } else {
+      await supabase.from('favorite_professionals').insert([{ user_id: userId, prof_id: profId }]);
+      setFavoritos(prev => [...prev, profId]);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -101,10 +145,21 @@ export default function ClienteDashboard() {
     const avgRating = reviewCount > 0 ? Number((totalRating / reviewCount).toFixed(1)) : 0;
     return { ...prof, avgRating, reviewCount };
   }).filter(prof => {
+    if (userId && prof.prof_id === userId) return false;
+
     if (ubicacion.trim()) {
       const ubiNorm = ubicacion.toLowerCase().trim();
+      const predefinedLocations = ['México', 'Estados Unidos', 'España', 'Colombia', 'Argentina', 'Chile', 'Perú', 'Ciudad de México', 'Nueva York'];
+      const matchedLocations = predefinedLocations.filter(loc => 
+        t(loc).toLowerCase().includes(ubiNorm)
+      );
+
       const addrNorm = (prof.address || '').toLowerCase();
-      if (!addrNorm.includes(ubiNorm)) return false;
+      const matchInTranslations = matchedLocations.some(loc => addrNorm.includes(loc.toLowerCase()));
+      
+      if (!addrNorm.includes(ubiNorm) && !matchInTranslations) {
+        return false;
+      }
     }
     if (ratingMin === '4.5+' && prof.avgRating < 4.5) return false;
     if (ratingMin === '4+' && prof.avgRating < 4) return false;
@@ -175,7 +230,7 @@ export default function ClienteDashboard() {
             <View style={styles.searchInputRow}>
               <Ionicons name="search" size={22} color={Colors.primary[600]} />
               <TextInput
-                placeholder="¿Qué servicio buscas? Ej. Plomero, Electricista"
+                placeholder={t('¿Qué servicio buscas? Ej. Plomero, Electricista')}
                 placeholderTextColor={Colors.text.disabled}
                 style={styles.searchInput}
                 value={busqueda}
@@ -185,7 +240,7 @@ export default function ClienteDashboard() {
             </View>
             {!isMobile && (
               <Pressable style={styles.searchBtn} onPress={() => buscarProfesionales(busqueda)}>
-                <Text style={styles.searchBtnTxt}>Buscar</Text>
+                <Text style={styles.searchBtnTxt}>{t('Buscar')}</Text>
               </Pressable>
             )}
           </View>
@@ -201,7 +256,7 @@ export default function ClienteDashboard() {
                 <View style={styles.locBoxMobile}>
                   <Ionicons name="location-outline" size={18} color={Colors.primary[600]} />
                   <TextInput
-                    placeholder="Ciudad o CP"
+                    placeholder={t('Ciudad o CP')}
                     placeholderTextColor={Colors.text.disabled}
                     style={styles.locInputMobile}
                     value={ubicacion}
@@ -212,7 +267,7 @@ export default function ClienteDashboard() {
                 <View style={styles.locBoxMobile}>
                   <Ionicons name="navigate-outline" size={18} color={Colors.primary[600]} />
                   <TextInput
-                    placeholder="Máx Km"
+                    placeholder={t('Máx Km')}
                     placeholderTextColor={Colors.text.disabled}
                     style={[styles.locInputMobile, { width: 70 }]}
                     value={distanciaMax}
@@ -221,7 +276,7 @@ export default function ClienteDashboard() {
                   />
                 </View>
                 <Pressable style={[styles.ratingChipMobile, soloVerificados && styles.ratingChipOnMobile]} onPress={() => setSoloVerificados(!soloVerificados)}>
-                  <Text style={[styles.ratingChipTxtMobile, soloVerificados && styles.ratingChipTxtOnMobile]}>Verificados</Text>
+                  <Text style={[styles.ratingChipTxtMobile, soloVerificados && styles.ratingChipTxtOnMobile]}>{t('Verificados')}</Text>
                 </Pressable>
                 {RATINGS_OPTS.map(r => (
                   <Pressable key={r} style={[styles.ratingChipMobile, ratingMin === r && styles.ratingChipOnMobile]} onPress={() => setRatingMin(r)}>
@@ -229,25 +284,25 @@ export default function ClienteDashboard() {
                   </Pressable>
                 ))}
                 <Pressable onPress={() => { setRatingMin(''); setUbicacion(''); setDistanciaMax(''); setSoloVerificados(false); buscarProfesionales(busqueda); }} style={styles.filterResetBtnMobile}>
-                   <Text style={styles.filterResetTxtMobile}>Limpiar</Text>
+                   <Text style={styles.filterResetTxtMobile}>{t('Limpiar')}</Text>
                 </Pressable>
               </ScrollView>
             </View>
           ) : (
             <View style={[styles.filtersPanel, { width: 280 }]}>
               <View style={styles.filterHeader}>
-                <Text style={styles.filterTitle}>Filtros</Text>
+                <Text style={styles.filterTitle}>{t('Filtros')}</Text>
                 <Pressable onPress={() => { setRatingMin(''); setUbicacion(''); setDistanciaMax(''); setSoloVerificados(false); buscarProfesionales(busqueda); }}>
-                  <Text style={styles.filterReset}>Limpiar</Text>
+                  <Text style={styles.filterReset}>{t('Limpiar')}</Text>
                 </Pressable>
               </View>
 
               <View style={styles.filterGroup}>
-                <Text style={styles.filterLabel}>UBICACIÓN</Text>
+                <Text style={styles.filterLabel}>{t('UBICACIÓN')}</Text>
                 <View style={styles.locBox}>
                   <Ionicons name="location-outline" size={16} color={Colors.primary[600]} />
                   <TextInput
-                    placeholder="Ciudad o CP"
+                    placeholder={t('Ciudad o CP')}
                     placeholderTextColor={Colors.text.disabled}
                     style={styles.locInput}
                     value={ubicacion}
@@ -258,7 +313,7 @@ export default function ClienteDashboard() {
                 <View style={[styles.locBox, { marginTop: 8 }]}>
                   <Ionicons name="navigate-outline" size={16} color={Colors.primary[600]} />
                   <TextInput
-                    placeholder="Distancia Máx (Km)"
+                    placeholder={t('Distancia Máx (Km)')}
                     placeholderTextColor={Colors.text.disabled}
                     style={styles.locInput}
                     value={distanciaMax}
@@ -269,18 +324,18 @@ export default function ClienteDashboard() {
               </View>
 
               <View style={styles.filterGroup}>
-                <Text style={styles.filterLabel}>VERIFICACIÓN</Text>
+                <Text style={styles.filterLabel}>{t('VERIFICACIÓN')}</Text>
                 <Pressable 
                   style={[styles.locBox, { backgroundColor: soloVerificados ? Colors.primary[50] : '#fff', borderColor: soloVerificados ? Colors.primary[400] : Colors.border.default }]} 
                   onPress={() => setSoloVerificados(!soloVerificados)}
                 >
                   <Ionicons name={soloVerificados ? "checkmark-circle" : "ellipse-outline"} size={16} color={soloVerificados ? Colors.primary[600] : Colors.text.disabled} />
-                  <Text style={{ marginLeft: 8, color: soloVerificados ? Colors.primary[700] : Colors.text.secondary }}>Solo Verificados</Text>
+                  <Text style={{ marginLeft: 8, color: soloVerificados ? Colors.primary[700] : Colors.text.secondary }}>{t('Solo Verificados')}</Text>
                 </Pressable>
               </View>
 
               <View style={styles.filterGroup}>
-                <Text style={styles.filterLabel}>CALIFICACIÓN</Text>
+                <Text style={styles.filterLabel}>{t('CALIFICACIÓN')}</Text>
                 <View style={styles.ratingRow}>
                   {RATINGS_OPTS.map(r => (
                     <Pressable key={r} style={[styles.ratingChip, ratingMin === r && styles.ratingChipOn]} onPress={() => setRatingMin(r)}>
@@ -313,7 +368,7 @@ export default function ClienteDashboard() {
                   >
                      <View style={styles.mapOverlayBtn}>
                        <Ionicons name="expand-outline" size={20} color="#fff" />
-                       <Text style={styles.mapOverlayBtnTxt}>Tocar para interactuar</Text>
+                       <Text style={styles.mapOverlayBtnTxt}>{t('Tocar para interactuar')}</Text>
                      </View>
                   </TouchableOpacity>
                 )}
@@ -325,23 +380,23 @@ export default function ClienteDashboard() {
           <View style={[styles.cardsCol, !isMobile && { flex: 1 }]}>
             <View style={styles.resultsHeader}>
               <Text style={styles.resultsTitle}>
-                {buscado && busqueda ? `Resultados para "${busqueda}"` : 'Profesionistas Disponibles'}
+                {buscado && busqueda ? `${t('resultadosPara')} "${busqueda}"` : t('Profesionistas Disponibles')}
               </Text>
               <Text style={styles.resultsCount}>
-                {cargando ? 'Buscando expertos...' : `Mostrando ${resultadosProcesados.length} resultado${resultadosProcesados.length !== 1 ? 's' : ''}`}
+                {cargando ? t('Buscando expertos...') : `${t('Mostrando')} ${resultadosProcesados.length} ${resultadosProcesados.length !== 1 ? t('resultados') : t('resultado')}`}
               </Text>
             </View>
 
             {cargando ? (
               <View style={styles.loadingWrap}>
                 <ActivityIndicator size="large" color={Colors.primary[600]} />
-                <Text style={styles.loadingTxt}>Encontrando a los mejores...</Text>
+                <Text style={styles.loadingTxt}>{t('Encontrando a los mejores...')}</Text>
               </View>
             ) : resultadosProcesados.length === 0 ? (
               <View style={styles.emptyWrap}>
                 <Ionicons name="search-outline" size={64} color={Colors.neutral[300]} />
-                <Text style={styles.emptyTxt}>No se encontraron profesionistas.</Text>
-                <Text style={styles.emptySubTxt}>Intenta con otros términos de búsqueda.</Text>
+                <Text style={styles.emptyTxt}>{t('No se encontraron profesionistas.')}</Text>
+                <Text style={styles.emptySubTxt}>{t('Intenta con otros términos de búsqueda.')}</Text>
               </View>
             ) : (
               <View style={[styles.cardsGrid, isMobile && { flexDirection: 'column', flexWrap: 'nowrap' }]}>
@@ -368,12 +423,17 @@ export default function ClienteDashboard() {
                           })() && (
                             <View style={styles.verifiedBadge}>
                               <Ionicons name="checkmark-circle" size={12} color={Colors.primary[700]} />
-                              <Text style={styles.verifiedTxt}>Verificado</Text>
+                              <Text style={styles.verifiedTxt}>{t('Verificado')}</Text>
                             </View>
                           )}
                           <Text style={styles.cardNombre} numberOfLines={1}>{prof.full_name}</Text>
                         </View>
-                        <Text style={styles.cardRol}>{prof.speciality}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Text style={styles.cardRol}>{t(prof.speciality || 'Por definir')}</Text>
+                          <Pressable onPress={() => alternarFavorito(prof.prof_id)} style={{ padding: 4 }}>
+                            <Ionicons name={favoritos.includes(prof.prof_id) ? "heart" : "heart-outline"} size={20} color={favoritos.includes(prof.prof_id) ? Colors.primary[600] : Colors.text.secondary} />
+                          </Pressable>
+                        </View>
                       </View>
                     </View>
 
@@ -386,7 +446,7 @@ export default function ClienteDashboard() {
                     <View style={[styles.cardFooter, isMobile && { flexDirection: 'column', alignItems: 'stretch', gap: 16 }]}>
                       <View style={isMobile && { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                         <View>
-                          <Text style={styles.startingAt}>RESEÑAS</Text>
+                          <Text style={styles.startingAt}>{t('RESEÑAS')}</Text>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                             <Ionicons name="star" size={16} color="#F59E0B" />
                             <Text style={styles.precio}>{prof.avgRating > 0 ? prof.avgRating : 'N/A'}</Text>
@@ -395,7 +455,7 @@ export default function ClienteDashboard() {
                         </View>
                       </View>
                       <Pressable style={[styles.viewBtn, isMobile && { justifyContent: 'center', height: 44 }]} onPress={() => router.push(`/(cliente)/profesionista/${prof.prof_id}` as any)}>
-                        <Text style={styles.viewBtnTxt}>Agendar / Ver más</Text>
+                        <Text style={styles.viewBtnTxt}>{t('Agendar / Ver más')}</Text>
                         <Ionicons name="arrow-forward" size={16} color="#fff" />
                       </Pressable>
                     </View>
@@ -424,15 +484,15 @@ export default function ClienteDashboard() {
         {/* ── FOOTER ── */}
         <View style={styles.footer}>
           <View style={styles.footerBrand}>
-            <Text style={styles.footerLogo}>ProFinder</Text>
-            <Text style={styles.footerTag}>Connecting visionaries with experts.</Text>
+            <Text style={styles.footerLogo}>{t('ProFinder')}</Text>
+            <Text style={styles.footerTag}>{t('Connecting visionaries with experts.')}</Text>
           </View>
           <View style={styles.footerLinks}>
             {['Privacy', 'Terms', 'Support'].map(l => (
               <Pressable key={l}><Text style={styles.footerLink}>{l}</Text></Pressable>
             ))}
           </View>
-          <Text style={styles.footerCopy}>© 2024 ProFinder.</Text>
+          <Text style={styles.footerCopy}>{t('© 2024 ProFinder.')}</Text>
         </View>
       </ScrollView>
 
@@ -441,7 +501,7 @@ export default function ClienteDashboard() {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Mapa de Profesionistas</Text>
+              <Text style={styles.modalTitle}>{t('Mapa de Profesionistas')}</Text>
               <TouchableOpacity onPress={() => setIsMapModalOpen(false)} style={styles.modalCloseBtn}>
                 <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>

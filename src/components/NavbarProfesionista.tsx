@@ -11,7 +11,7 @@ import { Typography } from '../theme/Typography';
 import { useTranslation } from 'react-i18next';
 import { useNotifications } from '../context/NotificationContext';
 
-export default function NavbarCliente() {
+export default function NavbarProfesionista() {
   const { t } = useTranslation();
   const router = useRouter();
   const navigation = useNavigation();
@@ -34,42 +34,46 @@ export default function NavbarCliente() {
         || 'Mi cuenta';
       setNombreUsuario(nombre);
       setInicialUsuario(nombre.charAt(0).toUpperCase());
-      
-      const { data } = await supabase.from('users').select('profile_picture').eq('user_id', user.id).maybeSingle();
-      if (data?.profile_picture) {
-        setFotoPerfil(data.profile_picture);
-      } else if (user.user_metadata?.avatar_url) {
-        setFotoPerfil(user.user_metadata.avatar_url);
-      } else if (user.user_metadata?.picture) {
-        setFotoPerfil(user.user_metadata.picture);
+
+      const { data: profData } = await supabase.from('professionals').select('profile_picture').eq('prof_id', user.id).maybeSingle();
+      if (profData?.profile_picture) {
+        setFotoPerfil(profData.profile_picture);
+      } else {
+        const { data: userData } = await supabase.from('users').select('profile_picture').eq('user_id', user.id).maybeSingle();
+        if (userData?.profile_picture) {
+          setFotoPerfil(userData.profile_picture);
+        } else if (user.user_metadata?.avatar_url) {
+          setFotoPerfil(user.user_metadata.avatar_url);
+        } else if (user.user_metadata?.picture) {
+          setFotoPerfil(user.user_metadata.picture);
+        }
       }
     });
   }, []);
 
   return (
     <View style={[styles.navbar, isMobile && { paddingTop: insets.top + Spacing[3], height: 64 + insets.top }]}>
-      <Pressable style={styles.navBrand} onPress={() => router.replace('/(cliente)' as any)}>
+      <Pressable style={styles.navBrand} onPress={() => router.replace('/(profesionista)' as any)}>
         <Image source={require('../../assets/images/logo.png')} style={styles.navLogo} resizeMode="contain" />
         <Text style={styles.navLogoText}>{t('ProFinder')}</Text>
       </Pressable>
 
       {!isMobile && (
         <View style={styles.navLinks}>
-          <Pressable onPress={() => router.replace('/(cliente)' as any)}>
-            <Text style={[styles.navLink, (pathname === '/' || pathname === '/(cliente)') && styles.navLinkActive]}>{t('Find Professionals')}</Text>
+          <Pressable onPress={() => router.replace('/(profesionista)' as any)}>
+            <Text style={[styles.navLink, (pathname === '/' || pathname === '/(profesionista)') && styles.navLinkActive]}>{t('Dashboard')}</Text>
           </Pressable>
-
-          <Pressable onPress={() => router.push('/(cliente)/chat' as any)}>
-            <Text style={[styles.navLink, pathname?.includes('/chat') && styles.navLinkActive]}>{t('Chat')}</Text>
+          <Pressable onPress={() => router.push('/(profesionista)/servicios' as any)}>
+            <Text style={[styles.navLink, pathname?.includes('/servicios') && styles.navLinkActive]}>{t('Servicios')}</Text>
           </Pressable>
-          <Pressable onPress={() => router.push('/(cliente)/servicios' as any)}>
-            <Text style={[styles.navLink, pathname?.includes('/servicios') && styles.navLinkActive]}>{t('Citas')}</Text>
+          <Pressable onPress={() => router.push('/(profesionista)/horarios' as any)}>
+            <Text style={[styles.navLink, pathname?.includes('/horarios') && styles.navLinkActive]}>{t('Horarios')}</Text>
           </Pressable>
         </View>
       )}
 
       <View style={styles.navRight}>
-        <Pressable style={styles.navIconBtn} onPress={() => router.push('/(cliente)/notificaciones' as any)}>
+        <Pressable style={styles.navIconBtn} onPress={() => router.push('/(profesionista)/notificaciones' as any)}>
           <Ionicons name="notifications-outline" size={20} color="#fff" />
           {unreadCount > 0 && (
             <View style={styles.badge}>

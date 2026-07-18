@@ -335,14 +335,14 @@ export default function SignInScreen() {
       <View style={styles.header}>
         <Image source={require('../../../assets/images/logo.png')} style={styles.logoImg} resizeMode="contain" />
         <Text style={styles.logoText}>ProFinder</Text>
-        <Text style={styles.tagline}>Connecting visionaries with experts.</Text>
+        <Text style={styles.tagline}>{t('connectingVisionaries', 'Connecting visionaries with experts.')}</Text>
       </View>
 
       {/* Card del formulario */}
       <View style={styles.card}>
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>{modoRecuperar ? t('recuperaAcceso') : 'Bienvenido de nuevo'}</Text>
-        <Text style={styles.subtitle}>{modoRecuperar ? 'Ingresa tu correo o usuario para recuperar tu cuenta.' : t('iniciaSesion')}</Text>
+        <Text style={styles.title}>{modoRecuperar ? t('recuperaAcceso') : t('bienvenidoDeNuevo', 'Bienvenido de nuevo')}</Text>
+        <Text style={styles.subtitle}>{modoRecuperar ? t('ingresaCorreoRecuperar', 'Ingresa tu correo o usuario para recuperar tu cuenta.') : t('iniciaSesion')}</Text>
 
         {/* Selector portal */}
         <View style={styles.portalSelector}>
@@ -358,10 +358,10 @@ export default function SignInScreen() {
 
         {/* Input correo */}
         <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Correo electrónico o Usuario</Text>
+          <Text style={styles.inputLabel}>{t('correoOUser', 'Correo electrónico o Usuario')}</Text>
           <View style={styles.inputWrap}>
             <Ionicons name="mail-outline" size={17} color={Colors.text.disabled} style={styles.inputIcon} />
-            <TextInput style={styles.input} placeholder="nombre@ejemplo.com" placeholderTextColor={Colors.text.disabled} value={identificador} onChangeText={setIdentificador} autoCapitalize="none" editable={!cargando} />
+            <TextInput style={styles.input} placeholder={t('ejemploCorreo', 'nombre@ejemplo.com')} placeholderTextColor={Colors.text.disabled} value={identificador} onChangeText={setIdentificador} autoCapitalize="none" editable={!cargando} />
           </View>
         </View>
 
@@ -369,9 +369,9 @@ export default function SignInScreen() {
         {!modoRecuperar && (
           <View style={styles.inputGroup}>
             <View style={styles.inputLabelRow}>
-              <Text style={styles.inputLabel}>Contraseña</Text>
+              <Text style={styles.inputLabel}>{t('contrasenaLabel', 'Contraseña')}</Text>
               <TouchableOpacity onPress={() => { setModoRecuperar(true); setMensaje(''); }}>
-                <Text style={styles.forgotLink}>¿Olvidaste tu contraseña?</Text>
+                <Text style={styles.forgotLink}>{t('btnOlvideContrasena', '¿Olvidaste tu contraseña?')}</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.inputWrap}>
@@ -430,7 +430,7 @@ export default function SignInScreen() {
           <>
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerTxt}>o continúa con</Text>
+              <Text style={styles.dividerTxt}>{t('o continua con', 'o continúa con')}</Text>
               <View style={styles.dividerLine} />
             </View>
             <View style={styles.socialRow}>
@@ -444,7 +444,7 @@ export default function SignInScreen() {
               </TouchableOpacity>
             </View>
             <View style={styles.registerRow}>
-              <Text style={styles.registerTxt}>¿No tienes una cuenta? </Text>
+              <Text style={styles.registerTxt}>{t('No tienes cuenta', '¿No tienes una cuenta?')} </Text>
               <TouchableOpacity onPress={() => router.push('/(auth)/sign-up')}>
                 <Text style={styles.registerLink}>{t('btnRegistro') || 'Regístrate gratis'}</Text>
               </TouchableOpacity>
@@ -454,7 +454,7 @@ export default function SignInScreen() {
         </ScrollView>
       </View>
 
-      <Text style={styles.footer}>© 2024 ProFinder. Connecting visionaries with experts.</Text>
+      <Text style={styles.footer}>{t('footerText', '© 2024 ProFinder. Conectando visionarios con expertos.')}</Text>
     </ScrollView>
     </LinearGradient>
   );

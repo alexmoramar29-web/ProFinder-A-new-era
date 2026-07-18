@@ -125,7 +125,7 @@ export default function CambiarContrasenaScreen() {
       
       // Te regresamos automáticamente al menú anterior después de 2 segundos
       setTimeout(() => {
-         router.replace('/(profesionista)/configuracion');
+         router.replace('/(cliente)/configuracion');
       }, 2000);
 
     } catch (error: any) {
@@ -145,7 +145,7 @@ export default function CambiarContrasenaScreen() {
   return (
     <View style={styles.contenedorFondo}>
       <View style={styles.tarjeta}>
-        <TouchableOpacity onPress={() => router.replace('/(profesionista)/configuracion')} style={styles.botonAtrasInline}>
+        <TouchableOpacity onPress={() => router.replace('/(cliente)/configuracion')} style={styles.botonAtrasInline}>
           <Text style={styles.flechaAtras}>❮</Text>
           <Text style={styles.textoAtrasInline}>{t('atras')}</Text>
         </TouchableOpacity>
@@ -196,6 +196,7 @@ export default function CambiarContrasenaScreen() {
               onChangeText={setNuevaContraseña}
             />
 
+            {/* 3. NUEVO: La cajita visual para confirmar */}
             <Text style={styles.etiquetaInput}>{t('confirmarContrasenaLabel')}</Text>
             <TextInput
               style={styles.input}

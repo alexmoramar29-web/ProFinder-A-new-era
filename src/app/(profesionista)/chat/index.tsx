@@ -2,11 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View, TouchableOpacity } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 import { Colors } from '../../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Typography } from '../../../theme/Typography';
+import NavbarProfesionista from '../../../components/NavbarProfesionista';
 
 export default function BandejaChatScreen() {
   const { t } = useTranslation();
@@ -123,6 +124,7 @@ export default function BandejaChatScreen() {
 
   return (
     <View style={styles.root}>
+      <NavbarProfesionista />
       <View style={styles.body}>
         <View style={styles.sidebar}>
           <View style={styles.sidebarHeader}>
@@ -153,14 +155,14 @@ export default function BandejaChatScreen() {
               contentContainerStyle={{ paddingBottom: 20 }}
               renderItem={({ item }) => (
                 <Pressable style={styles.convItem} onPress={() => irAlChat(item.id, item.nombre, item.inicial, item.avatar)}>
-                  <View style={styles.convAvatarWrap}>
+                  <TouchableOpacity onPress={() => router.push(`/(profesionista)/cliente/${item.id}` as any)} activeOpacity={0.7} style={styles.convAvatarWrap}>
                     {item.avatar ? (
                         <Image source={{ uri: item.avatar }} style={styles.convAvatar} />
                     ) : (
                         <View style={styles.convAvatar}><Text style={styles.convAvatarTxt}>{item.inicial}</Text></View>
                     )}
-                    {item.online && <View style={styles.onlineDot} />}
-                  </View>
+                    {item.online && <View style={[styles.onlineDot, { backgroundColor: Colors.primary[600] }]} />}
+                  </TouchableOpacity>
                   <View style={[styles.convInfo, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1, paddingRight: 8 }}>
                       <Text style={styles.convNombre} numberOfLines={1}>{item.nombre}</Text>

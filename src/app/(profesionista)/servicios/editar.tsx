@@ -6,6 +6,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Colors } from '@/theme/Colors';
+import { Typography } from '@/theme/Typography';
+import { Radius, Shadow, Spacing } from '@/theme/Spacing';
+import NavbarProfesionista from '@/components/NavbarProfesionista';
 
 export default function EditarServicioScreen() {
   const router = useRouter();
@@ -148,12 +152,14 @@ export default function EditarServicioScreen() {
   };
 
   if (cargando) {
-    return <View style={styles.centro}><ActivityIndicator size="large" color="#5c4b8a" /></View>;
+    return <View style={styles.centro}><ActivityIndicator size="large" color={Colors.primary[600]} /></View>;
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll}>
-      <View style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <NavbarProfesionista />
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.container}>
         <TouchableOpacity onPress={() => router.replace('/(profesionista)/servicios')} style={styles.botonAtrasInline}>
           <Text style={styles.flechaAtras}>❮</Text>
           <Text style={styles.textoAtrasInline}>{t('atras')}</Text>
@@ -255,41 +261,42 @@ export default function EditarServicioScreen() {
             {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoGuardar}>{t('guardarCambiosBtn')}</Text>}
           </TouchableOpacity>
         </View>
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  centro: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
-  scroll: { flexGrow: 1, backgroundColor: '#fff', paddingBottom: 40 },
-  container: { padding: 20 },
-  botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
-  flechaAtras: { fontSize: 20, color: '#5c4b8a', fontWeight: 'bold', marginRight: 5 },
-  textoAtrasInline: { fontSize: 16, color: '#5c4b8a', fontWeight: 'bold' },
-  titulo: { fontSize: 24, fontWeight: 'bold', color: '#5c4b8a', textAlign: 'center' },
-  subtitulo: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20, marginTop: 5 },
+  centro: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.neutral[50] },
+  scroll: { flexGrow: 1, backgroundColor: Colors.neutral[50], paddingBottom: Spacing[10] },
+  container: { padding: Spacing[5], maxWidth: 800, width: '100%', alignSelf: 'center' },
+  botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing[4] },
+  flechaAtras: { fontSize: 20, color: Colors.primary[700], fontWeight: 'bold', marginRight: 5 },
+  textoAtrasInline: { ...Typography.styles.body, color: Colors.primary[700], fontWeight: '700' },
+  titulo: { ...Typography.styles.h2, fontWeight: 'bold', color: Colors.primary[800], textAlign: 'center' },
+  subtitulo: { ...Typography.styles.body, color: Colors.text.secondary, textAlign: 'center', marginBottom: Spacing[6], marginTop: Spacing[1] },
 
-  fotoContainer: { alignSelf: 'center', marginBottom: 20 },
-  fotoSeleccionada: { width: 120, height: 120, borderRadius: 12, backgroundColor: '#e9ecef', borderWidth: 1, borderColor: '#ccc' },
-  fotoPlaceholder: { width: 120, height: 120, borderRadius: 12, backgroundColor: '#f4f1fa', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#5c4b8a', borderStyle: 'dashed' },
-  textoPlaceholder: { color: '#5c4b8a', fontSize: 16, fontWeight: 'bold' },
-  switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f4f1fa', padding: 15, borderRadius: 8, marginBottom: 15, borderWidth: 1, borderColor: '#ddd' },
+  fotoContainer: { alignSelf: 'center', marginBottom: Spacing[5] },
+  fotoSeleccionada: { width: 120, height: 120, borderRadius: Radius.lg, backgroundColor: Colors.neutral[200], borderWidth: 1, borderColor: Colors.border.default },
+  fotoPlaceholder: { width: 120, height: 120, borderRadius: Radius.lg, backgroundColor: Colors.primary[50], justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: Colors.primary[600], borderStyle: 'dashed' },
+  textoPlaceholder: { color: Colors.primary[700], fontSize: 16, fontWeight: 'bold' },
+  switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: Spacing[4], borderRadius: Radius.md, marginBottom: Spacing[4], borderWidth: 1, borderColor: Colors.border.default, ...Shadow.sm },
   switchTextos: { flex: 1 },
-  switchTitulo: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-  switchSubtitulo: { fontSize: 12, color: '#666', marginTop: 2 },
-  label: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 5, marginTop: 10 },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 12, borderRadius: 8, backgroundColor: '#f9f9f9', fontSize: 16 },
+  switchTitulo: { ...Typography.styles.body, fontWeight: 'bold', color: Colors.text.primary },
+  switchSubtitulo: { ...Typography.styles.caption, color: Colors.text.secondary, marginTop: 2 },
+  label: { ...Typography.styles.label, fontWeight: 'bold', color: Colors.text.primary, marginBottom: 5, marginTop: Spacing[3] },
+  input: { borderWidth: 1, borderColor: Colors.border.default, padding: Spacing[3], borderRadius: Radius.md, backgroundColor: '#fff', ...Typography.styles.body, ...Shadow.sm },
   textArea: { height: 80, textAlignVertical: 'top' },
-  filaDivisora: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+  filaDivisora: { flexDirection: 'row', justifyContent: 'space-between', marginTop: Spacing[2] },
   mitad: { width: '48%' },
-  pickerBox: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, backgroundColor: '#f9f9f9', height: 50, justifyContent: 'center' },
-  errorBox: { backgroundColor: '#ffe6e6', padding: 12, borderRadius: 5, marginTop: 20, borderWidth: 1, borderColor: '#ff4d4d' },
-  errorText: { color: '#d9534f', textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
-  contenedorBotones: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30 },
-  botonCancelar: { flex: 1, backgroundColor: '#6c757d', padding: 15, borderRadius: 8, alignItems: 'center', marginRight: 10 },
-  textoCancelar: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  botonGuardar: { flex: 1, backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center', marginLeft: 10 },
-  botonDeshabilitado: { backgroundColor: '#aaa' },
-  textoGuardar: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
+  pickerBox: { borderWidth: 1, borderColor: Colors.border.default, borderRadius: Radius.md, backgroundColor: '#fff', height: 50, justifyContent: 'center', ...Shadow.sm },
+  errorBox: { backgroundColor: Colors.error.light, padding: Spacing[3], borderRadius: Radius.md, marginTop: Spacing[5], borderWidth: 1, borderColor: Colors.error.main },
+  errorText: { color: Colors.error.main, textAlign: 'center', fontWeight: 'bold', ...Typography.styles.body },
+  contenedorBotones: { flexDirection: 'row', justifyContent: 'space-between', marginTop: Spacing[8] },
+  botonCancelar: { flex: 1, backgroundColor: Colors.neutral[200], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginRight: Spacing[2], ...Shadow.sm },
+  textoCancelar: { color: Colors.text.primary, fontWeight: 'bold', ...Typography.styles.btn },
+  botonGuardar: { flex: 1, backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginLeft: Spacing[2], ...Shadow.brand },
+  botonDeshabilitado: { backgroundColor: Colors.text.disabled },
+  textoGuardar: { color: '#fff', fontWeight: 'bold', ...Typography.styles.btn }
 });
