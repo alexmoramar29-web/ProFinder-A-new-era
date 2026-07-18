@@ -138,7 +138,7 @@ export default function SignInScreen() {
         const { error } = await supabase.auth.signInWithOAuth({ 
           provider: proveedor, 
           options: { 
-            redirectTo: window.location.origin + '/(auth)/sign-in',
+            redirectTo: window.location.origin + '/sign-in',
             queryParams: { prompt: 'consent select_account' } 
           } 
         });
@@ -147,7 +147,7 @@ export default function SignInScreen() {
       }
       
       // 1. Generamos la URL de retorno dinámica (Uso de AuthSession para cerrar la pestaña automáticamente)
-      const urlDeRegreso = AuthSession.makeRedirectUri({ path: '(auth)/sign-in' });
+      const urlDeRegreso = AuthSession.makeRedirectUri({ path: 'sign-in' });
       console.log('URL de regreso móvil:', urlDeRegreso);
       
       // 2. Iniciamos el proceso OAuth con Supabase
