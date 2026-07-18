@@ -143,6 +143,10 @@ export default function SignUpScreen() {
   return (
     <LinearGradient colors={['#ffffff', '#ede9fe', '#7c3aed']} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={styles.fondo}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {/* Botón volver */}
+        <TouchableOpacity style={styles.volverBtn} onPress={() => router.replace('/(auth)/landing')}>
+          <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+        </TouchableOpacity>
 
         {/* Cabecera */}
         <View style={styles.header}>
@@ -380,6 +384,8 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   fondo:  { flex: 1 },
   scroll: { flexGrow: 1, alignItems: 'center', paddingVertical: Spacing[8], paddingHorizontal: Spacing[5] },
+
+  volverBtn: { position: 'absolute', top: 48, left: 20, backgroundColor: 'rgba(255,255,255,0.85)', padding: 8, borderRadius: Radius.full, zIndex: 10, ...Shadow.sm },
 
   // Cabecera fuera del card
   header:     { alignItems: 'center', marginBottom: Spacing[5] },

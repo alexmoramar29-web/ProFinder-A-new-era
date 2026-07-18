@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput, Modal, Pressable } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 import { Colors } from '../../../theme/Colors';
 import { Typography } from '../../../theme/Typography';
 import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import NavbarCliente from '../../../components/NavbarCliente';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -275,20 +275,23 @@ export default function ServiciosClienteScreen() {
             
             <View style={styles.estrellasCaja}>
               {[1, 2, 3, 4, 5].map((num) => (
-                <View key={num} style={{ flexDirection: 'row' }}>
-                  <TouchableOpacity
-                    style={{ position: 'absolute', left: 0, width: 20, height: 40, zIndex: 1 }}
-                    onPress={() => setEstrellas(num - 0.5)}
-                  />
-                  <TouchableOpacity
-                    style={{ position: 'absolute', right: 0, width: 20, height: 40, zIndex: 1 }}
-                    onPress={() => setEstrellas(num)}
-                  />
-                  <Ionicons 
-                    name={estrellas >= num ? 'star' : (estrellas >= num - 0.5 ? 'star-half' : 'star-outline')} 
+                <View key={num} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
+                  <FontAwesome 
+                    style={{ position: 'absolute' }}
+                    name={estrellas >= num ? 'star' : (estrellas >= num - 0.5 ? 'star-half-o' : 'star-o')} 
                     size={40} 
                     color={estrellas >= num - 0.5 ? Colors.primary[600] : Colors.text.disabled} 
                   />
+                  <View style={{ flexDirection: 'row', width: '100%', height: '100%' }}>
+                    <TouchableOpacity
+                      style={{ flex: 1, backgroundColor: 'transparent' }}
+                      onPress={() => setEstrellas(num - 0.5)}
+                    />
+                    <TouchableOpacity
+                      style={{ flex: 1, backgroundColor: 'transparent' }}
+                      onPress={() => setEstrellas(num)}
+                    />
+                  </View>
                 </View>
               ))}
             </View>

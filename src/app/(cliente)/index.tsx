@@ -105,11 +105,11 @@ export default function ClienteDashboard() {
     if (!userId) return;
     const esFav = favoritos.includes(profId);
     if (esFav) {
-      await supabase.from('favorite_professionals').delete().eq('user_id', userId).eq('prof_id', profId);
       setFavoritos(prev => prev.filter(id => id !== profId));
+      supabase.from('favorite_professionals').delete().eq('user_id', userId).eq('prof_id', profId).then();
     } else {
-      await supabase.from('favorite_professionals').insert([{ user_id: userId, prof_id: profId }]);
       setFavoritos(prev => [...prev, profId]);
+      supabase.from('favorite_professionals').insert([{ user_id: userId, prof_id: profId }]).then();
     }
   };
 
@@ -430,7 +430,11 @@ export default function ClienteDashboard() {
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                           <Text style={styles.cardRol}>{t(prof.speciality || 'Por definir')}</Text>
-                          <Pressable onPress={() => alternarFavorito(prof.prof_id)} style={{ padding: 4 }}>
+                          <Pressable onPress={(e) => { 
+                            if (e && e.stopPropagation) e.stopPropagation(); 
+                            if (e && e.preventDefault) e.preventDefault();
+                            alternarFavorito(prof.prof_id); 
+                          }} style={{ padding: 4, zIndex: 10 }}>
                             <Ionicons name={favoritos.includes(prof.prof_id) ? "heart" : "heart-outline"} size={20} color={favoritos.includes(prof.prof_id) ? Colors.primary[600] : Colors.text.secondary} />
                           </Pressable>
                         </View>

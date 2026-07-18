@@ -256,21 +256,19 @@ export default function UbicacionServiciosScreen() {
             <Text style={styles.textoBotonSecundarioLleno}>{t('alinearMapaBoton', '📍 Alinear mapa con lo escrito')}</Text>
           </TouchableOpacity>
 
-        </View>
-      </ScrollView>
-
-      <View style={styles.contenedorFijoAbajo}>
-        <TouchableOpacity 
-          style={[styles.botonPrimario, cargando && { backgroundColor: '#8a7db3' }]} 
-          onPress={guardarUbicacion}
-          disabled={cargando}
-        >
-          <Text style={styles.textoBotonPrimario}>
-            {cargando ? t('guardando', 'Guardando...') : t('guardarUbicacion', 'Guardar Ubicación')}
-          </Text>
-        </TouchableOpacity>
+          <View style={styles.contenedorAcciones}>
+            <TouchableOpacity 
+              style={[styles.botonPrimario, cargando && { backgroundColor: '#8a7db3' }]} 
+              onPress={guardarUbicacion}
+              disabled={cargando}
+            >
+              <Text style={styles.textoBotonPrimario}>
+                {cargando ? t('guardando', 'Guardando...') : t('guardarUbicacion', 'Guardar Ubicación')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </View>
-    </View>
     </View>
   );
 }
@@ -302,7 +300,7 @@ const styles = StyleSheet.create({
   botonGPS: { backgroundColor: Colors.info.main, padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginBottom: Spacing[4], ...Shadow.md },
   textoBotonGPS: { color: '#fff', fontWeight: 'bold', ...Typography.styles.btn },
 
-  contenedorFijoAbajo: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing[5], backgroundColor: Colors.neutral[50], borderTopWidth: 1, borderTopColor: Colors.border.default },
+  contenedorAcciones: { marginTop: Spacing[6], paddingTop: Spacing[5], borderTopWidth: 1, borderTopColor: Colors.border.default },
   botonPrimario: { backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', ...Shadow.brand },
   textoBotonPrimario: { color: '#fff', fontWeight: 'bold', ...Typography.styles.btn }
 });

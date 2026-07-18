@@ -147,7 +147,7 @@ export default function SignInScreen() {
       }
       
       // 1. Generamos la URL de retorno dinámica (Uso de AuthSession para cerrar la pestaña automáticamente)
-      const urlDeRegreso = AuthSession.makeRedirectUri({ path: 'auth-callback' });
+      const urlDeRegreso = AuthSession.makeRedirectUri({ path: '(auth)/sign-in' });
       console.log('URL de regreso móvil:', urlDeRegreso);
       
       // 2. Iniciamos el proceso OAuth con Supabase
@@ -326,6 +326,11 @@ export default function SignInScreen() {
     >
     <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
+      {/* Botón volver */}
+      <TouchableOpacity style={styles.volverBtn} onPress={() => router.replace('/(auth)/landing')}>
+        <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+      </TouchableOpacity>
+
       {/* Botón idioma */}
       <TouchableOpacity style={styles.idiomaBtn} onPress={cambiarIdioma}>
         <Text style={styles.idiomaTxt}>{i18n.language === 'es' ? 'EN' : 'ES'}</Text>
@@ -464,7 +469,8 @@ const styles = StyleSheet.create({
   fondo:  { flex: 1 },
   scroll: { flexGrow: 1, paddingVertical: Spacing[8], justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing[5] },
 
-  idiomaBtn: { position: 'absolute', top: 48, right: 20, backgroundColor: 'rgba(255,255,255,0.85)', paddingHorizontal: 12, paddingVertical: 7, borderRadius: Radius.full, zIndex: 10 },
+  volverBtn: { position: 'absolute', top: 48, left: 20, backgroundColor: 'rgba(255,255,255,0.85)', padding: 8, borderRadius: Radius.full, zIndex: 10, ...Shadow.sm },
+  idiomaBtn: { position: 'absolute', top: 48, right: 20, backgroundColor: 'rgba(255,255,255,0.85)', paddingHorizontal: 12, paddingVertical: 7, borderRadius: Radius.full, zIndex: 10, ...Shadow.sm },
   idiomaTxt: { ...Typography.styles.label, color: Colors.text.primary },
 
   header:   { alignItems: 'center', marginBottom: Spacing[4] },
