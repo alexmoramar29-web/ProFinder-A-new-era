@@ -430,12 +430,12 @@ export default function ClienteDashboard() {
                           <Text style={styles.cardNombre} numberOfLines={1}>{prof.full_name}</Text>
                         </View>
                         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <Text style={styles.cardRol}>{t(prof.speciality || 'Por definir')}</Text>
+                          <Text style={[styles.cardRol, { flex: 1, marginRight: 8 }]} numberOfLines={1}>{t(prof.speciality || 'Por definir')}</Text>
                           <Pressable onPress={(e) => { 
                             if (e && e.stopPropagation) e.stopPropagation(); 
                             if (e && e.preventDefault) e.preventDefault();
                             alternarFavorito(prof.prof_id); 
-                          }} style={{ padding: 4, zIndex: 10 }}>
+                          }} style={{ padding: 4, zIndex: 10, flexShrink: 0 }}>
                             <FontAwesome name={favoritos.includes(prof.prof_id) ? "heart" : "heart-o"} size={20} color={favoritos.includes(prof.prof_id) ? Colors.primary[600] : Colors.text.secondary} />
                           </Pressable>
                         </View>
@@ -453,7 +453,7 @@ export default function ClienteDashboard() {
                         <View>
                           <Text style={styles.startingAt}>{t('RESEÑAS')}</Text>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                            <Ionicons name="star" size={16} color="#F59E0B" />
+                            <Ionicons name="star" size={16} color={Colors.primary[600]} />
                             <Text style={styles.precio}>{prof.avgRating > 0 ? prof.avgRating : 'N/A'}</Text>
                             <Text style={styles.precioSub}>({prof.reviewCount})</Text>
                           </View>
