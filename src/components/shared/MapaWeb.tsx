@@ -293,12 +293,7 @@ export default function MapaWeb({ coordenadas, marcadores = [], onLocationSelect
   }
 
   return (
-    <View 
-      style={[styles.mapa, { height: height as any }]}
-      onStartShouldSetResponder={() => true}
-      onMoveShouldSetResponder={() => true}
-      onStartShouldSetResponderCapture={() => true}
-    >
+    <View style={[styles.mapa, { height: height as any }]}>
       <div ref={webContainerRef} style={{ height: '100%', width: '100%' }}>
         <MapContainer
         center={[coordenadas.latitude, coordenadas.longitude]}

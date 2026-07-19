@@ -1,10 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Colors } from '../theme/Colors';
-import { Typography } from '../theme/Typography';
-import { Radius, Shadow, Spacing } from '../theme/Spacing';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Colors } from '../theme/Colors';
+import { Radius, Shadow, Spacing } from '../theme/Spacing';
+import { Typography } from '../theme/Typography';
 
 interface LegalModalProps {
   visible: boolean;
@@ -57,7 +57,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 500,
     maxHeight: '80%',
-    ...Shadow.xl,
     overflow: 'hidden'
   },
   modalCabecera: {
