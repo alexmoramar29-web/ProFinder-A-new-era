@@ -97,20 +97,7 @@ export default function MapaWeb({ coordenadas, marcadores = [], onLocationSelect
   const webviewRef = useRef<any>(null);
   const webContainerRef = useRef<any>(null);
 
-  useEffect(() => {
-    if (Platform.OS === 'web' && webContainerRef.current) {
-      const stop = (e: any) => e.stopPropagation();
-      const node = webContainerRef.current;
-      node.addEventListener('touchstart', stop, { passive: false });
-      node.addEventListener('touchmove', stop, { passive: false });
-      node.addEventListener('wheel', stop, { passive: false });
-      return () => {
-        node.removeEventListener('touchstart', stop);
-        node.removeEventListener('touchmove', stop);
-        node.removeEventListener('wheel', stop);
-      };
-    }
-  }, [mounted]);
+  // Se eliminó el useEffect con stopPropagation porque bloqueaba los eventos táctiles nativos de Leaflet en la web.
 
   useEffect(() => {
     setMounted(true);
