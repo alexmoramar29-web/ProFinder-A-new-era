@@ -4,8 +4,11 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacit
 import { supabase } from '../../../lib/supabase';
 import NavbarCliente from '../../../components/NavbarCliente';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function DetalleServicio() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const { t } = useTranslation();
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -79,13 +82,13 @@ export default function DetalleServicio() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#f9f9f9' },
   backButton: { marginBottom: 15, paddingVertical: 5 },
   backButtonText: { fontSize: 18, color: '#007AFF', fontWeight: '600' },
   image: { width: '100%', height: 250, borderRadius: 12, marginBottom: 20, backgroundColor: '#ddd' },
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20, color: '#333' },
-  card: { backgroundColor: '#fff', padding: 20, borderRadius: 12, elevation: 3 },
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20, color: colors.text.primary },
+  card: { backgroundColor: colors.neutral[0], padding: 20, borderRadius: 12, elevation: 3 },
   label: { fontSize: 14, color: '#888', marginTop: 15 },
   value: { fontSize: 18, color: '#000', marginTop: 5 }
 });

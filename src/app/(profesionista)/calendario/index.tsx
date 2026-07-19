@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/Colors';
 import { Radius, Shadow } from '@/theme/Spacing';
 import NavbarProfesionista from '@/components/NavbarProfesionista';
+import { useTheme } from '@/context/ThemeContext';
 
 interface Cita {
   appointment_id: number;
@@ -19,6 +20,8 @@ interface Cita {
 }
 
 export default function CalendarioScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const { t } = useTranslation();
   const [citas, setCitas] = useState<Cita[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -149,7 +152,7 @@ export default function CalendarioScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+    <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
       <NavbarProfesionista />
       <View style={styles.contenedorFondo}>
         <View style={styles.cabecera}>
@@ -186,7 +189,7 @@ export default function CalendarioScreen() {
       </View>
 
       {cargando ? (
-        <View style={styles.centro}><ActivityIndicator size="large" color={Colors.primary[600]} /></View>
+        <View style={styles.centro}><ActivityIndicator size="large" color={colors.primary[600]} /></View>
       ) : (
         <ScrollView contentContainerStyle={styles.scroll}>
           {citas.length === 0 ? (
@@ -215,16 +218,16 @@ export default function CalendarioScreen() {
 
                   <View style={styles.infoCita}>
                     <View style={styles.infoRow}>
-                      <Ionicons name="calendar-outline" size={16} color={Colors.text.secondary} />
+                      <Ionicons name="calendar-outline" size={16} color={colors.text.secondary} />
                       <Text style={styles.infoTexto}>{cita.appointment_date}</Text>
                     </View>
                     <View style={styles.infoRow}>
-                      <Ionicons name="time-outline" size={16} color={Colors.text.secondary} />
+                      <Ionicons name="time-outline" size={16} color={colors.text.secondary} />
                       <Text style={styles.infoTexto}>{cita.appointment_time.slice(0,5)}</Text>
                     </View>
                     {cita.services ? (
                       <View style={styles.infoRow}>
-                        <Ionicons name="briefcase-outline" size={16} color={Colors.text.secondary} />
+                        <Ionicons name="briefcase-outline" size={16} color={colors.text.secondary} />
                         <Text style={styles.infoTexto}>{cita.services.service_name}</Text>
                       </View>
                     ) : null}
@@ -290,7 +293,7 @@ export default function CalendarioScreen() {
       {/* Toast In-App */}
       {mensajeUI && (
         <View style={[styles.mensajeToast, mensajeUI.tipo === 'exito' ? styles.toastExito : styles.toastError]}>
-          <Ionicons name={mensajeUI.tipo === 'exito' ? 'checkmark-circle' : 'warning'} size={24} color="#fff" />
+          <Ionicons name={mensajeUI.tipo === 'exito' ? 'checkmark-circle' : 'warning'} size={24} color={colors.neutral[0]} />
           <Text style={styles.mensajeToastTxt}>{mensajeUI.texto}</Text>
         </View>
       )}
@@ -325,66 +328,66 @@ export default function CalendarioScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  contenedorFondo: { flex: 1, backgroundColor: Colors.neutral[50], padding: 20 },
+const getStyles = (colors: any) => StyleSheet.create({
+  contenedorFondo: { flex: 1, backgroundColor: colors.neutral[50], padding: 20 },
   centro: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   cabecera: { marginBottom: 15 },
-  tituloSeccion: { fontSize: 26, fontWeight: 'bold', color: Colors.primary[800] },
+  tituloSeccion: { fontSize: 26, fontWeight: 'bold', color: colors.primary[800] },
   
-  contenedorPestañas: { flexDirection: 'row', backgroundColor: '#FFFFFF', padding: 5, borderRadius: Radius.button, borderWidth: 1, borderColor: Colors.border.default, marginBottom: 15 },
+  contenedorPestañas: { flexDirection: 'row', backgroundColor: colors.neutral[0], padding: 5, borderRadius: Radius.button, borderWidth: 1, borderColor: colors.border.default, marginBottom: 15 },
   pestaña: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: Radius.button },
-  pestañaActiva: { backgroundColor: Colors.primary[100] },
-  textoPestaña: { fontSize: 14, fontWeight: 'bold', color: Colors.text.secondary },
-  textoPestañaActiva: { color: Colors.primary[700] },
+  pestañaActiva: { backgroundColor: colors.primary[100] },
+  textoPestaña: { fontSize: 14, fontWeight: 'bold', color: colors.text.secondary },
+  textoPestañaActiva: { color: colors.primary[700] },
   
   scroll: { paddingBottom: 50 },
-  textoVacio: { textAlign: 'center', color: Colors.text.disabled, marginTop: 50, fontSize: 16 },
+  textoVacio: { textAlign: 'center', color: colors.text.disabled, marginTop: 50, fontSize: 16 },
   
-  tarjetaCita: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 15, borderWidth: 1, borderColor: Colors.border.default, ...Shadow.sm },
-  tarjetaEnCurso: { borderColor: Colors.primary[400], borderWidth: 2 },
+  tarjetaCita: { backgroundColor: colors.neutral[0], borderRadius: 12, padding: 16, marginBottom: 15, borderWidth: 1, borderColor: colors.border.default, ...Shadow.sm },
+  tarjetaEnCurso: { borderColor: colors.primary[400], borderWidth: 2 },
   
   tarjetaCabecera: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  nombreCliente: { fontSize: 18, fontWeight: 'bold', color: Colors.text.primary },
-  badgeEnCurso: { backgroundColor: Colors.primary[100], paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
-  badgeTxtEnCurso: { fontSize: 12, fontWeight: 'bold', color: Colors.primary[700] },
+  nombreCliente: { fontSize: 18, fontWeight: 'bold', color: colors.text.primary },
+  badgeEnCurso: { backgroundColor: colors.primary[100], paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
+  badgeTxtEnCurso: { fontSize: 12, fontWeight: 'bold', color: colors.primary[700] },
 
-  badgeFinalizado: { backgroundColor: Colors.neutral[200], paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
-  badgeTxtFinalizado: { fontSize: 12, fontWeight: 'bold', color: Colors.text.secondary },
+  badgeFinalizado: { backgroundColor: colors.neutral[200], paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
+  badgeTxtFinalizado: { fontSize: 12, fontWeight: 'bold', color: colors.text.secondary },
 
   infoCita: { marginBottom: 15 },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  infoTexto: { fontSize: 15, color: Colors.text.primary },
+  infoTexto: { fontSize: 15, color: colors.text.primary },
   
-  notasBox: { backgroundColor: Colors.neutral[50], padding: 10, borderRadius: 8, marginTop: 10 },
-  notasLabel: { fontSize: 12, fontWeight: 'bold', color: Colors.text.secondary, marginBottom: 4 },
-  notasTexto: { fontSize: 14, color: Colors.text.primary, fontStyle: 'italic' },
+  notasBox: { backgroundColor: colors.neutral[50], padding: 10, borderRadius: 8, marginTop: 10 },
+  notasLabel: { fontSize: 12, fontWeight: 'bold', color: colors.text.secondary, marginBottom: 4 },
+  notasTexto: { fontSize: 14, color: colors.text.primary, fontStyle: 'italic' },
   
   filaBotones: { flexDirection: 'row', gap: 10 },
   
-  botonRechazar: { flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: Colors.error.main, padding: 12, borderRadius: 8, alignItems: 'center' },
-  textoBotonRechazar: { color: Colors.error.main, fontWeight: 'bold' },
+  botonRechazar: { flex: 1, backgroundColor: colors.neutral[0], borderWidth: 1, borderColor: colors.error.main, padding: 12, borderRadius: 8, alignItems: 'center' },
+  textoBotonRechazar: { color: colors.error.main, fontWeight: 'bold' },
   
-  botonAceptar: { flex: 1, backgroundColor: Colors.primary[600], padding: 12, borderRadius: 8, alignItems: 'center', ...Shadow.brand },
-  textoBotonAceptar: { color: '#FFFFFF', fontWeight: 'bold' },
+  botonAceptar: { flex: 1, backgroundColor: colors.primary[600], padding: 12, borderRadius: 8, alignItems: 'center', ...Shadow.brand },
+  textoBotonAceptar: { color: colors.neutral[0], fontWeight: 'bold' },
 
-  botonEnCurso: { flex: 1, backgroundColor: Colors.primary[100], borderWidth: 1, borderColor: Colors.primary[300], padding: 12, borderRadius: 8, alignItems: 'center' },
-  textoBotonEnCurso: { color: Colors.primary[700], fontWeight: 'bold' },
+  botonEnCurso: { flex: 1, backgroundColor: colors.primary[100], borderWidth: 1, borderColor: colors.primary[300], padding: 12, borderRadius: 8, alignItems: 'center' },
+  textoBotonEnCurso: { color: colors.primary[700], fontWeight: 'bold' },
 
-  botonFinalizar: { flex: 1, backgroundColor: Colors.success.main, padding: 12, borderRadius: 8, alignItems: 'center', ...Shadow.sm },
-  textoBotonFinalizar: { color: '#FFFFFF', fontWeight: 'bold' },
+  botonFinalizar: { flex: 1, backgroundColor: colors.success.main, padding: 12, borderRadius: 8, alignItems: 'center', ...Shadow.sm },
+  textoBotonFinalizar: { color: colors.neutral[0], fontWeight: 'bold' },
 
   mensajeToast: { position: 'absolute', bottom: 40, left: 20, right: 20, padding: 15, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 10, elevation: 5, zIndex: 999 },
-  toastExito: { backgroundColor: Colors.success.main },
-  toastError: { backgroundColor: Colors.error.main },
-  mensajeToastTxt: { color: '#fff', fontWeight: 'bold', fontSize: 14, flex: 1 },
+  toastExito: { backgroundColor: colors.success.main },
+  toastError: { backgroundColor: colors.error.main },
+  mensajeToastTxt: { color: colors.neutral[0], fontWeight: 'bold', fontSize: 14, flex: 1 },
 
   modalFondo: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-  modalCaja: { backgroundColor: '#fff', padding: 24, borderRadius: 16, width: '85%', maxWidth: 400, ...Shadow.md },
-  modalTitulo: { fontSize: 20, fontWeight: 'bold', color: Colors.text.primary, marginBottom: 10 },
-  modalTexto: { fontSize: 15, color: Colors.text.secondary, marginBottom: 24, lineHeight: 22 },
+  modalCaja: { backgroundColor: colors.neutral[0], padding: 24, borderRadius: 16, width: '85%', maxWidth: 400, ...Shadow.md },
+  modalTitulo: { fontSize: 20, fontWeight: 'bold', color: colors.text.primary, marginBottom: 10 },
+  modalTexto: { fontSize: 15, color: colors.text.secondary, marginBottom: 24, lineHeight: 22 },
   modalBotones: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12 },
-  modalBotonCancelar: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: Colors.neutral[100] },
-  modalTextoCancelar: { color: Colors.text.secondary, fontWeight: 'bold' },
-  modalBotonAceptar: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: Colors.primary[600] },
-  modalTextoAceptar: { color: '#fff', fontWeight: 'bold' }
+  modalBotonCancelar: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: colors.neutral[100] },
+  modalTextoCancelar: { color: colors.text.secondary, fontWeight: 'bold' },
+  modalBotonAceptar: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: colors.primary[600] },
+  modalTextoAceptar: { color: colors.neutral[0], fontWeight: 'bold' }
 });

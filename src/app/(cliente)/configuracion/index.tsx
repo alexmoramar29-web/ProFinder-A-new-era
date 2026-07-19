@@ -71,7 +71,7 @@ export default function ConfiguracionScreen() {
 
         <Text style={styles.tituloBloque}>{t('acercaDe')}</Text>
         <View style={styles.bloqueAjustes}>
-          <TouchableOpacity style={[styles.filaAjuste, styles.lineaDivisora]} onPress={() => router.push('/(cliente)/configuracion/privacidad' as any)}>
+          <TouchableOpacity style={[styles.filaAjuste, styles.lineaDivisora]} onPress={() => router.push('/(cliente)/configuracion/terminos' as any)}>
             <Text style={styles.textoFila}>{t('terminosPrivacidad')}</Text>
             <Text style={styles.flecha}>❯</Text>
           </TouchableOpacity>

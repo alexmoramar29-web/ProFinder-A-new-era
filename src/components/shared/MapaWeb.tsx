@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { StyleSheet, View, Text, Platform, Linking } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
 
 // Si no estamos en web, usamos WebView
 let WebView: any = null;
@@ -93,6 +94,8 @@ const ClickHandler = ({ onSelect }: { onSelect: any }) => {
 };
 
 export default function MapaWeb({ coordenadas, marcadores = [], onLocationSelect, onMarkerPress, height = 350, readOnly = false, requireConfirmToNavigate = false }: MapaWebProps) {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const [mounted, setMounted] = useState(false);
   const webviewRef = useRef<any>(null);
   const webContainerRef = useRef<any>(null);
@@ -328,7 +331,7 @@ export default function MapaWeb({ coordenadas, marcadores = [], onLocationSelect
                         </button>
                         <button 
                           onClick={() => onMarkerPress && onMarkerPress(m.id)}
-                          style={{ backgroundColor: '#5c4b8a', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '999px', fontSize: '12px', cursor: 'pointer', flex: 1 }}
+                          style={{ backgroundColor: '#5c4b8a', color: colors.neutral[0], border: 'none', padding: '6px 12px', borderRadius: '999px', fontSize: '12px', cursor: 'pointer', flex: 1 }}
                         >
                           Perfil
                         </button>
@@ -359,13 +362,13 @@ export default function MapaWeb({ coordenadas, marcadores = [], onLocationSelect
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   mapa: {
     width: '100%',
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    backgroundColor: '#fff'
+    backgroundColor: colors.neutral[0]
   },
 });

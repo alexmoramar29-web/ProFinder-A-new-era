@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider } from '@/context/AuthProvider';
 import { NotificationProvider } from '@/context/NotificationContext';
+import { ThemeProvider } from '@/context/ThemeContext';
 import { Slot } from 'expo-router';
 import Head from 'expo-router/head';
 import React, { useEffect } from 'react';
@@ -26,16 +27,23 @@ export default function LayoutPrincipal() {
     <>
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <style>{`
+          body, div, span, a, input, textarea {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, fill 0.3s ease !important;
+          }
+        `}</style>
       </Head>
 
-      <AuthProvider>
-        <NotificationProvider>
-          {/* Envolvemos la app en una caja que NO puede crecer más allá de la pantalla */}
-          <View style={styles.cajaEstricta}>
-            <Slot />
-          </View>
-        </NotificationProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            {/* Envolvemos la app en una caja que NO puede crecer más allá de la pantalla */}
+            <View style={styles.cajaEstricta}>
+              <Slot />
+            </View>
+          </NotificationProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </>
   );
 }

@@ -10,8 +10,11 @@ import { Colors } from '@/theme/Colors';
 import { Typography } from '@/theme/Typography';
 import { Radius, Shadow, Spacing } from '@/theme/Spacing';
 import NavbarProfesionista from '@/components/NavbarProfesionista';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function UbicacionServiciosScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -172,7 +175,7 @@ export default function UbicacionServiciosScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+    <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
       <NavbarProfesionista />
       <View style={styles.contenedorFondo}>
         <ScrollView contentContainerStyle={styles.scroll}>
@@ -274,34 +277,34 @@ export default function UbicacionServiciosScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  contenedorFondo: { flex: 1, backgroundColor: Colors.neutral[50] },
+const getStyles = (colors: any) => StyleSheet.create({
+  contenedorFondo: { flex: 1, backgroundColor: colors.neutral[50] },
   scroll: { paddingBottom: Spacing[10] },
   container: { padding: Spacing[5], maxWidth: 800, width: '100%', alignSelf: 'center' },
   botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing[4] },
-  flechaAtras: { fontSize: 20, color: Colors.primary[700], fontWeight: 'bold', marginRight: 5 },
-  textoAtrasInline: { ...Typography.styles.body, color: Colors.primary[700], fontWeight: '700' },
-  titulo: { ...Typography.styles.h2, fontWeight: 'bold', color: Colors.primary[800], textAlign: 'center' },
-  subtitulo: { ...Typography.styles.body, color: Colors.text.secondary, textAlign: 'center', marginBottom: Spacing[6], marginTop: Spacing[1] },
+  flechaAtras: { fontSize: 20, color: colors.primary[700], fontWeight: 'bold', marginRight: 5 },
+  textoAtrasInline: { ...Typography.styles.body, color: colors.primary[700], fontWeight: '700' },
+  titulo: { ...Typography.styles.h2, fontWeight: 'bold', color: colors.primary[800], textAlign: 'center' },
+  subtitulo: { ...Typography.styles.body, color: colors.text.secondary, textAlign: 'center', marginBottom: Spacing[6], marginTop: Spacing[1] },
   
   // Nuevos estilos para el mapa
   mapaContenedor: { marginBottom: Spacing[6] },
   mapa: { height: 350, width: '100%', borderRadius: Radius.lg, overflow: 'hidden' },
-  textoMapaSub: { color: Colors.text.secondary, fontSize: 12, marginTop: 8, textAlign: 'center', fontStyle: 'italic' },
+  textoMapaSub: { color: colors.text.secondary, fontSize: 12, marginTop: 8, textAlign: 'center', fontStyle: 'italic' },
 
-  label: { ...Typography.styles.label, fontWeight: 'bold', color: Colors.text.primary, marginBottom: 5, marginTop: Spacing[3] },
-  input: { borderWidth: 1, borderColor: Colors.border.default, padding: Spacing[3], borderRadius: Radius.md, backgroundColor: '#fff', ...Typography.styles.body, ...Shadow.sm },
+  label: { ...Typography.styles.label, fontWeight: 'bold', color: colors.text.primary, marginBottom: 5, marginTop: Spacing[3] },
+  input: { borderWidth: 1, borderColor: colors.border.default, padding: Spacing[3], borderRadius: Radius.md, backgroundColor: colors.neutral[0], color: colors.text.primary, ...Typography.styles.body, ...Shadow.sm },
   textArea: { height: 80, textAlignVertical: 'top' },
   filaDivisora: { flexDirection: 'row', justifyContent: 'space-between', marginTop: Spacing[2] },
   mitad: { width: '48%' },
 
-  botonSecundarioLleno: { backgroundColor: Colors.neutral[100], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', marginTop: Spacing[4], borderWidth: 1, borderColor: Colors.border.default, ...Shadow.sm },
-  textoBotonSecundarioLleno: { color: Colors.text.primary, fontWeight: 'bold', ...Typography.styles.body },
+  botonSecundarioLleno: { backgroundColor: colors.neutral[100], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', marginTop: Spacing[4], borderWidth: 1, borderColor: colors.border.default, ...Shadow.sm },
+  textoBotonSecundarioLleno: { color: colors.text.primary, ...Typography.styles.body, fontWeight: 'bold' },
 
-  botonGPS: { backgroundColor: Colors.info.main, padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginBottom: Spacing[4], ...Shadow.md },
-  textoBotonGPS: { color: '#fff', fontWeight: 'bold', ...Typography.styles.btn },
+  botonGPS: { backgroundColor: colors.info.main, padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginBottom: Spacing[4], ...Shadow.md },
+  textoBotonGPS: { color: colors.neutral[0], ...Typography.styles.btn, fontWeight: 'bold' },
 
-  contenedorAcciones: { marginTop: Spacing[6], paddingTop: Spacing[5], borderTopWidth: 1, borderTopColor: Colors.border.default },
-  botonPrimario: { backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', ...Shadow.brand },
-  textoBotonPrimario: { color: '#fff', fontWeight: 'bold', ...Typography.styles.btn }
+  contenedorAcciones: { marginTop: Spacing[6], paddingTop: Spacing[5], borderTopWidth: 1, borderTopColor: colors.border.default },
+  botonPrimario: { backgroundColor: colors.primary[600], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', ...Shadow.brand },
+  textoBotonPrimario: { color: colors.neutral[0], ...Typography.styles.btn, fontWeight: 'bold' }
 });

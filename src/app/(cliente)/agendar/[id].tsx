@@ -9,6 +9,7 @@ import { Colors } from '../../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Typography } from '../../../theme/Typography';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '@/context/ThemeContext';
 
 LocaleConfig.locales['es'] = {
   monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
@@ -42,6 +43,8 @@ const generateTimeSlots = (start: string, end: string) => {
 };
 
 export default function AgendarCitaScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const { t } = useTranslation();
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -142,7 +145,7 @@ export default function AgendarCitaScreen() {
       
       // Si hay una fecha seleccionada, agregarle el estilo de seleccionado
       if (selectedDate) {
-        marcados[selectedDate] = { ...marcados[selectedDate], selected: true, selectedColor: Colors.primary[600] };
+        marcados[selectedDate] = { ...marcados[selectedDate], selected: true, selectedColor: colors.primary[600] };
       }
       
       setMarkedDatesObj(marcados);
@@ -249,10 +252,10 @@ export default function AgendarCitaScreen() {
 
   if (cargando) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
         <NavbarCliente />
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={Colors.primary[600]} />
+          <ActivityIndicator size="large" color={colors.primary[600]} />
         </View>
       </View>
     );
@@ -265,7 +268,7 @@ export default function AgendarCitaScreen() {
         <View style={styles.container}>
           
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={20} color={Colors.text.primary} />
+            <Ionicons name="arrow-back" size={20} color={colors.text.primary} />
             <Text style={styles.backTxt}>{t('Volver al perfil')}</Text>
           </TouchableOpacity>
 
@@ -276,7 +279,7 @@ export default function AgendarCitaScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('1. ¿Qué servicio necesitas?')}</Text>
             {servicios.length === 0 ? (
-              <Text style={{ color: Colors.text.disabled }}>{t('Este profesionista no tiene servicios disponibles.')}</Text>
+              <Text style={{ color: colors.text.disabled }}>{t('Este profesionista no tiene servicios disponibles.')}</Text>
             ) : (
               <View style={styles.serviceList}>
                 {servicios.map(s => (
@@ -303,13 +306,13 @@ export default function AgendarCitaScreen() {
                     
                     <View style={styles.serviceMeta}>
                       <View style={styles.metaBadge}>
-                        <Ionicons name="time-outline" size={14} color={selectedService === s.service_id ? Colors.primary[700] : Colors.text.secondary} />
+                        <Ionicons name="time-outline" size={14} color={selectedService === s.service_id ? colors.primary[700] : colors.text.secondary} />
                         <Text style={[styles.metaTxt, selectedService === s.service_id && styles.metaTxtSelected]}>
                           {s.duration_minutes} min
                         </Text>
                       </View>
                       <View style={styles.metaBadge}>
-                        <Ionicons name="location-outline" size={14} color={selectedService === s.service_id ? Colors.primary[700] : Colors.text.secondary} />
+                        <Ionicons name="location-outline" size={14} color={selectedService === s.service_id ? colors.primary[700] : colors.text.secondary} />
                         <Text style={[styles.metaTxt, selectedService === s.service_id && styles.metaTxtSelected]}>
                           {s.modality || 'Presencial'}
                         </Text>
@@ -336,9 +339,15 @@ export default function AgendarCitaScreen() {
                   markedDates={markedDatesObj}
                   minDate={new Date().toISOString().split('T')[0]}
                   theme={{
-                    todayTextColor: Colors.primary[600],
-                    selectedDayBackgroundColor: Colors.primary[600],
-                    arrowColor: Colors.primary[600],
+                    calendarBackground: colors.neutral[0],
+                    textSectionTitleColor: colors.text.secondary,
+                    selectedDayBackgroundColor: colors.primary[600],
+                    selectedDayTextColor: '#ffffff',
+                    todayTextColor: colors.primary[600],
+                    dayTextColor: colors.text.primary,
+                    textDisabledColor: colors.text.disabled,
+                    monthTextColor: colors.text.primary,
+                    arrowColor: colors.primary[600],
                   }}
                 />
               </View>
@@ -352,12 +361,12 @@ export default function AgendarCitaScreen() {
               
               {dayOff ? (
                 <View style={styles.alertBox}>
-                  <Ionicons name="information-circle-outline" size={20} color={Colors.text.secondary} />
+                  <Ionicons name="information-circle-outline" size={20} color={colors.text.secondary} />
                   <Text style={styles.alertTxt}>{t('El profesionista no atiende este servicio en este día. Selecciona otra fecha.')}</Text>
                 </View>
               ) : availableSlots.length === 0 ? (
                 <View style={styles.alertBox}>
-                  <Ionicons name="information-circle-outline" size={20} color={Colors.text.secondary} />
+                  <Ionicons name="information-circle-outline" size={20} color={colors.text.secondary} />
                   <Text style={styles.alertTxt}>{t('No hay horarios configurados para este servicio hoy.')}</Text>
                 </View>
               ) : (
@@ -397,7 +406,7 @@ export default function AgendarCitaScreen() {
             disabled={!selectedDate || !selectedTime || !selectedService || guardando}
           >
             {guardando ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.neutral[0]} />
             ) : (
               <Text style={styles.submitBtnTxt}>{t('Confirmar Cita')}</Text>
             )}
@@ -408,7 +417,7 @@ export default function AgendarCitaScreen() {
 
       {mensajeUI && (
         <View style={[styles.mensajeToast, mensajeUI.tipo === 'exito' ? styles.toastExito : styles.toastError]}>
-          <Ionicons name={mensajeUI.tipo === 'exito' ? 'checkmark-circle' : 'warning'} size={24} color="#fff" />
+          <Ionicons name={mensajeUI.tipo === 'exito' ? 'checkmark-circle' : 'warning'} size={24} color={colors.neutral[0]} />
           <Text style={styles.mensajeToastTxt}>{mensajeUI.texto}</Text>
         </View>
       )}
@@ -417,55 +426,55 @@ export default function AgendarCitaScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.neutral[50] },
+const getStyles = (colors: any) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.neutral[50] },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scroll: { padding: Spacing[4] },
-  container: { maxWidth: 800, width: '100%', alignSelf: 'center', backgroundColor: '#fff', borderRadius: Radius.card, padding: Spacing[6], ...Shadow.md },
+  container: { maxWidth: 800, width: '100%', alignSelf: 'center', backgroundColor: colors.neutral[0], borderRadius: Radius.card, padding: Spacing[6], ...Shadow.md },
   
   backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing[4] },
-  backTxt: { ...Typography.styles.body, marginLeft: Spacing[2], fontWeight: '500', color: Colors.text.primary },
+  backTxt: { ...Typography.styles.body, marginLeft: Spacing[2], fontWeight: '500', color: colors.text.primary },
   
-  title: { ...Typography.styles.h2, color: Colors.primary[800], marginBottom: 2 },
-  subtitle: { ...Typography.styles.body, color: Colors.text.secondary, marginBottom: Spacing[6] },
+  title: { ...Typography.styles.h2, color: colors.primary[800], marginBottom: 2 },
+  subtitle: { ...Typography.styles.body, color: colors.text.secondary, marginBottom: Spacing[6] },
 
   section: { marginBottom: Spacing[6] },
-  sectionTitle: { ...Typography.styles.h5, color: Colors.text.primary, marginBottom: Spacing[4] },
+  sectionTitle: { ...Typography.styles.h5, color: colors.text.primary, marginBottom: Spacing[4] },
 
   serviceList: { gap: Spacing[3] },
-  serviceCard: { backgroundColor: '#fff', borderRadius: Radius.card, padding: Spacing[4], borderWidth: 1, borderColor: Colors.border.default },
-  serviceCardSelected: { borderColor: Colors.primary[600], backgroundColor: Colors.primary[50] },
+  serviceCard: { backgroundColor: colors.neutral[0], borderRadius: Radius.card, padding: Spacing[4], borderWidth: 1, borderColor: colors.border.default },
+  serviceCardSelected: { borderColor: colors.primary[600], backgroundColor: colors.primary[50] },
   serviceHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing[2] },
-  serviceTitle: { ...Typography.styles.h5, color: Colors.text.primary, flex: 1 },
-  serviceTitleSelected: { color: Colors.primary[800] },
-  servicePrice: { ...Typography.styles.h4, color: Colors.primary[600] },
-  servicePriceSelected: { color: Colors.primary[800] },
-  serviceDesc: { ...Typography.styles.bodySm, color: Colors.text.secondary, marginBottom: Spacing[3] },
+  serviceTitle: { ...Typography.styles.h5, color: colors.text.primary, flex: 1 },
+  serviceTitleSelected: { color: colors.primary[800] },
+  servicePrice: { ...Typography.styles.h4, color: colors.primary[600] },
+  servicePriceSelected: { color: colors.primary[800] },
+  serviceDesc: { ...Typography.styles.bodySm, color: colors.text.secondary, marginBottom: Spacing[3] },
   
   serviceMeta: { flexDirection: 'row', gap: Spacing[3] },
-  metaBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.neutral[100], paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  metaTxt: { ...Typography.styles.caption, color: Colors.text.secondary, fontWeight: '500' },
-  metaTxtSelected: { color: Colors.primary[700] },
+  metaBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.neutral[100], paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  metaTxt: { ...Typography.styles.caption, color: colors.text.secondary, fontWeight: '500' },
+  metaTxtSelected: { color: colors.primary[700] },
 
-  calendarWrap: { borderWidth: 1, borderColor: Colors.border.default, borderRadius: Radius.card, overflow: 'hidden' },
+  calendarWrap: { borderWidth: 1, borderColor: colors.border.default, borderRadius: Radius.card, overflow: 'hidden' },
   
   timeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing[3] },
-  timeSlot: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: Radius.button, borderWidth: 1, borderColor: Colors.border.default, backgroundColor: '#fff', minWidth: 80, alignItems: 'center' },
-  timeSlotSelected: { backgroundColor: Colors.primary[600], borderColor: Colors.primary[600] },
-  timeSlotTxt: { ...Typography.styles.body, color: Colors.text.primary },
-  timeSlotTxtSelected: { color: '#fff', fontWeight: 'bold' },
+  timeSlot: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: Radius.button, borderWidth: 1, borderColor: colors.border.default, backgroundColor: colors.neutral[0], minWidth: 80, alignItems: 'center' },
+  timeSlotSelected: { backgroundColor: colors.primary[600], borderColor: colors.primary[600] },
+  timeSlotTxt: { ...Typography.styles.body, color: colors.text.primary },
+  timeSlotTxtSelected: { color: colors.neutral[0], fontWeight: 'bold' },
 
-  alertBox: { backgroundColor: Colors.neutral[100], padding: Spacing[4], borderRadius: Radius.button, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  alertTxt: { ...Typography.styles.bodySm, color: Colors.text.secondary, flex: 1 },
+  alertBox: { backgroundColor: colors.neutral[100], padding: Spacing[4], borderRadius: Radius.button, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  alertTxt: { ...Typography.styles.bodySm, color: colors.text.secondary, flex: 1 },
 
-  inputArea: { borderWidth: 1, borderColor: Colors.border.default, borderRadius: Radius.button, padding: Spacing[4], ...Typography.styles.body, minHeight: 100, backgroundColor: '#fff' },
+  inputArea: {  borderWidth: 1, borderColor: colors.border.default, borderRadius: Radius.button, padding: Spacing[4], ...Typography.styles.body, minHeight: 100, backgroundColor: colors.neutral[0] , color: colors.text.primary },
 
-  submitBtn: { backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', ...Shadow.brand, marginTop: Spacing[2] },
-  submitBtnDisabled: { backgroundColor: Colors.neutral[300], shadowOpacity: 0 },
-  submitBtnTxt: { ...Typography.styles.btn, color: '#fff', fontSize: 16 },
+  submitBtn: { backgroundColor: colors.primary[600], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', ...Shadow.brand, marginTop: Spacing[2] },
+  submitBtnDisabled: { backgroundColor: colors.neutral[300], shadowOpacity: 0 },
+  submitBtnTxt: { ...Typography.styles.btn, color: colors.neutral[0], fontSize: 16 },
 
   mensajeToast: { position: 'absolute', bottom: 40, left: 20, right: 20, padding: 15, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 10, elevation: 5, zIndex: 999 },
-  toastExito: { backgroundColor: Colors.success.main },
-  toastError: { backgroundColor: Colors.error.main },
-  mensajeToastTxt: { color: '#fff', fontWeight: 'bold', fontSize: 14, flex: 1 }
+  toastExito: { backgroundColor: colors.success.main },
+  toastError: { backgroundColor: colors.error.main },
+  mensajeToastTxt: { color: colors.neutral[0], fontWeight: 'bold', fontSize: 14, flex: 1 }
 });

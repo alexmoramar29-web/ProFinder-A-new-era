@@ -1,7 +1,10 @@
 import { Platform, StyleSheet, View, ViewProps } from 'react-native';
 import { useThemeColor } from '../../theme/useThemeColor';
+import { useTheme } from '@/context/ThemeContext';
 
 export function MainContainer({ children, style, ...props }: ViewProps) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const backgroundColor = useThemeColor({}, 'background');
 
   return (
@@ -11,7 +14,7 @@ export function MainContainer({ children, style, ...props }: ViewProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   outerContainer: {
     flex: 1,
     alignItems: 'center'

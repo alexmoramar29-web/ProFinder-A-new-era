@@ -1,15 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerActions } from '@react-navigation/native';
-import { useNavigation, useRouter, usePathname } from 'expo-router';
+import { useNavigation, usePathname, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNotifications } from '../context/NotificationContext';
+import { useTheme } from '@/context/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { Colors } from '../theme/Colors';
 import { Shadow, Spacing } from '../theme/Spacing';
 import { Typography } from '../theme/Typography';
-import { useTranslation } from 'react-i18next';
-import { useNotifications } from '../context/NotificationContext';
 
 export default function NavbarCliente() {
   const { t } = useTranslation();
@@ -20,6 +21,7 @@ export default function NavbarCliente() {
   const insets = useSafeAreaInsets();
   const isMobile = width < 768;
   const { unreadCount } = useNotifications();
+  const { isDark, colors } = useTheme();
 
   const [nombreUsuario, setNombreUsuario] = useState('Mi cuenta');
   const [inicialUsuario, setInicialUsuario] = useState('U');
@@ -47,7 +49,7 @@ export default function NavbarCliente() {
   }, []);
 
   return (
-    <View style={[styles.navbar, isMobile && { paddingTop: insets.top + Spacing[3], height: 64 + insets.top }]}>
+    <View style={[styles.navbar, isMobile && { paddingTop: insets.top + Spacing[3], height: 64 + insets.top }, { backgroundColor: isDark ? '#1A1A2E' : Colors.primary[700], borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)' }]}>
       <Pressable style={styles.navBrand} onPress={() => router.replace('/(cliente)' as any)}>
         <Image source={require('../../assets/images/logo.png')} style={styles.navLogo} resizeMode="contain" />
         <Text style={styles.navLogoText}>{t('ProFinder')}</Text>
@@ -72,7 +74,7 @@ export default function NavbarCliente() {
         <Pressable style={styles.navIconBtn} onPress={() => router.push('/(cliente)/notificaciones' as any)}>
           <Ionicons name="notifications-outline" size={20} color="#fff" />
           {unreadCount > 0 && (
-            <View style={styles.badge}>
+            <View style={[styles.badge, { borderColor: isDark ? '#1A1A2E' : Colors.primary[700] }]}>
               <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
             </View>
           )}

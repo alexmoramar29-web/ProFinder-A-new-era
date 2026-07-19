@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { Colors } from '../../theme/Colors';
+import { useTheme } from '@/context/ThemeContext';
 import { Radius, Shadow, Spacing } from '../../theme/Spacing';
 import { Typography } from '../../theme/Typography';
 import LegalModal from '../../components/LegalModal';
@@ -24,6 +25,8 @@ if (Platform.OS === 'web') {
 }
 
 export default function SignUpScreen() {
+  const { colors, isDark } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const router = useRouter();
   const { t, i18n } = useTranslation();
 
@@ -147,7 +150,7 @@ export default function SignUpScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Botón volver */}
         <TouchableOpacity style={styles.volverBtn} onPress={() => router.replace('/(auth)/landing')}>
-          <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
 
         {/* Cabecera */}
@@ -165,14 +168,14 @@ export default function SignUpScreen() {
               style={[styles.rolTab, esCliente && styles.rolTabActive]}
               onPress={() => setRol('cliente')} disabled={cargando}
             >
-              <Ionicons name="person-outline" size={16} color={esCliente ? '#fff' : Colors.text.secondary} />
+              <Ionicons name="person-outline" size={16} color={esCliente ? '#fff' : colors.text.secondary} />
               <Text style={[styles.rolTabTxt, esCliente && styles.rolTabTxtActive]} numberOfLines={1} adjustsFontSizeToFit>{t('soyCliente')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.rolTab, !esCliente && styles.rolTabActive]}
               onPress={() => setRol('profesionista')} disabled={cargando}
             >
-              <Ionicons name="briefcase-outline" size={16} color={!esCliente ? '#fff' : Colors.text.secondary} />
+              <Ionicons name="briefcase-outline" size={16} color={!esCliente ? '#fff' : colors.text.secondary} />
               <Text style={[styles.rolTabTxt, !esCliente && styles.rolTabTxtActive]} numberOfLines={1} adjustsFontSizeToFit>{t('soyProfesionista')}</Text>
             </TouchableOpacity>
           </View>
@@ -181,8 +184,8 @@ export default function SignUpScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('nombreCompleto') || 'Nombre completo'}</Text>
             <View style={styles.inputWrap}>
-              <Ionicons name="person-outline" size={16} color={Colors.text.disabled} style={styles.inputIcon} />
-              <TextInput style={styles.input} placeholder="Ej. Juan Pérez" placeholderTextColor={Colors.text.disabled} value={fullName} onChangeText={setFullName} maxLength={100} editable={!cargando} />
+              <Ionicons name="person-outline" size={16} color={colors.text.disabled} style={styles.inputIcon} />
+              <TextInput style={styles.input} placeholder="Ej. Juan Pérez" placeholderTextColor={colors.text.disabled} value={fullName} onChangeText={setFullName} maxLength={100} editable={!cargando} />
             </View>
           </View>
 
@@ -190,8 +193,8 @@ export default function SignUpScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('nombreUsuario') || 'Nombre de usuario'}</Text>
             <View style={styles.inputWrap}>
-              <Ionicons name="at-outline" size={16} color={Colors.text.disabled} style={styles.inputIcon} />
-              <TextInput style={styles.input} placeholder="ej. juanperez123" placeholderTextColor={Colors.text.disabled} value={username} onChangeText={setUsername} autoCapitalize="none" maxLength={50} editable={!cargando} />
+              <Ionicons name="at-outline" size={16} color={colors.text.disabled} style={styles.inputIcon} />
+              <TextInput style={styles.input} placeholder="ej. juanperez123" placeholderTextColor={colors.text.disabled} value={username} onChangeText={setUsername} autoCapitalize="none" maxLength={50} editable={!cargando} />
             </View>
           </View>
 
@@ -199,8 +202,8 @@ export default function SignUpScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('correoElectronico') || 'Correo electrónico'}</Text>
             <View style={styles.inputWrap}>
-              <Ionicons name="mail-outline" size={16} color={Colors.text.disabled} style={styles.inputIcon} />
-              <TextInput style={styles.input} placeholder="nombre@empresa.com" placeholderTextColor={Colors.text.disabled} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" maxLength={100} editable={!cargando} />
+              <Ionicons name="mail-outline" size={16} color={colors.text.disabled} style={styles.inputIcon} />
+              <TextInput style={styles.input} placeholder="nombre@empresa.com" placeholderTextColor={colors.text.disabled} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" maxLength={100} editable={!cargando} />
             </View>
           </View>
 
@@ -208,8 +211,8 @@ export default function SignUpScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('telefonoPlaceholder') || 'Teléfono'}</Text>
             <View style={styles.inputWrap}>
-              <Ionicons name="call-outline" size={16} color={Colors.text.disabled} style={styles.inputIcon} />
-              <TextInput style={styles.input} placeholder="+52 123 456 7890" placeholderTextColor={Colors.text.disabled} value={phone} onChangeText={(t) => setPhone(t.replace(/[^0-9+]/g, ''))} keyboardType="phone-pad" maxLength={13} editable={!cargando} />
+              <Ionicons name="call-outline" size={16} color={colors.text.disabled} style={styles.inputIcon} />
+              <TextInput style={styles.input} placeholder="+52 123 456 7890" placeholderTextColor={colors.text.disabled} value={phone} onChangeText={(t) => setPhone(t.replace(/[^0-9+]/g, ''))} keyboardType="phone-pad" maxLength={13} editable={!cargando} />
             </View>
           </View>
 
@@ -218,7 +221,7 @@ export default function SignUpScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>{t('seleccionaProfesion') || 'Selecciona tu profesión'}</Text>
               <View style={styles.pickerWrap}>
-                <Picker selectedValue={speciality} onValueChange={(v: string) => setSpeciality(v)} enabled={!cargando} style={styles.picker}>
+                <Picker dropdownIconColor={colors.text.primary} selectedValue={speciality} onValueChange={(v: string) => setSpeciality(v)} enabled={!cargando} style={styles.picker}>
                   <Picker.Item label={t('Doctor', 'Doctor')} value="Doctor" />
                   <Picker.Item label={t('Abogado', 'Abogado')} value="Abogado" />
                   <Picker.Item label={t('Dentista', 'Dentista')} value="Dentista" />
@@ -236,10 +239,10 @@ export default function SignUpScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('contrasenaMinimo') || 'Contraseña'}</Text>
             <View style={styles.inputWrap}>
-              <Ionicons name="lock-closed-outline" size={16} color={Colors.text.disabled} style={styles.inputIcon} />
-              <TextInput style={styles.input} placeholder={t('min8caracteres', 'Mínimo 8 caracteres')} placeholderTextColor={Colors.text.disabled} value={password} onChangeText={setPassword} secureTextEntry={!mostrarPass} maxLength={50} editable={!cargando} />
+              <Ionicons name="lock-closed-outline" size={16} color={colors.text.disabled} style={styles.inputIcon} />
+              <TextInput style={styles.input} placeholder={t('min8caracteres', 'Mínimo 8 caracteres')} placeholderTextColor={colors.text.disabled} value={password} onChangeText={setPassword} secureTextEntry={!mostrarPass} maxLength={50} editable={!cargando} />
               <Pressable onPress={() => setMostrarPass(v => !v)} style={styles.eyeBtn}>
-                <Ionicons name={mostrarPass ? 'eye-off-outline' : 'eye-outline'} size={16} color={Colors.text.disabled} />
+                <Ionicons name={mostrarPass ? 'eye-off-outline' : 'eye-outline'} size={16} color={colors.text.disabled} />
               </Pressable>
             </View>
           </View>
@@ -248,10 +251,10 @@ export default function SignUpScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('confirmarContrasena') || 'Confirmar contraseña'}</Text>
             <View style={styles.inputWrap}>
-              <Ionicons name="lock-closed-outline" size={16} color={Colors.text.disabled} style={styles.inputIcon} />
-              <TextInput style={styles.input} placeholder={t('repiteNuevaClave', 'Repite tu contraseña')} placeholderTextColor={Colors.text.disabled} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={!mostrarConfirm} maxLength={50} editable={!cargando} />
+              <Ionicons name="lock-closed-outline" size={16} color={colors.text.disabled} style={styles.inputIcon} />
+              <TextInput style={styles.input} placeholder={t('repiteNuevaClave', 'Repite tu contraseña')} placeholderTextColor={colors.text.disabled} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={!mostrarConfirm} maxLength={50} editable={!cargando} />
               <Pressable onPress={() => setMostrarConfirm(v => !v)} style={styles.eyeBtn}>
-                <Ionicons name={mostrarConfirm ? 'eye-off-outline' : 'eye-outline'} size={16} color={Colors.text.disabled} />
+                <Ionicons name={mostrarConfirm ? 'eye-off-outline' : 'eye-outline'} size={16} color={colors.text.disabled} />
               </Pressable>
             </View>
           </View>
@@ -272,14 +275,14 @@ export default function SignUpScreen() {
                     onPress={() => seleccionarDocumento(item.tipo)}
                     disabled={cargando}
                   >
-                    <Ionicons name={item.doc ? 'checkmark-circle' : 'cloud-upload-outline'} size={18} color={item.doc ? Colors.success.main : Colors.text.disabled} />
+                    <Ionicons name={item.doc ? 'checkmark-circle' : 'cloud-upload-outline'} size={18} color={item.doc ? colors.success.main : colors.text.disabled} />
                     <Text style={[styles.docBtnTxt, item.doc && styles.docBtnTxtOk]}>
                       {item.doc ? item.labelCambiar : item.label}
                     </Text>
                   </TouchableOpacity>
                   {item.doc && (
                     <TouchableOpacity onPress={() => Linking.openURL(item.doc.uri)} style={styles.docVerLink}>
-                      <Ionicons name="eye-outline" size={13} color={Colors.primary[600]} />
+                      <Ionicons name="eye-outline" size={13} color={colors.primary[600]} />
                       <Text style={styles.docVerTxt}>{t('verPdf') || 'Ver PDF'}</Text>
                     </TouchableOpacity>
                   )}
@@ -317,13 +320,13 @@ export default function SignUpScreen() {
           {/* Mensajes */}
           {mensajeError !== '' && (
             <View style={styles.errorBox}>
-              <Ionicons name="alert-circle-outline" size={15} color={Colors.error.main} />
+              <Ionicons name="alert-circle-outline" size={15} color={colors.error.main} />
               <Text style={styles.errorTxt}>{mensajeError}</Text>
             </View>
           )}
           {mensajeExito !== '' && (
             <View style={styles.exitoBox}>
-              <Ionicons name="checkmark-circle-outline" size={15} color={Colors.success.main} />
+              <Ionicons name="checkmark-circle-outline" size={15} color={colors.success.main} />
               <Text style={styles.exitoTxt}>{mensajeExito}</Text>
             </View>
           )}
@@ -383,26 +386,26 @@ export default function SignUpScreen() {
 }
 
 // ── Estilos ──────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   fondo:  { flex: 1 },
   scroll: { flexGrow: 1, alignItems: 'center', paddingVertical: Spacing[8], paddingHorizontal: Spacing[5] },
 
-  volverBtn: { position: 'absolute', top: 48, left: 20, backgroundColor: 'rgba(255,255,255,0.85)', padding: 8, borderRadius: Radius.full, zIndex: 10, ...Shadow.sm },
+  volverBtn: { position: 'absolute', top: 48, left: 20, backgroundColor: isDark ? "rgba(0,0,0,0.85)" : "rgba(255,255,255,0.85)", padding: 8, borderRadius: Radius.full, zIndex: 10, ...Shadow.sm },
 
   // Cabecera fuera del card
   header:     { alignItems: 'center', marginBottom: Spacing[5], marginTop: 60 },
-  headerTitle:{ ...Typography.styles.h2, color: Colors.neutral[900], textAlign: 'center' },
-  headerSub:  { ...Typography.styles.body, color: Colors.neutral[600], marginTop: 4 },
+  headerTitle:{ ...Typography.styles.h2, color: colors.neutral[900], textAlign: 'center' },
+  headerSub:  { ...Typography.styles.body, color: colors.neutral[600], marginTop: 4 },
 
   // Card
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.neutral[0],
     borderRadius: Radius.xl,
     padding: Spacing[6],
     width: '100%',
     maxWidth: 480,
     ...Shadow.lg,
-    shadowColor: '#4c1d95',
+    shadowColor: colors.primary[900],
     shadowOpacity: 0.25,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 12 },
@@ -410,62 +413,62 @@ const styles = StyleSheet.create({
   },
 
   // Selector de rol
-  rolSelector:     { flexDirection: 'row', backgroundColor: Colors.neutral[100], borderRadius: Radius.md, padding: 4, gap: 4, marginBottom: Spacing[5] },
+  rolSelector:     { flexDirection: 'row', backgroundColor: colors.neutral[100], borderRadius: Radius.md, padding: 4, gap: 4, marginBottom: Spacing[5] },
   rolTab:          { flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: Radius.sm, gap: 4 },
-  rolTabActive:    { backgroundColor: Colors.primary[600], ...Shadow.sm },
-  rolTabTxt:       { ...Typography.styles.btn, color: Colors.text.secondary, fontSize: 13 },
-  rolTabTxtActive: { color: '#fff' },
+  rolTabActive:    { backgroundColor: colors.primary[600], ...Shadow.sm },
+  rolTabTxt:       { ...Typography.styles.btn, color: colors.text.secondary, fontSize: 13 },
+  rolTabTxtActive: { color: colors.neutral[0] },
 
   // Inputs
   inputGroup:  { marginBottom: Spacing[3] },
-  inputLabel:  { ...Typography.styles.label, color: Colors.text.secondary, textTransform: 'none', letterSpacing: 0, fontSize: 12, marginBottom: 4 },
-  inputWrap:   { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: Colors.border.default, borderRadius: Radius.input, minHeight: 44, backgroundColor: '#fff' },
+  inputLabel:  { ...Typography.styles.label, color: colors.text.secondary, textTransform: 'none', letterSpacing: 0, fontSize: 12, marginBottom: 4 },
+  inputWrap:   { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: colors.border.default, borderRadius: Radius.input, minHeight: 44, backgroundColor: colors.neutral[0] },
   inputIcon:   { paddingLeft: 12 },
-  input:       { flex: 1, paddingHorizontal: 8, paddingVertical: 10, ...Typography.styles.body, color: Colors.text.primary },
+  input:       { flex: 1, paddingHorizontal: 8, paddingVertical: 10, ...Typography.styles.body, color: colors.text.primary },
   eyeBtn:      { paddingRight: 12 },
 
-  pickerWrap: { borderWidth: 1.5, borderColor: Colors.border.default, borderRadius: Radius.input, backgroundColor: '#fff', overflow: 'hidden' },
-  picker:     { height: 60, color: Colors.text.primary, justifyContent: 'center', transform: [{ translateY: -4 }] },
+  pickerWrap: { borderWidth: 1.5, borderColor: colors.border.default, borderRadius: Radius.input, backgroundColor: colors.neutral[0], overflow: 'hidden' },
+  picker:     { height: 60, color: colors.text.primary, justifyContent: 'center', transform: [{ translateY: -4 }], backgroundColor: colors.neutral[0] },
 
   // Documentos
   docsSection:      { marginBottom: Spacing[4] },
-  docsSectionTitle: { ...Typography.styles.label, color: Colors.text.primary, fontSize: 13, marginBottom: Spacing[3] },
+  docsSectionTitle: { ...Typography.styles.label, color: colors.text.primary, fontSize: 13, marginBottom: Spacing[3] },
   docBox:           { marginBottom: Spacing[2] },
   docBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    borderWidth: 1.5, borderColor: Colors.border.default, borderStyle: 'dashed',
+    borderWidth: 1.5, borderColor: colors.border.default, borderStyle: 'dashed',
     borderRadius: Radius.input, padding: Spacing[3],
-    backgroundColor: Colors.neutral[50],
+    backgroundColor: colors.neutral[50],
   },
-  docBtnOk:    { borderColor: Colors.success.main, backgroundColor: Colors.success.light, borderStyle: 'solid' },
-  docBtnTxt:   { ...Typography.styles.body, color: Colors.text.secondary },
-  docBtnTxtOk: { color: Colors.success.dark },
+  docBtnOk:    { borderColor: colors.success.main, backgroundColor: colors.success.light, borderStyle: 'solid' },
+  docBtnTxt:   { ...Typography.styles.body, color: colors.text.secondary },
+  docBtnTxtOk: { color: colors.success.dark },
   docVerLink:  { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, paddingLeft: 4 },
-  docVerTxt:   { ...Typography.styles.caption, color: Colors.primary[600] },
+  docVerTxt:   { ...Typography.styles.caption, color: colors.primary[600] },
 
   // Términos
   terminosRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: Spacing[4] },
   checkboxContainer: { padding: 4, marginLeft: -4 },
-  checkbox:    { width: 16, height: 16, borderRadius: 4, borderWidth: 1.5, borderColor: Colors.border.default, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  checkboxOn:  { backgroundColor: Colors.primary[600], borderColor: Colors.primary[600] },
-  terminosTxt: { ...Typography.styles.bodySm, color: Colors.text.secondary, flex: 1, lineHeight: 22, marginTop: 1 },
-  terminosLink:{ color: Colors.primary[600], fontWeight: '600', textDecorationLine: 'underline' },
+  checkbox:    { width: 16, height: 16, borderRadius: 4, borderWidth: 1.5, borderColor: colors.border.default, backgroundColor: colors.neutral[0], alignItems: 'center', justifyContent: 'center' },
+  checkboxOn:  { backgroundColor: colors.primary[600], borderColor: colors.primary[600] },
+  terminosTxt: { ...Typography.styles.bodySm, color: colors.text.secondary, flex: 1, lineHeight: 22, marginTop: 1 },
+  terminosLink:{ color: colors.primary[600], fontWeight: '600', textDecorationLine: 'underline' },
 
   // Mensajes
-  errorBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.error.light, borderRadius: Radius.md, padding: Spacing[3], marginBottom: Spacing[3] },
-  errorTxt: { ...Typography.styles.bodySm, color: Colors.error.dark, flex: 1 },
-  exitoBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.success.light, borderRadius: Radius.md, padding: Spacing[3], marginBottom: Spacing[3] },
-  exitoTxt: { ...Typography.styles.bodySm, color: Colors.success.dark, flex: 1 },
+  errorBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.error.light, borderRadius: Radius.md, padding: Spacing[3], marginBottom: Spacing[3] },
+  errorTxt: { ...Typography.styles.bodySm, color: colors.error.dark, flex: 1 },
+  exitoBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.success.light, borderRadius: Radius.md, padding: Spacing[3], marginBottom: Spacing[3] },
+  exitoTxt: { ...Typography.styles.bodySm, color: colors.success.dark, flex: 1 },
 
   // Botón
-  mainBtn:    { backgroundColor: Colors.primary[600], paddingVertical: 14, borderRadius: Radius.button, alignItems: 'center', ...Shadow.brand },
-  mainBtnTxt: { ...Typography.styles.btnLg, color: '#fff' },
+  mainBtn:    { backgroundColor: colors.primary[600], paddingVertical: 14, borderRadius: Radius.button, alignItems: 'center', ...Shadow.brand },
+  mainBtnTxt: { ...Typography.styles.btnLg, color: colors.neutral[0] },
 
   // Login link
   loginRow:  { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing[5] },
-  loginTxt:  { ...Typography.styles.bodySm, color: Colors.text.secondary },
-  loginLink: { ...Typography.styles.bodySm, color: Colors.primary[600], fontWeight: '600' },
+  loginTxt:  { ...Typography.styles.bodySm, color: colors.text.secondary },
+  loginLink: { ...Typography.styles.bodySm, color: colors.primary[600], fontWeight: '600' },
 
   // Footer
-  footer: { ...Typography.styles.caption, color: 'rgba(0, 0, 0, 0.7)', textAlign: 'center', marginTop: Spacing[6] },
+  footer: { ...Typography.styles.caption, color: colors.text.disabled, textAlign: 'center', marginTop: Spacing[6] },
 });

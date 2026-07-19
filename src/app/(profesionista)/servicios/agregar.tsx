@@ -10,8 +10,11 @@ import { Colors } from '@/theme/Colors';
 import { Typography } from '@/theme/Typography';
 import { Radius, Shadow, Spacing } from '@/theme/Spacing';
 import NavbarProfesionista from '@/components/NavbarProfesionista';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function AgregarServicioScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const router = useRouter();
   const { t } = useTranslation();
   const [cargando, setCargando] = useState(true);
@@ -129,11 +132,11 @@ export default function AgregarServicioScreen() {
   };
 
   if (cargando) {
-    return <View style={styles.centro}><ActivityIndicator size="large" color={Colors.primary[600]} /></View>;
+    return <View style={styles.centro}><ActivityIndicator size="large" color={colors.primary[600]} /></View>;
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+    <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
       <NavbarProfesionista />
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.container}>
@@ -223,7 +226,7 @@ export default function AgregarServicioScreen() {
 </TouchableOpacity>
 
           <TouchableOpacity style={[styles.botonGuardar, guardando && styles.botonDeshabilitado]} onPress={handleGuardar} disabled={guardando}>
-            {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoGuardar}>{t('crearServicioBtn')}</Text>}
+            {guardando ? <ActivityIndicator color={colors.neutral[0]} /> : <Text style={styles.textoGuardar}>{t('crearServicioBtn')}</Text>}
           </TouchableOpacity>
         </View>
         </View>
@@ -232,35 +235,35 @@ export default function AgregarServicioScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  centro: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.neutral[50] },
-  scroll: { flexGrow: 1, backgroundColor: Colors.neutral[50], paddingBottom: Spacing[10] },
+const getStyles = (colors: any) => StyleSheet.create({
+  centro: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.neutral[50] },
+  scroll: { flexGrow: 1, backgroundColor: colors.neutral[50], paddingBottom: Spacing[10] },
   container: { padding: Spacing[5], maxWidth: 800, width: '100%', alignSelf: 'center' },
   botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing[4] },
-  flechaAtras: { fontSize: 20, color: Colors.primary[700], fontWeight: 'bold', marginRight: 5 },
-  textoAtrasInline: { ...Typography.styles.body, color: Colors.primary[700], fontWeight: '700' },
-  titulo: { ...Typography.styles.h2, fontWeight: 'bold', color: Colors.primary[800], textAlign: 'center' },
-  subtitulo: { ...Typography.styles.body, color: Colors.text.secondary, textAlign: 'center', marginBottom: Spacing[6], marginTop: Spacing[1] },
+  flechaAtras: { fontSize: 20, color: colors.primary[700], fontWeight: 'bold', marginRight: 5 },
+  textoAtrasInline: { ...Typography.styles.body, color: colors.primary[700], fontWeight: '700' },
+  titulo: { ...Typography.styles.h2, fontWeight: 'bold', color: colors.primary[800], textAlign: 'center' },
+  subtitulo: { ...Typography.styles.body, color: colors.text.secondary, textAlign: 'center', marginBottom: Spacing[6], marginTop: Spacing[1] },
   
   // Estilos de la foto
   fotoContainer: { alignSelf: 'center', marginBottom: Spacing[5] },
-  fotoSeleccionada: { width: 120, height: 120, borderRadius: Radius.lg, backgroundColor: Colors.neutral[200], borderWidth: 1, borderColor: Colors.border.default },
-  fotoPlaceholder: { width: 120, height: 120, borderRadius: Radius.lg, backgroundColor: Colors.primary[50], justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: Colors.primary[600], borderStyle: 'dashed' },
-  textoPlaceholder: { color: Colors.primary[700], fontSize: 16, fontWeight: 'bold' },
-  textoSubPlaceholder: { color: Colors.text.secondary, fontSize: 10, marginTop: 4 },
+  fotoSeleccionada: { width: 120, height: 120, borderRadius: Radius.lg, backgroundColor: colors.neutral[200], borderWidth: 1, borderColor: colors.border.default },
+  fotoPlaceholder: { width: 120, height: 120, borderRadius: Radius.lg, backgroundColor: colors.primary[50], justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: colors.primary[600], borderStyle: 'dashed' },
+  textoPlaceholder: { color: colors.primary[700], fontSize: 16, fontWeight: 'bold' },
+  textoSubPlaceholder: { color: colors.text.secondary, fontSize: 10, marginTop: 4 },
 
-  label: { ...Typography.styles.label, fontWeight: 'bold', color: Colors.text.primary, marginBottom: 5, marginTop: Spacing[3] },
-  input: { borderWidth: 1, borderColor: Colors.border.default, padding: Spacing[3], borderRadius: Radius.md, backgroundColor: '#fff', ...Typography.styles.body, ...Shadow.sm },
+  label: { ...Typography.styles.label, fontWeight: 'bold', color: colors.text.primary, marginBottom: 5, marginTop: Spacing[3] },
+  input: { borderWidth: 1, borderColor: colors.border.default, padding: Spacing[3], borderRadius: Radius.md, backgroundColor: colors.neutral[0], ...Typography.styles.body, ...Shadow.sm },
   textArea: { height: 80, textAlignVertical: 'top' },
   filaDivisora: { flexDirection: 'row', justifyContent: 'space-between', marginTop: Spacing[2] },
   mitad: { width: '48%' },
-  pickerBox: { borderWidth: 1, borderColor: Colors.border.default, borderRadius: Radius.md, backgroundColor: '#fff', height: 50, justifyContent: 'center', ...Shadow.sm },
-  errorBox: { backgroundColor: Colors.error.light, padding: Spacing[3], borderRadius: Radius.md, marginTop: Spacing[5], borderWidth: 1, borderColor: Colors.error.main },
-  errorText: { color: Colors.error.main, textAlign: 'center', fontWeight: 'bold', ...Typography.styles.body },
+  pickerBox: { borderWidth: 1, borderColor: colors.border.default, borderRadius: Radius.md, backgroundColor: colors.neutral[0], height: 50, justifyContent: 'center', ...Shadow.sm },
+  errorBox: { backgroundColor: colors.error.light, padding: Spacing[3], borderRadius: Radius.md, marginTop: Spacing[5], borderWidth: 1, borderColor: colors.error.main },
+  errorText: { color: colors.error.main, textAlign: 'center', ...Typography.styles.body, fontWeight: 'bold' },
   contenedorBotones: { flexDirection: 'row', justifyContent: 'space-between', marginTop: Spacing[8] },
-  botonCancelar: { flex: 1, backgroundColor: Colors.neutral[200], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginRight: Spacing[2], ...Shadow.sm },
-  textoCancelar: { color: Colors.text.primary, fontWeight: 'bold', ...Typography.styles.btn },
-  botonGuardar: { flex: 1, backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginLeft: Spacing[2], ...Shadow.brand },
-  botonDeshabilitado: { backgroundColor: Colors.text.disabled },
-  textoGuardar: { color: '#fff', fontWeight: 'bold', ...Typography.styles.btn }
+  botonCancelar: { flex: 1, backgroundColor: colors.neutral[200], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginRight: Spacing[2], ...Shadow.sm },
+  textoCancelar: { color: colors.text.primary, ...Typography.styles.btn, fontWeight: 'bold' },
+  botonGuardar: { flex: 1, backgroundColor: colors.primary[600], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginLeft: Spacing[2], ...Shadow.brand },
+  botonDeshabilitado: { backgroundColor: colors.text.disabled },
+  textoGuardar: { color: colors.neutral[0], ...Typography.styles.btn, fontWeight: 'bold' }
 });

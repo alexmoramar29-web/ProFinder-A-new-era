@@ -7,10 +7,14 @@ import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import NavbarProfesionista from '@/components/NavbarProfesionista';
+import NavbarProfesionista from '../../../components/NavbarProfesionista';
+import { useTheme } from '../../../context/ThemeContext';
 
 export default function ReseñasProfesionistaScreen() {
   const { t } = useTranslation();
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
+  
   const [reseñas, setReseñas] = useState<any[]>([]);
   const [promedio, setPromedio] = useState<number>(0);
   const [cargando, setCargando] = useState(true);
@@ -45,7 +49,7 @@ export default function ReseñasProfesionistaScreen() {
       const uniqueServices = new Map<number, string>();
       citas.forEach(cita => {
         if (cita.service_id) {
-          uniqueServices.set(cita.service_id, cita.services?.service_name || 'Servicio');
+          uniqueServices.set(cita.service_id, (Array.isArray(cita.services) ? cita.services[0]?.service_name : (cita.services as any)?.service_name) || 'Servicio');
         }
       });
       const serviceIds = Array.from(uniqueServices.keys());
@@ -88,6 +92,7 @@ export default function ReseñasProfesionistaScreen() {
   };
 
   const renderEstrellas = (rating: number) => {
+
     const estrellas = [];
     for (let i = 1; i <= 5; i++) {
       if (i <= rating) {
@@ -95,14 +100,14 @@ export default function ReseñasProfesionistaScreen() {
       } else if (i - 0.5 <= rating) {
         estrellas.push(<Ionicons key={i} name="star-half" size={16} color="#eab308" />);
       } else {
-        estrellas.push(<Ionicons key={i} name="star-outline" size={16} color={Colors.text.disabled} />);
+        estrellas.push(<Ionicons key={i} name="star-outline" size={16} color={colors.text.disabled} />);
       }
     }
     return estrellas;
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+    <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
       <NavbarProfesionista />
       <View style={styles.root}>
         
@@ -112,7 +117,7 @@ export default function ReseñasProfesionistaScreen() {
           <Text style={styles.subtitle}>{t('descubreOpiniones')}</Text>
 
           {cargando ? (
-            <ActivityIndicator size="large" color={Colors.primary[600]} style={{ marginTop: 40 }} />
+            <ActivityIndicator size="large" color={colors.primary[600]} style={{ marginTop: 40 }} />
           ) : (
             <>
               {/* Caja de Promedio Global */}
@@ -133,7 +138,7 @@ export default function ReseñasProfesionistaScreen() {
               {/* Lista de Reseñas */}
               {reseñas.length === 0 ? (
                 <View style={styles.emptyBox}>
-                  <Ionicons name="chatbubble-ellipses-outline" size={48} color={Colors.text.disabled} />
+                  <Ionicons name="chatbubble-ellipses-outline" size={48} color={colors.text.disabled} />
                   <Text style={styles.emptyTxt}>{t('noTienesResenas')}</Text>
                 </View>
               ) : (
@@ -181,39 +186,39 @@ export default function ReseñasProfesionistaScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.neutral[50] },
+const getStyles = (colors: any) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.neutral[50] },
   scroll: { padding: Spacing[4] },
   container: { maxWidth: 800, width: '100%', alignSelf: 'center', padding: Spacing[4] },
   
-  title: { ...Typography.styles.h2, color: Colors.primary[800], marginBottom: 2 },
-  subtitle: { ...Typography.styles.body, color: Colors.text.secondary, marginBottom: Spacing[6] },
+  title: { ...Typography.styles.h2, color: colors.primary[800], marginBottom: 2 },
+  subtitle: { ...Typography.styles.body, color: colors.text.secondary, marginBottom: Spacing[6] },
 
-  promedioBox: { backgroundColor: Colors.primary[800], borderRadius: Radius.card, padding: Spacing[6], alignItems: 'center', marginBottom: Spacing[8], ...Shadow.lg },
+  promedioBox: { backgroundColor: colors.primary[800], borderRadius: Radius.card, padding: Spacing[6], alignItems: 'center', marginBottom: Spacing[8], ...Shadow.lg },
   promedioHeader: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 8 },
-  promedioNumero: { fontSize: 48, fontWeight: 'bold', color: '#fff' },
+  promedioNumero: { fontSize: 48, fontWeight: 'bold', color: colors.neutral[0] },
   promedioEstrellasGdes: { flexDirection: 'row', gap: 4 },
-  promedioTxt: { ...Typography.styles.body, color: Colors.primary[200], fontWeight: '500' },
+  promedioTxt: { ...Typography.styles.body, color: colors.primary[200], fontWeight: '500' },
 
   emptyBox: { alignItems: 'center', marginTop: 40, gap: 10 },
-  emptyTxt: { ...Typography.styles.body, color: Colors.text.disabled },
+  emptyTxt: { ...Typography.styles.body, color: colors.text.disabled },
 
   lista: { gap: Spacing[4] },
-  tarjeta: { backgroundColor: '#fff', borderRadius: Radius.card, padding: Spacing[5], ...Shadow.md, borderWidth: 1, borderColor: Colors.border.default },
+  tarjeta: { backgroundColor: colors.neutral[0], borderRadius: Radius.card, padding: Spacing[5], ...Shadow.md, borderWidth: 1, borderColor: colors.border.default },
   
   tarjetaHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing[3] },
-  avatarPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.primary[100], justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  avatarLetra: { fontSize: 18, fontWeight: 'bold', color: Colors.primary[700] },
+  avatarPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary[100], justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  avatarLetra: { fontSize: 18, fontWeight: 'bold', color: colors.primary[700] },
   
   headerText: { flex: 1 },
-  clienteNombre: { ...Typography.styles.h5, color: Colors.text.primary, marginBottom: 2 },
-  fecha: { ...Typography.styles.caption, color: Colors.text.secondary },
+  clienteNombre: { ...Typography.styles.h5, color: colors.text.primary, marginBottom: 2 },
+  fecha: { ...Typography.styles.caption, color: colors.text.secondary },
   
   estrellasRow: { flexDirection: 'row', gap: 2 },
 
-  servicioBadge: { backgroundColor: Colors.neutral[100], alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginBottom: Spacing[3] },
-  servicioTxt: { fontSize: 12, fontWeight: 'bold', color: Colors.text.secondary },
+  servicioBadge: { backgroundColor: colors.neutral[100], alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginBottom: Spacing[3] },
+  servicioTxt: { fontSize: 12, fontWeight: 'bold', color: colors.text.secondary },
 
-  comentario: { ...Typography.styles.body, color: Colors.text.primary, lineHeight: 24, fontStyle: 'italic' },
-  comentarioVacio: { ...Typography.styles.body, color: Colors.text.disabled, fontStyle: 'italic' }
+  comentario: { ...Typography.styles.body, color: colors.text.primary, lineHeight: 24, fontStyle: 'italic' },
+  comentarioVacio: { ...Typography.styles.body, color: colors.text.disabled, fontStyle: 'italic' }
 });

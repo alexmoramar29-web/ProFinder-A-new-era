@@ -10,8 +10,11 @@ import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Typography } from '../../../theme/Typography';
 import MapaWeb from '../../../components/shared/MapaWeb';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function PerfilProfesionistaScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const { t } = useTranslation();
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -116,10 +119,10 @@ export default function PerfilProfesionistaScreen() {
 
   if (cargando) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
         <NavbarCliente />
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={Colors.primary[600]} />
+          <ActivityIndicator size="large" color={colors.primary[600]} />
         </View>
       </View>
     );
@@ -127,12 +130,12 @@ export default function PerfilProfesionistaScreen() {
 
   if (!profesional) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
         <NavbarCliente />
         <View style={styles.centerContainer}>
-          <Text style={{ ...Typography.styles.h5, color: Colors.text.disabled }}>{t('No se encontró el profesionista')}</Text>
+          <Text style={{ ...Typography.styles.h5, color: colors.text.disabled }}>{t('No se encontró el profesionista')}</Text>
           <TouchableOpacity style={styles.backBtnFallback} onPress={() => router.back()}>
-            <Text style={{ color: '#fff' }}>{t('Volver')}</Text>
+            <Text style={{ color: colors.neutral[0] }}>{t('Volver')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -146,13 +149,13 @@ export default function PerfilProfesionistaScreen() {
       <ScrollView contentContainerStyle={[styles.scroll, { padding: isMobile ? Spacing[4] : Spacing[8] }]}>
         <View style={{ maxWidth: 800, width: '100%', alignSelf: 'center' }}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={20} color={Colors.text.primary} />
+            <Ionicons name="arrow-back" size={20} color={colors.text.primary} />
             <Text style={styles.backTxt}>{t('Volver')}</Text>
           </TouchableOpacity>
 
           <View style={styles.card}>
             <TouchableOpacity style={{ position: 'absolute', top: Spacing[4], right: Spacing[4], zIndex: 10, padding: 4 }} onPress={alternarFavorito}>
-              <FontAwesome name={esFavorito ? "heart" : "heart-o"} size={28} color={esFavorito ? Colors.primary[600] : Colors.text.secondary} />
+              <FontAwesome name={esFavorito ? "heart" : "heart-o"} size={28} color={esFavorito ? colors.primary[600] : colors.text.secondary} />
             </TouchableOpacity>
 
           <View style={styles.header}>
@@ -178,7 +181,7 @@ export default function PerfilProfesionistaScreen() {
                     onPress={() => setShowVerificationInfo(!showVerificationInfo)}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="checkmark-circle" size={24} color={Colors.primary[600]} />
+                    <Ionicons name="checkmark-circle" size={24} color={colors.primary[600]} />
                   </TouchableOpacity>
                 );
               })()}
@@ -186,14 +189,14 @@ export default function PerfilProfesionistaScreen() {
             
             {showVerificationInfo && (
               <View style={styles.verificationTooltip}>
-                <Ionicons name="shield-checkmark" size={16} color={Colors.primary[700]} />
+                <Ionicons name="shield-checkmark" size={16} color={colors.primary[700]} />
                 <Text style={styles.verificationTooltipTxt}>{t('Perfil y documentos verificados por ProFinder')}</Text>
               </View>
             )}
 
             <Text style={styles.name}>{profesional.full_name}</Text>
             {profesional.username && (
-              <Text style={{ ...Typography.styles.body, color: Colors.text.secondary, marginBottom: 4 }}>
+              <Text style={{ ...Typography.styles.body, color: colors.text.secondary, marginBottom: 4 }}>
                 @{profesional.username}
               </Text>
             )}
@@ -212,12 +215,12 @@ export default function PerfilProfesionistaScreen() {
           {currentUserId !== profesional.prof_id && (
             <View style={{ marginBottom: Spacing[6] }}>
               <TouchableOpacity style={styles.agendarBtn} onPress={() => router.push(`/(cliente)/agendar/${profesional.prof_id}` as any)}>
-                <Ionicons name="calendar-outline" size={22} color={Colors.primary[700]} />
+                <Ionicons name="calendar-outline" size={22} color={colors.primary[700]} />
                 <Text style={styles.agendarBtnTxt}>{t('Agendar Cita')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.chatBtn} onPress={iniciarChat}>
-                <Ionicons name="chatbubbles-outline" size={22} color="#fff" />
+                <Ionicons name="chatbubbles-outline" size={22} color={colors.neutral[0]} />
                 <Text style={styles.chatBtnTxt}>{t('Enviar Mensaje')}</Text>
               </TouchableOpacity>
             </View>
@@ -240,7 +243,7 @@ export default function PerfilProfesionistaScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -Spacing[4] }} contentContainerStyle={{ paddingHorizontal: Spacing[4], gap: 12 }}>
                 {portafolio.map((item) => (
                   <TouchableOpacity key={item.image_id} onPress={() => setFotoAmpliada(item.image_url)} activeOpacity={0.8}>
-                    <Image source={{ uri: item.image_url }} style={{ width: 120, height: 120, borderRadius: 12, backgroundColor: Colors.neutral[200] }} />
+                    <Image source={{ uri: item.image_url }} style={{ width: 120, height: 120, borderRadius: 12, backgroundColor: colors.neutral[200] }} />
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -251,7 +254,7 @@ export default function PerfilProfesionistaScreen() {
           {profesional.latitude && profesional.longitude && (
             <View style={{ marginBottom: Spacing[2] }}>
               <Text style={styles.sectionTitle}>{t('Ubicación de Trabajo')}</Text>
-              <Text style={{ ...Typography.styles.body, color: Colors.text.secondary, marginBottom: Spacing[3] }}>
+              <Text style={{ ...Typography.styles.body, color: colors.text.secondary, marginBottom: Spacing[3] }}>
                 {(() => {
                   if (profesional.address && profesional.address.includes('|||')) {
                     const partes = profesional.address.split('|||');
@@ -299,7 +302,7 @@ export default function PerfilProfesionistaScreen() {
                      onPress={() => setIsMapModalOpen(true)}
                   >
                      <View style={styles.mapOverlayBtn}>
-                       <Ionicons name="expand-outline" size={20} color="#fff" />
+                       <Ionicons name="expand-outline" size={20} color={colors.neutral[0]} />
                        <Text style={styles.mapOverlayBtnTxt}>{t('Tocar para interactuar')}</Text>
                      </View>
                   </TouchableOpacity>
@@ -318,7 +321,7 @@ export default function PerfilProfesionistaScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t('Ubicación de Trabajo')}</Text>
               <TouchableOpacity onPress={() => setIsMapModalOpen(false)} style={styles.modalCloseBtn}>
-                <Ionicons name="close" size={24} color="#333" />
+                <Ionicons name="close" size={24} color={colors.text.primary} />
               </TouchableOpacity>
             </View>
             <View style={{ flex: 1 }}>
@@ -356,7 +359,7 @@ export default function PerfilProfesionistaScreen() {
       <Modal visible={fotoAmpliada !== null} transparent={true} animationType="fade" onRequestClose={() => setFotoAmpliada(null)}>
         <View style={styles.imageModalBackdrop}>
           <TouchableOpacity style={styles.imageModalCloseBtn} onPress={() => setFotoAmpliada(null)}>
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>{t('Cerrar')}</Text>
+            <Text style={{ color: colors.neutral[0], fontSize: 16, fontWeight: 'bold' }}>{t('Cerrar')}</Text>
           </TouchableOpacity>
           {fotoAmpliada && (
             <Image source={{ uri: fotoAmpliada }} style={styles.imageModalImg} resizeMode="contain" />
@@ -367,53 +370,53 @@ export default function PerfilProfesionistaScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.neutral[100] },
+const getStyles = (colors: any) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.neutral[100] },
   scroll: { padding: Spacing[4] },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  backBtnFallback: { backgroundColor: Colors.primary[600], paddingHorizontal: 20, paddingVertical: 10, borderRadius: Radius.button, marginTop: 20 },
+  backBtnFallback: { backgroundColor: colors.primary[600], paddingHorizontal: 20, paddingVertical: 10, borderRadius: Radius.button, marginTop: 20 },
   
   backBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', marginBottom: Spacing[4] },
-  backTxt: { ...Typography.styles.body, marginLeft: Spacing[2], fontWeight: '500', color: Colors.text.primary },
+  backTxt: { ...Typography.styles.body, marginLeft: Spacing[2], fontWeight: '500', color: colors.text.primary },
 
-  card: { backgroundColor: Colors.background.card, borderRadius: Radius.card, padding: Spacing[6], ...Shadow.md },
+  card: { backgroundColor: colors.background.card, borderRadius: Radius.card, padding: Spacing[6], ...Shadow.md },
   
   header: { alignItems: 'center', marginBottom: Spacing[5] },
   avatarWrap: { position: 'relative', marginBottom: Spacing[3] },
   avatar: { width: 100, height: 100, borderRadius: 50 },
-  avatarPlaceholder: { backgroundColor: Colors.primary[200], justifyContent: 'center', alignItems: 'center' },
-  avatarPlaceholderTxt: { ...Typography.styles.h2, color: Colors.primary[700] },
-  verifiedBadge: { position: 'absolute', bottom: -4, right: -4, backgroundColor: '#fff', borderRadius: 15, padding: 2, ...Shadow.sm },
-  verificationTooltip: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primary[100], paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.button, marginBottom: Spacing[4], gap: 8 },
-  verificationTooltipTxt: { ...Typography.styles.caption, color: Colors.primary[700], fontWeight: '500' },
+  avatarPlaceholder: { backgroundColor: colors.primary[200], justifyContent: 'center', alignItems: 'center' },
+  avatarPlaceholderTxt: { ...Typography.styles.h2, color: colors.primary[700] },
+  verifiedBadge: { position: 'absolute', bottom: -4, right: -4, backgroundColor: colors.neutral[0], borderRadius: 15, padding: 2, ...Shadow.sm },
+  verificationTooltip: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primary[100], paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.button, marginBottom: Spacing[4], gap: 8 },
+  verificationTooltipTxt: { ...Typography.styles.caption, color: colors.primary[700], fontWeight: '500' },
   
-  name: { ...Typography.styles.h4, color: Colors.text.primary, marginBottom: 2 },
-  speciality: { ...Typography.styles.body, color: Colors.primary[600], fontWeight: '500' },
+  name: { ...Typography.styles.h4, color: colors.text.primary, marginBottom: 2 },
+  speciality: { ...Typography.styles.body, color: colors.primary[600], fontWeight: '500' },
 
   statsRow: { flexDirection: 'row', justifyContent: 'center', gap: Spacing[6], marginBottom: Spacing[5] },
   statBox: { alignItems: 'center' },
-  statVal: { ...Typography.styles.h5, color: Colors.text.primary },
-  statLabel: { ...Typography.styles.caption, color: Colors.text.secondary },
+  statVal: { ...Typography.styles.h5, color: colors.text.primary },
+  statLabel: { ...Typography.styles.caption, color: colors.text.secondary },
 
-  divider: { height: 1, backgroundColor: Colors.border.default, marginVertical: Spacing[4] },
+  divider: { height: 1, backgroundColor: colors.border.default, marginVertical: Spacing[4] },
 
-  sectionTitle: { ...Typography.styles.h5, color: Colors.text.primary, marginBottom: Spacing[3] },
-  desc: { ...Typography.styles.body, color: Colors.text.secondary, lineHeight: 22 },
+  sectionTitle: { ...Typography.styles.h5, color: colors.text.primary, marginBottom: Spacing[3] },
+  desc: { ...Typography.styles.body, color: colors.text.secondary, lineHeight: 22 },
 
-  chatBtn: { flexDirection: 'row', backgroundColor: Colors.primary[600], paddingVertical: 14, borderRadius: Radius.button, justifyContent: 'center', alignItems: 'center', ...Shadow.brand, gap: 10, marginBottom: Spacing[3] },
-  chatBtnTxt: { ...Typography.styles.btn, color: '#fff', fontSize: 16 },
+  chatBtn: { flexDirection: 'row', backgroundColor: colors.primary[600], paddingVertical: 14, borderRadius: Radius.button, justifyContent: 'center', alignItems: 'center', ...Shadow.brand, gap: 10, marginBottom: Spacing[3] },
+  chatBtnTxt: { ...Typography.styles.btn, color: colors.neutral[0], fontSize: 16 },
 
-  agendarBtn: { flexDirection: 'row', backgroundColor: Colors.primary[100], paddingVertical: 14, borderRadius: Radius.button, justifyContent: 'center', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: Colors.primary[200], marginBottom: Spacing[3] },
-  agendarBtnTxt: { ...Typography.styles.btn, color: Colors.primary[700], fontSize: 16 },
+  agendarBtn: { flexDirection: 'row', backgroundColor: colors.primary[100], paddingVertical: 14, borderRadius: Radius.button, justifyContent: 'center', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: colors.primary[200], marginBottom: Spacing[3] },
+  agendarBtnTxt: { ...Typography.styles.btn, color: colors.primary[700], fontSize: 16 },
 
   mapOverlayMobile: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.15)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
   mapOverlayBtn: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, alignItems: 'center', gap: 8 },
-  mapOverlayBtnTxt: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  mapOverlayBtnTxt: { color: colors.neutral[0], fontSize: 14, fontWeight: '600' },
   
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#fff', height: '90%', borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: Colors.border.default },
-  modalTitle: { ...Typography.styles.h4, color: Colors.text.primary },
+  modalContent: { backgroundColor: colors.neutral[0], height: '90%', borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.border.default },
+  modalTitle: { ...Typography.styles.h4, color: colors.text.primary },
   modalCloseBtn: { padding: 4 },
   
   imageModalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },

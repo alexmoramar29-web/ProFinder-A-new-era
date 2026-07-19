@@ -2,28 +2,26 @@
 // ProFinder — Landing Page
 // ============================================================
 
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import i18n from '../../i18n';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Dimensions,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  View,
-  Linking,
-  Modal,
-  Platform,
   useWindowDimensions,
+  View
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import i18n from '../../i18n';
 import { supabase } from '../../lib/supabase';
-import { Colors } from '../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../theme/Spacing';
 import { Typography } from '../../theme/Typography';
 
@@ -31,11 +29,12 @@ const { width: INITIAL_WIDTH } = Dimensions.get('window');
 const INITIAL_IS_MOBILE = INITIAL_WIDTH < 900;
 
 export default function LandingScreen() {
+  const { isDark, colors } = useTheme();
   const { width: SCREEN_W } = useWindowDimensions();
   const IS_MOBILE = SCREEN_W < 768;
   const HIDE_NAV_LINKS = SCREEN_W < 1050;
   const CENTER_PROS = SCREEN_W >= 1280;
-  const styles = React.useMemo(() => getStyles(IS_MOBILE), [IS_MOBILE]);
+  const styles = React.useMemo(() => getStyles(IS_MOBILE, colors, isDark), [IS_MOBILE, colors, isDark]);
 
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -139,7 +138,7 @@ export default function LandingScreen() {
       {/* ══════════════════════════════════════════
           NAVBAR
       ══════════════════════════════════════════ */}
-      <View style={{ backgroundColor: Colors.primary[600], paddingTop: Platform.OS === 'web' ? 0 : Math.max(insets.top || 30, 0) }}>
+      <View style={{ backgroundColor: colors.primary[600], paddingTop: Platform.OS === 'web' ? 0 : Math.max(insets.top || 30, 0) }}>
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -168,8 +167,8 @@ export default function LandingScreen() {
 
         <View style={[styles.navActions, IS_MOBILE && { gap: 2, flexShrink: 1 }]}>
           <Pressable onPress={cambiarIdioma} style={({ hovered, pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: IS_MOBILE ? 2 : 10, paddingVertical: 8, borderRadius: 8 }, hovered && { backgroundColor: 'rgba(255,255,255,0.1)' }, pressed && { transform: [{ scale: 0.95 }] }] as any}>
-            <Ionicons name="globe-outline" size={IS_MOBILE ? 20 : 20} color="#fff" />
-            {!IS_MOBILE && <Text style={{ fontWeight: 'bold', color: '#fff', fontSize: 15 }}>{i18n.language === 'es' ? 'ES' : 'EN'}</Text>}
+            <Ionicons name="globe-outline" size={IS_MOBILE ? 20 : 20} color={colors.neutral[0]} />
+            {!IS_MOBILE && <Text style={{ fontWeight: 'bold', color: colors.neutral[0], fontSize: 15 }}>{i18n.language === 'es' ? 'ES' : 'EN'}</Text>}
           </Pressable>
           <Pressable onPress={irALogin} style={({ hovered, pressed }) => [styles.navBtnOutline, IS_MOBILE && { paddingHorizontal: 6, paddingVertical: 6 }, hovered && { backgroundColor: 'rgba(255,255,255,0.1)' }, pressed && { transform: [{ scale: 0.97 }] }] as any}>
             <Text style={[styles.navBtnOutlineText, IS_MOBILE && { fontSize: 11 }]} numberOfLines={1} adjustsFontSizeToFit>{t('Iniciar sesión')}</Text>
@@ -181,13 +180,11 @@ export default function LandingScreen() {
         </View>
       </View>
 
-      {/* ══════════════════════════════════════════
-          HERO
-      ══════════════════════════════════════════ */}
+
       <View style={styles.hero}>
         <View style={[styles.heroLeft, IS_MOBILE && styles.heroLeftMobile]}>
           <View style={styles.heroBadge}>
-            <Ionicons name="shield-checkmark" size={13} color={Colors.primary[600]} />
+            <Ionicons name="shield-checkmark" size={13} color={colors.primary[600]} />
             <Text style={styles.heroBadgeText}>{t('ÚNETE A NUESTRA COMUNIDAD PIONERA')}</Text>
           </View>
 
@@ -205,7 +202,7 @@ export default function LandingScreen() {
           <View style={styles.heroButtons}>
             <Pressable onPress={irARegistro} style={({ hovered, pressed }) => [styles.heroBtnPrimary, hovered && { opacity: 0.9 }, pressed && { transform: [{ scale: 0.97 }] }] as any}>
               <Text style={styles.heroBtnPrimaryText}>{t('Comenzar ahora')}</Text>
-              <Ionicons name="arrow-forward" size={16} color={Colors.text.inverse} />
+              <Ionicons name="arrow-forward" size={16} color={colors.text.inverse} />
             </Pressable>
             <Pressable onPress={() => scrollRef.current?.scrollTo({ y: prosY, animated: true })} style={({ hovered, pressed }) => [styles.heroBtnGhost, hovered && { backgroundColor: '#F3F4F6' }, pressed && { transform: [{ scale: 0.97 }] }] as any}>
               <Text style={styles.heroBtnGhostText}>{t('Ver perfiles')}</Text>
@@ -216,7 +213,7 @@ export default function LandingScreen() {
             <View style={styles.avatarStack}>
               {['#7C3AED','#8B5CF6','#A78BFA'].map((c, i) => (
                 <View key={i} style={[styles.avatarCircle, { backgroundColor: c, marginLeft: i === 0 ? 0 : -10 }]}>
-                  <Ionicons name="person" size={12} color="#fff" />
+                  <Ionicons name="person" size={12} color={colors.neutral[0]} />
                 </View>
               ))}
             </View>
@@ -246,7 +243,7 @@ export default function LandingScreen() {
                 </View>
                 <View style={styles.mockupHero}>
                   <Text style={styles.mockupHeroTitle}>{t('Encuentra al')}{'\n'}
-                    <Text style={{ color: Colors.primary[600] }}>{t('Mejor')}</Text> {t('Profesionista')}
+                    <Text style={{ color: colors.primary[600] }}>{t('Mejor')}</Text> {t('Profesionista')}
                   </Text>
                   <Pressable onPress={irARegistro} style={({ hovered, pressed }) => [styles.mockupBtn, hovered && { opacity: 0.9 }, pressed && { transform: [{ scale: 0.97 }] }] as any}>
                     <Text style={styles.mockupBtnText}>{t('Comenzar ahora')} →</Text>
@@ -254,12 +251,12 @@ export default function LandingScreen() {
                 </View>
                 <View style={styles.mockupCards}>
                   {[
-                    { name: 'Ana S.', role: 'UX Designer', rating: '4.9', color: Colors.primary[200] },
-                    { name: 'Marco V.', role: 'Full Stack Dev', rating: '4.8', color: Colors.primary[300] },
+                    { name: 'Ana S.', role: 'UX Designer', rating: '4.9', color: colors.primary[200] },
+                    { name: 'Marco V.', role: 'Full Stack Dev', rating: '4.8', color: colors.primary[300] },
                   ].map((p, i) => (
                     <View key={i} style={styles.mockupCard}>
                       <View style={[styles.mockupAvatar, { backgroundColor: p.color }]}>
-                        <Ionicons name="person" size={10} color={Colors.primary[700]} />
+                        <Ionicons name="person" size={10} color={colors.primary[700]} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.mockupCardName}>{p.name}</Text>
@@ -275,9 +272,6 @@ export default function LandingScreen() {
         )}
       </View>
 
-      {/* ══════════════════════════════════════════
-          PROFESIONALES DESTACADOS
-      ══════════════════════════════════════════ */}
       <View style={styles.prosSection} onLayout={(e) => setProsY(e.nativeEvent.layout.y - 100)}>
         <View style={{ alignItems: 'center', paddingHorizontal: Spacing[6] }}>
           <Text style={styles.sectionEyebrow}>{t('TALENTO VERIFICADO')}</Text>
@@ -297,7 +291,7 @@ export default function LandingScreen() {
             { name: 'Otro', icon: 'ellipsis-horizontal-outline' as const }
           ].map((cat, i) => (
              <View key={i} style={styles.proCategoryCard}>
-               <Ionicons name={cat.icon} size={32} color={Colors.primary[600]} />
+               <Ionicons name={cat.icon} size={32} color={colors.primary[600]} />
                <Text style={styles.proCategoryTitle}>{t(cat.name)}</Text>
                <Pressable onPress={irARegistro} style={styles.proCategoryBtn}>
                  <Text style={styles.proCategoryBtnText}>{t('Explorar')}</Text>
@@ -307,17 +301,14 @@ export default function LandingScreen() {
         </ScrollView>
       </View>
 
-      {/* ══════════════════════════════════════════
-          FEATURES (Mensajes y Citas)
-      ══════════════════════════════════════════ */}
       <View style={[styles.featuresSection, IS_MOBILE && { flexDirection: 'column' }]} onLayout={(e) => setFeaturesY(e.nativeEvent.layout.y - 80)}>
          <View style={styles.featureBlock}>
-            <View style={styles.featureIcon}><Ionicons name="chatbubbles" size={28} color="#fff" /></View>
+            <View style={styles.featureIcon}><Ionicons name="chatbubbles" size={28} color={colors.neutral[0]} /></View>
             <Text style={styles.featureTitle}>{t('Mensajería Integrada')}</Text>
             <Text style={styles.featureDesc}>{t('Chatea directamente con los profesionales sin compartir tu número personal hasta que estés listo.')}</Text>
          </View>
          <View style={styles.featureBlock}>
-            <View style={styles.featureIcon}><Ionicons name="calendar" size={28} color="#fff" /></View>
+            <View style={styles.featureIcon}><Ionicons name="calendar" size={28} color={colors.neutral[0]} /></View>
             <Text style={styles.featureTitle}>{t('Citas y Calendarios')}</Text>
             <Text style={styles.featureDesc}>{t('Sincroniza agendas y realiza videollamadas dentro de nuestra plataforma con un solo clic.')}</Text>
          </View>
@@ -342,14 +333,14 @@ export default function LandingScreen() {
           ].map((s, i) => (
             <View key={i} style={[styles.stepCard, IS_MOBILE && styles.stepCardMobile]}>
               <View style={styles.stepIconWrap}>
-                <Ionicons name={s.icon} size={26} color={Colors.primary[600]} />
+                <Ionicons name={s.icon} size={26} color={colors.primary[600]} />
               </View>
               <Text style={styles.stepNumber}>{s.step}</Text>
               <Text style={styles.stepTitle}>{s.title}</Text>
               <Text style={styles.stepDesc}>{s.desc}</Text>
               <Pressable onPress={irARegistro} style={({ hovered, pressed }) => [styles.stepCta, hovered && { opacity: 0.7 }, pressed && { transform: [{ scale: 0.97 }] }] as any}>
                 <Text style={styles.stepCtaText}>{s.cta}</Text>
-                <Ionicons name="arrow-forward-outline" size={13} color={Colors.primary[600]} />
+                <Ionicons name="arrow-forward-outline" size={13} color={colors.primary[600]} />
               </Pressable>
             </View>
           ))}
@@ -374,9 +365,7 @@ export default function LandingScreen() {
         </View>
       </View>
 
-      {/* ══════════════════════════════════════════
-          INFORMACIÓN CORPORATIVA Y LEGAL
-      ══════════════════════════════════════════ */}
+
       <View style={styles.infoSection} onLayout={(e) => setInfoY(e.nativeEvent.layout.y - 80)}>
          <View style={styles.infoGrid}>
             <View style={styles.infoCol}>
@@ -398,9 +387,7 @@ export default function LandingScreen() {
          </View>
       </View>
 
-      {/* ══════════════════════════════════════════
-          FOOTER
-      ══════════════════════════════════════════ */}
+
       <View style={styles.footer}>
         <View style={styles.footerLeft}>
           <Text style={styles.footerLogo}>ProFinder</Text>
@@ -419,25 +406,25 @@ export default function LandingScreen() {
   );
 }
 
-const getStyles = (IS_MOBILE: boolean) => StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.background.app },
+const getStyles = (IS_MOBILE: boolean, colors: any, isDark: boolean) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.background.app },
 
   navbar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: Colors.primary[600],
+    backgroundColor: colors.primary[600],
     paddingHorizontal: Spacing[6], paddingVertical: Spacing[3],
     ...Shadow.sm,
   },
   navLogo:         { flexDirection: 'row', alignItems: 'center', gap: 8 },
   navLogoImg:      { width: 44, height: 44 },
-  navLogoText:     { ...Typography.styles.h5, color: '#fff', letterSpacing: 0.3 },
+  navLogoText:     { ...Typography.styles.h5, color: colors.neutral[0], letterSpacing: 0.3 },
   navLinks:        { flexDirection: 'row', gap: Spacing[6] },
   navLink:         { ...Typography.styles.body, color: 'rgba(255,255,255,0.80)' },
   navActions:      { flexDirection: 'row', gap: Spacing[2], alignItems: 'center' },
   navBtnOutline:   { paddingHorizontal: 14, paddingVertical: 8, borderRadius: Radius.button, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.7)' },
-  navBtnOutlineText: { ...Typography.styles.btn, color: '#fff' },
-  navBtnPrimary:   { paddingHorizontal: 14, paddingVertical: 8, borderRadius: Radius.button, backgroundColor: '#fff' },
-  navBtnPrimaryText: { ...Typography.styles.btn, color: Colors.primary[600] },
+  navBtnOutlineText: { ...Typography.styles.btn, color: colors.neutral[0] },
+  navBtnPrimary:   { paddingHorizontal: 14, paddingVertical: 8, borderRadius: Radius.button, backgroundColor: colors.neutral[0] },
+  navBtnPrimaryText: { ...Typography.styles.btn, color: colors.primary[600] },
 
   hero: {
     flexDirection: IS_MOBILE ? 'column' : 'row',
@@ -450,94 +437,94 @@ const getStyles = (IS_MOBILE: boolean) => StyleSheet.create({
   heroLeftMobile: { alignItems: 'center' },
   heroBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: IS_MOBILE ? 'center' : 'flex-start',
-    backgroundColor: Colors.primary[50], borderRadius: Radius.full,
+    backgroundColor: colors.primary[50], borderRadius: Radius.full,
     paddingHorizontal: 12, paddingVertical: 5,
-    borderWidth: 1, borderColor: Colors.primary[200],
+    borderWidth: 1, borderColor: colors.primary[200],
   },
-  heroBadgeText:    { ...Typography.styles.overline, color: Colors.primary[600], fontSize: 10 },
-  heroTitle:        { ...Typography.styles.h1, color: Colors.text.primary, fontSize: IS_MOBILE ? 32 : 44, lineHeight: IS_MOBILE ? 42 : 56 },
-  heroTitleAccent:  { color: Colors.primary[600] },
-  heroSubtitle:     { ...Typography.styles.bodyLg, color: Colors.text.secondary, maxWidth: 440, lineHeight: 26 },
+  heroBadgeText:    { ...Typography.styles.overline, color: colors.primary[600], fontSize: 10 },
+  heroTitle:        { ...Typography.styles.h1, color: colors.text.primary, fontSize: IS_MOBILE ? 32 : 44, lineHeight: IS_MOBILE ? 42 : 56 },
+  heroTitleAccent:  { color: colors.primary[600] },
+  heroSubtitle:     { ...Typography.styles.bodyLg, color: colors.text.secondary, maxWidth: 440, lineHeight: 26 },
   heroButtons:      { flexDirection: 'row', gap: Spacing[3], flexWrap: 'wrap' },
-  heroBtnPrimary:   { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.primary[600], paddingHorizontal: 22, paddingVertical: 13, borderRadius: Radius.button, ...Shadow.brand },
-  heroBtnPrimaryText: { ...Typography.styles.btnLg, color: '#fff' },
-  heroBtnGhost:     { paddingHorizontal: 22, paddingVertical: 13, borderRadius: Radius.button, borderWidth: 1.5, borderColor: Colors.border.default },
-  heroBtnGhostText: { ...Typography.styles.btnLg, color: Colors.text.primary },
+  heroBtnPrimary:   { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.primary[600], paddingHorizontal: 22, paddingVertical: 13, borderRadius: Radius.button, ...Shadow.brand },
+  heroBtnPrimaryText: { ...Typography.styles.btnLg, color: colors.neutral[0] },
+  heroBtnGhost:     { paddingHorizontal: 22, paddingVertical: 13, borderRadius: Radius.button, borderWidth: 1.5, borderColor: colors.border.default },
+  heroBtnGhostText: { ...Typography.styles.btnLg, color: colors.text.primary },
   socialProof:      { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'center', maxWidth: '100%' },
   avatarStack:      { flexDirection: 'row' },
-  avatarCircle:     { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
-  socialProofText:  { ...Typography.styles.bodySm, color: Colors.text.secondary, textAlign: 'center', flexShrink: 1 },
+  avatarCircle:     { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.neutral[0] },
+  socialProofText:  { ...Typography.styles.bodySm, color: colors.text.secondary, textAlign: 'center', flexShrink: 1 },
 
   heroRight:       { flex: 1, alignItems: 'center' },
-  mockupFrame:     { width: '100%', maxWidth: 420, backgroundColor: Colors.background.card, borderRadius: Radius.xl, overflow: 'hidden', ...Shadow.lg, borderWidth: 1, borderColor: Colors.border.default },
-  mockupBar:       { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.neutral[100], paddingHorizontal: 12, paddingVertical: 8, gap: 6 },
+  mockupFrame:     { width: '100%', maxWidth: 420, backgroundColor: colors.background.card, borderRadius: Radius.xl, overflow: 'hidden', ...Shadow.lg, borderWidth: 1, borderColor: colors.border.default },
+  mockupBar:       { flexDirection: 'row', alignItems: 'center', backgroundColor: isDark ? colors.neutral[100] : colors.neutral[100], paddingHorizontal: 12, paddingVertical: 8, gap: 6 },
   mockupBarDot:    { width: 10, height: 10, borderRadius: 5, backgroundColor: '#FC5753' },
-  mockupBarUrl:    { flex: 1, backgroundColor: '#fff', borderRadius: 4, paddingHorizontal: 8, paddingVertical: 3, marginLeft: 6 },
-  mockupBarUrlText:{ ...Typography.styles.caption, color: Colors.text.secondary, textAlign: 'center' },
+  mockupBarUrl:    { flex: 1, backgroundColor: isDark ? colors.neutral[200] : colors.neutral[0], borderRadius: 4, paddingHorizontal: 8, paddingVertical: 3, marginLeft: 6 },
+  mockupBarUrlText:{ ...Typography.styles.caption, color: colors.text.secondary, textAlign: 'center' },
   mockupContent:   { padding: 16, gap: 12 },
   mockupNav:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  mockupNavLogo:   { ...Typography.styles.label, color: Colors.primary[600], fontSize: 13 },
+  mockupNavLogo:   { ...Typography.styles.label, color: colors.primary[600], fontSize: 13 },
   mockupNavLinks:  { flexDirection: 'row', gap: 8 },
-  mockupNavLink:   { ...Typography.styles.caption, color: Colors.text.secondary },
-  mockupHero:      { backgroundColor: Colors.primary[50], borderRadius: Radius.md, padding: 14, gap: 8 },
-  mockupHeroTitle: { ...Typography.styles.bodySm, color: Colors.text.primary, fontWeight: '700', lineHeight: 18 },
-  mockupBtn:       { backgroundColor: Colors.primary[600], borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, alignSelf: 'flex-start' },
-  mockupBtnText:   { ...Typography.styles.caption, color: '#fff', fontWeight: '600' },
+  mockupNavLink:   { ...Typography.styles.caption, color: colors.text.secondary },
+  mockupHero:      { backgroundColor: isDark ? colors.neutral[100] : colors.primary[50], borderRadius: Radius.md, padding: 14, gap: 8 },
+  mockupHeroTitle: { ...Typography.styles.bodySm, color: colors.text.primary, fontWeight: '700', lineHeight: 18 },
+  mockupBtn:       { backgroundColor: colors.primary[600], borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5, alignSelf: 'flex-start' },
+  mockupBtnText:   { ...Typography.styles.caption, color: colors.neutral[0], fontWeight: '600' },
   mockupCards:     { gap: 8 },
-  mockupCard:      { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.neutral[50], borderRadius: Radius.md, padding: 10, borderWidth: 1, borderColor: Colors.border.default },
+  mockupCard:      { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: isDark ? colors.neutral[100] : colors.neutral[50], borderRadius: Radius.md, padding: 10, borderWidth: 1, borderColor: colors.border.default },
   mockupAvatar:    { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  mockupCardName:  { ...Typography.styles.label, color: Colors.text.primary, fontSize: 11 },
-  mockupCardRole:  { ...Typography.styles.caption, color: Colors.text.secondary },
-  mockupCardRating:{ ...Typography.styles.label, color: Colors.primary[600], fontSize: 11 },
+  mockupCardName:  { ...Typography.styles.label, color: colors.text.primary, fontSize: 11 },
+  mockupCardRole:  { ...Typography.styles.caption, color: colors.text.secondary },
+  mockupCardRating:{ ...Typography.styles.label, color: colors.primary[600], fontSize: 11 },
 
-  prosSection:       { paddingVertical: Spacing[10], backgroundColor: '#fff', width: '100%' },
+  prosSection:       { paddingVertical: Spacing[10], backgroundColor: colors.neutral[0], width: '100%' },
   prosScroll:        { gap: Spacing[4], marginTop: Spacing[6], paddingHorizontal: Spacing[6] },
-  proCategoryCard:   { width: 140, padding: 16, borderRadius: Radius.card, backgroundColor: Colors.primary[50], alignItems: 'center', gap: 12, borderWidth: 1, borderColor: Colors.primary[100] },
-  proCategoryTitle:  { ...Typography.styles.label, color: Colors.text.primary, textAlign: 'center' },
-  proCategoryBtn:    { backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.button, borderWidth: 1, borderColor: Colors.border.default },
-  proCategoryBtnText:{ ...Typography.styles.caption, color: Colors.primary[600], fontWeight: '600' },
+  proCategoryCard:   { width: 140, padding: 16, borderRadius: Radius.card, backgroundColor: isDark ? colors.neutral[100] : colors.primary[50], alignItems: 'center', gap: 12, borderWidth: 1, borderColor: colors.primary[100] },
+  proCategoryTitle:  { ...Typography.styles.label, color: colors.text.primary, textAlign: 'center' },
+  proCategoryBtn:    { backgroundColor: colors.neutral[0], paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.button, borderWidth: 1, borderColor: colors.border.default },
+  proCategoryBtnText:{ ...Typography.styles.caption, color: colors.primary[600], fontWeight: '600' },
 
-  featuresSection:   { flexDirection: 'row', gap: Spacing[8], paddingHorizontal: Spacing[6], paddingVertical: Spacing[12], backgroundColor: Colors.primary[700], alignItems: 'center', justifyContent: 'center' },
+  featuresSection:   { flexDirection: 'row', gap: Spacing[8], paddingHorizontal: Spacing[6], paddingVertical: Spacing[12], backgroundColor: colors.primary[700], alignItems: 'center', justifyContent: 'center' },
   featureBlock:      { flex: 1, alignItems: 'center', gap: Spacing[3], maxWidth: 400 },
   featureIcon:       { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
-  featureTitle:      { ...Typography.styles.h4, color: '#fff', textAlign: 'center' },
-  featureDesc:       { ...Typography.styles.body, color: Colors.primary[100], textAlign: 'center', lineHeight: 22 },
+  featureTitle:      { ...Typography.styles.h4, color: colors.neutral[0], textAlign: 'center' },
+  featureDesc:       { ...Typography.styles.body, color: colors.primary[100], textAlign: 'center', lineHeight: 22 },
 
-  howSection:        { paddingHorizontal: Spacing[6], paddingVertical: Spacing[12], alignItems: 'center', backgroundColor: Colors.background.card },
-  sectionEyebrow:    { ...Typography.styles.overline, color: Colors.primary[600], marginBottom: Spacing[2] },
-  sectionTitle:      { ...Typography.styles.h2, color: Colors.text.primary, textAlign: 'center', marginBottom: Spacing[3] },
-  sectionTitleAccent:{ color: Colors.primary[600] },
-  sectionSubtitle:   { ...Typography.styles.bodyLg, color: Colors.text.secondary, textAlign: 'center', maxWidth: 520, marginBottom: Spacing[10] },
+  howSection:        { paddingHorizontal: Spacing[6], paddingVertical: Spacing[12], alignItems: 'center', backgroundColor: colors.background.card },
+  sectionEyebrow:    { ...Typography.styles.overline, color: colors.primary[600], marginBottom: Spacing[2] },
+  sectionTitle:      { ...Typography.styles.h2, color: colors.text.primary, textAlign: 'center', marginBottom: Spacing[3] },
+  sectionTitleAccent:{ color: colors.primary[600] },
+  sectionSubtitle:   { ...Typography.styles.bodyLg, color: colors.text.secondary, textAlign: 'center', maxWidth: 520, marginBottom: Spacing[10] },
   stepsRow:          { flexDirection: IS_MOBILE ? 'column' : 'row', gap: Spacing[5], width: '100%', maxWidth: 1000 },
-  stepCard:          { flex: 1, backgroundColor: Colors.background.app, borderRadius: Radius.card, padding: Spacing[6], gap: Spacing[2], borderWidth: 1, borderColor: Colors.border.default },
+  stepCard:          { flex: 1, backgroundColor: colors.background.app, borderRadius: Radius.card, padding: Spacing[6], gap: Spacing[2], borderWidth: 1, borderColor: colors.border.default },
   stepCardMobile:    { width: '100%' },
-  stepIconWrap:      { width: 48, height: 48, borderRadius: Radius.full, backgroundColor: Colors.primary[50], alignItems: 'center', justifyContent: 'center', marginBottom: Spacing[2] },
-  stepNumber:        { ...Typography.styles.overline, color: Colors.primary[400] },
-  stepTitle:         { ...Typography.styles.h5, color: Colors.text.primary },
-  stepDesc:          { ...Typography.styles.body, color: Colors.text.secondary, lineHeight: 22 },
+  stepIconWrap:      { width: 48, height: 48, borderRadius: Radius.full, backgroundColor: colors.primary[50], alignItems: 'center', justifyContent: 'center', marginBottom: Spacing[2] },
+  stepNumber:        { ...Typography.styles.overline, color: colors.primary[400] },
+  stepTitle:         { ...Typography.styles.h5, color: colors.text.primary },
+  stepDesc:          { ...Typography.styles.body, color: colors.text.secondary, lineHeight: 22 },
   stepCta:           { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: Spacing[2] },
-  stepCtaText:       { ...Typography.styles.btn, color: Colors.primary[600] },
+  stepCtaText:       { ...Typography.styles.btn, color: colors.primary[600] },
 
-  ctaBanner:         { margin: Spacing[6], borderRadius: Radius['2xl'], backgroundColor: Colors.primary[600], padding: Spacing[10], alignItems: 'center', gap: Spacing[4], ...Shadow.brand },
-  ctaTitle:          { ...Typography.styles.h2, color: '#fff', textAlign: 'center' },
-  ctaSubtitle:       { ...Typography.styles.bodyLg, color: Colors.primary[200], textAlign: 'center', maxWidth: 460 },
+  ctaBanner:         { margin: Spacing[6], borderRadius: Radius['2xl'], backgroundColor: colors.primary[600], padding: Spacing[10], alignItems: 'center', gap: Spacing[4], ...Shadow.brand },
+  ctaTitle:          { ...Typography.styles.h2, color: colors.neutral[0], textAlign: 'center' },
+  ctaSubtitle:       { ...Typography.styles.bodyLg, color: colors.primary[200], textAlign: 'center', maxWidth: 460 },
   ctaButtons:        { flexDirection: IS_MOBILE ? 'column' : 'row', gap: Spacing[3], marginTop: Spacing[2], width: IS_MOBILE ? '100%' : 'auto' },
-  ctaBtnWhite:       { backgroundColor: '#fff', paddingHorizontal: 22, paddingVertical: 13, borderRadius: Radius.button, width: IS_MOBILE ? '100%' : 'auto', alignItems: 'center' },
-  ctaBtnWhiteText:   { ...Typography.styles.btnLg, color: Colors.primary[600] },
+  ctaBtnWhite:       { backgroundColor: colors.neutral[0], paddingHorizontal: 22, paddingVertical: 13, borderRadius: Radius.button, width: IS_MOBILE ? '100%' : 'auto', alignItems: 'center' },
+  ctaBtnWhiteText:   { ...Typography.styles.btnLg, color: colors.primary[600] },
   ctaBtnOutline:     { borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)', paddingHorizontal: 22, paddingVertical: 13, borderRadius: Radius.button, width: IS_MOBILE ? '100%' : 'auto', alignItems: 'center' },
-  ctaBtnOutlineText: { ...Typography.styles.btnLg, color: '#fff' },
+  ctaBtnOutlineText: { ...Typography.styles.btnLg, color: colors.neutral[0] },
 
-  infoSection:       { paddingHorizontal: Spacing[6], paddingVertical: Spacing[10], backgroundColor: Colors.background.card, borderTopWidth: 1, borderTopColor: Colors.border.default, width: '100%' },
+  infoSection:       { paddingHorizontal: Spacing[6], paddingVertical: Spacing[10], backgroundColor: colors.background.card, borderTopWidth: 1, borderTopColor: colors.border.default, width: '100%' },
   infoGrid:          { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing[6], maxWidth: 1100, width: '100%', alignSelf: 'center' },
   infoCol:           { flex: 1, minWidth: IS_MOBILE ? '100%' : 220, gap: 8 },
-  infoTitle:         { ...Typography.styles.h6, color: Colors.text.primary },
-  infoText:          { ...Typography.styles.bodySm, color: Colors.text.secondary, lineHeight: 22 },
+  infoTitle:         { ...Typography.styles.h5, color: colors.text.primary },
+  infoText:          { ...Typography.styles.bodySm, color: colors.text.secondary, lineHeight: 22 },
 
-  footer:        { flexDirection: IS_MOBILE ? 'column' : 'row', justifyContent: 'space-between', alignItems: IS_MOBILE ? 'flex-start' : 'center', paddingHorizontal: Spacing[6], paddingVertical: Spacing[6], borderTopWidth: 1, borderTopColor: Colors.border.default, gap: Spacing[4], backgroundColor: Colors.background.app },
+  footer:        { flexDirection: IS_MOBILE ? 'column' : 'row', justifyContent: 'space-between', alignItems: IS_MOBILE ? 'flex-start' : 'center', paddingHorizontal: Spacing[6], paddingVertical: Spacing[6], borderTopWidth: 1, borderTopColor: colors.border.default, gap: Spacing[4], backgroundColor: colors.background.app },
   footerLeft:    { gap: 4 },
-  footerLogo:    { ...Typography.styles.h5, color: Colors.text.primary },
-  footerTagline: { ...Typography.styles.body, color: Colors.text.secondary },
-  footerCopy:    { ...Typography.styles.caption, color: Colors.text.disabled },
+  footerLogo:    { ...Typography.styles.h5, color: colors.text.primary },
+  footerTagline: { ...Typography.styles.body, color: colors.text.secondary },
+  footerCopy:    { ...Typography.styles.caption, color: colors.text.disabled },
   footerLinks:   { flexDirection: 'row', gap: Spacing[5], flexWrap: 'wrap' },
-  footerLink:    { ...Typography.styles.body, color: Colors.text.secondary },
+  footerLink:    { ...Typography.styles.body, color: colors.text.secondary },
 });

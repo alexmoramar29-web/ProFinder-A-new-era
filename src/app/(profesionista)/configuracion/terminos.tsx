@@ -2,8 +2,11 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../../context/ThemeContext';
 
 export default function PrivacidadScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const { t } = useTranslation();
   const router = useRouter();
 
@@ -42,15 +45,15 @@ export default function PrivacidadScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  contenedorFondo: { flex: 1, backgroundColor: '#FAFAFC' },
+const getStyles = (colors: any) => StyleSheet.create({
+  contenedorFondo: { flex: 1, backgroundColor: colors.neutral[50] },
   scroll: { padding: 20, paddingBottom: 50 },
   tarjeta: { 
-    backgroundColor: '#FFFFFF', 
+    backgroundColor: colors.neutral[0], 
     padding: 20, 
     borderRadius: 12, 
     borderWidth: 1, 
-    borderColor: '#E5E5EA', 
+    borderColor: colors.border.default, 
     shadowColor: '#000', 
     shadowOffset: { width: 0, height: 2 }, 
     shadowOpacity: 0.05, 
@@ -60,8 +63,8 @@ const styles = StyleSheet.create({
   botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
   flechaAtras: { fontSize: 20, color: '#5c4b8a', fontWeight: 'bold', marginRight: 5 },
   textoAtrasInline: { fontSize: 16, color: '#5c4b8a', fontWeight: 'bold' },
-  titulo: { fontSize: 24, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 5, textAlign: 'center' },
-  fechaActualizacion: { fontSize: 13, color: '#8E8E93', textAlign: 'center', marginBottom: 25, fontStyle: 'italic' },
+  titulo: { fontSize: 24, fontWeight: 'bold', color: colors.text.primary, marginBottom: 5, textAlign: 'center' },
+  fechaActualizacion: { fontSize: 13, color: colors.text.secondary, textAlign: 'center', marginBottom: 25, fontStyle: 'italic' },
   seccionTitulo: { fontSize: 16, fontWeight: 'bold', color: '#5c4b8a', marginTop: 15, marginBottom: 8 },
   textoGeneral: { fontSize: 14, color: '#48484A', lineHeight: 22, textAlign: 'justify', marginBottom: 10 }
 });

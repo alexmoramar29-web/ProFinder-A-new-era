@@ -7,8 +7,11 @@ import { Colors } from '@/theme/Colors';
 import { Typography } from '@/theme/Typography';
 import { Radius, Shadow, Spacing } from '@/theme/Spacing';
 import NavbarProfesionista from '@/components/NavbarProfesionista';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function ServiciosScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const router = useRouter();
   const { t } = useTranslation();
   const [servicios, setServicios] = useState<any[]>([]);
@@ -74,11 +77,11 @@ export default function ServiciosScreen() {
   };
 
   if (cargando) {
-    return <View style={styles.centro}><ActivityIndicator size="large" color={Colors.primary[600]} /></View>;
+    return <View style={styles.centro}><ActivityIndicator size="large" color={colors.primary[600]} /></View>;
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+    <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
       <NavbarProfesionista />
       <View style={styles.contenedorFondo}>
         <ScrollView contentContainerStyle={styles.scroll}>
@@ -165,60 +168,60 @@ export default function ServiciosScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   centro: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  contenedorFondo: { flex: 1, backgroundColor: Colors.neutral[50] }, 
+  contenedorFondo: { flex: 1, backgroundColor: colors.neutral[50] }, 
   scroll: { paddingBottom: 100 },
   container: { padding: Spacing[5] },
-  titulo: { ...Typography.styles.h2, color: Colors.primary[700], textAlign: 'center', fontWeight: '800' }, 
-  subtitulo: { ...Typography.styles.body, color: Colors.text.secondary, textAlign: 'center', marginBottom: Spacing[6], marginTop: Spacing[1] },
-  cajaVacia: { backgroundColor: '#fff', padding: Spacing[8], borderRadius: Radius.lg, alignItems: 'center', borderWidth: 1, borderColor: Colors.border.default },
-  textoVacio: { ...Typography.styles.body, color: Colors.text.disabled, fontStyle: 'italic' },
+  titulo: { ...Typography.styles.h2, color: colors.primary[700], textAlign: 'center', fontWeight: '800' }, 
+  subtitulo: { ...Typography.styles.body, color: colors.text.secondary, textAlign: 'center', marginBottom: Spacing[6], marginTop: Spacing[1] },
+  cajaVacia: { backgroundColor: colors.neutral[0], padding: Spacing[8], borderRadius: Radius.lg, alignItems: 'center', borderWidth: 1, borderColor: colors.border.default },
+  textoVacio: { ...Typography.styles.body, color: colors.text.disabled, fontStyle: 'italic' },
   
   tarjeta: { 
     flexDirection: 'row', 
-    backgroundColor: '#fff', 
+    backgroundColor: colors.neutral[0], 
     padding: Spacing[4], 
     borderRadius: Radius.lg, 
     marginBottom: Spacing[4], 
     ...Shadow.md, 
     borderWidth: 1, 
-    borderColor: Colors.border.default,
+    borderColor: colors.border.default,
     alignItems: 'center' 
   },
-  tarjetaPausada: { opacity: 0.65, backgroundColor: Colors.neutral[100] },
+  tarjetaPausada: { opacity: 0.65, backgroundColor: colors.neutral[100] },
   
-  imagenServicio: { width: 85, height: 85, borderRadius: Radius.md, marginRight: Spacing[4], backgroundColor: Colors.neutral[200] },
+  imagenServicio: { width: 85, height: 85, borderRadius: Radius.md, marginRight: Spacing[4], backgroundColor: colors.neutral[200] },
   infoTarjeta: { flex: 1 },
   encabezadoTarjeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4, paddingRight: 5 },
-  nombreServicio: { ...Typography.styles.h5, color: Colors.primary[700], flex: 1, marginRight: 5, fontWeight: '700' }, 
-  textoGris: { color: Colors.text.secondary },
+  nombreServicio: { ...Typography.styles.h5, color: colors.primary[700], flex: 1, marginRight: 5, fontWeight: '700' }, 
+  textoGris: { color: colors.text.secondary },
   
   etiquetasContainer: { flexDirection: 'row', alignItems: 'center' },
-  etiquetaModalidad: { backgroundColor: Colors.primary[100], paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.full, marginLeft: 5 },
-  textoModalidad: { fontSize: 10, fontWeight: 'bold', color: Colors.primary[700] },
+  etiquetaModalidad: { backgroundColor: colors.primary[100], paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.full, marginLeft: 5 },
+  textoModalidad: { fontSize: 10, fontWeight: 'bold', color: colors.primary[700] },
   
-  etiquetaPausado: { backgroundColor: Colors.error.light, paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.full },
-  textoPausado: { fontSize: 10, fontWeight: 'bold', color: Colors.error.main },
+  etiquetaPausado: { backgroundColor: colors.error.light, paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.full },
+  textoPausado: { fontSize: 10, fontWeight: 'bold', color: colors.error.main },
 
-  descripcionServicio: { ...Typography.styles.caption, color: Colors.text.secondary, marginBottom: Spacing[2] },
+  descripcionServicio: { ...Typography.styles.caption, color: colors.text.secondary, marginBottom: Spacing[2] },
   filaDatos: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing[3] },
-  precioTexto: { ...Typography.styles.h5, color: Colors.success.main, marginRight: Spacing[4], fontWeight: '800' },
-  tiempoTexto: { ...Typography.styles.caption, color: Colors.text.disabled },
+  precioTexto: { ...Typography.styles.h5, color: colors.success.main, marginRight: Spacing[4], fontWeight: '800' },
+  tiempoTexto: { ...Typography.styles.caption, color: colors.text.disabled },
   
   filaBotones: { flexDirection: 'row', justifyContent: 'flex-start' },
-  botonEditar: { backgroundColor: Colors.neutral[100], paddingHorizontal: 15, paddingVertical: 8, borderRadius: Radius.md, marginRight: 10 },
-  textoEditar: { color: Colors.text.primary, fontWeight: 'bold', fontSize: 12 },
-  botonBorrar: { backgroundColor: 'transparent', paddingHorizontal: 15, paddingVertical: 8, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.error.main },
-  textoBorrar: { color: Colors.error.main, fontWeight: 'bold', fontSize: 12 },
+  botonEditar: { backgroundColor: colors.neutral[100], paddingHorizontal: 15, paddingVertical: 8, borderRadius: Radius.md, marginRight: 10 },
+  textoEditar: { color: colors.text.primary, fontWeight: 'bold', fontSize: 12 },
+  botonBorrar: { backgroundColor: 'transparent', paddingHorizontal: 15, paddingVertical: 8, borderRadius: Radius.md, borderWidth: 1, borderColor: colors.error.main },
+  textoBorrar: { color: colors.error.main, fontWeight: 'bold', fontSize: 12 },
   
-  contenedorFijoAbajo: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing[5], backgroundColor: Colors.neutral[50], borderTopWidth: 1, borderTopColor: Colors.border.default },
-  botonPrimario: { backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', ...Shadow.brand },
-  textoBotonPrimario: { ...Typography.styles.btn, color: '#fff', fontWeight: '700' },
+  contenedorFijoAbajo: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing[5], backgroundColor: colors.neutral[50], borderTopWidth: 1, borderTopColor: colors.border.default },
+  botonPrimario: { backgroundColor: colors.primary[600], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', ...Shadow.brand },
+  textoBotonPrimario: { ...Typography.styles.btn, color: colors.neutral[0], fontWeight: '700' },
   
-  contenedorFijoAbajoDosBotones: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing[5], backgroundColor: Colors.neutral[50], borderTopWidth: 1, borderTopColor: Colors.border.default, flexDirection: 'row', justifyContent: 'space-between', gap: Spacing[3] },
-  botonPrimarioMitad: { backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', flex: 1, ...Shadow.brand },
-  textoBotonPrimarioMitad: { ...Typography.styles.btn, color: '#fff', fontWeight: '700', textAlign: 'center' },
-  botonSecundarioMitad: { backgroundColor: Colors.primary[100], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', flex: 1, borderWidth: 1, borderColor: Colors.primary[300] },
-  textoBotonSecundarioMitad: { ...Typography.styles.btn, color: Colors.primary[700], fontWeight: '700', textAlign: 'center' }
+  contenedorFijoAbajoDosBotones: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing[5], backgroundColor: colors.neutral[50], borderTopWidth: 1, borderTopColor: colors.border.default, flexDirection: 'row', justifyContent: 'space-between', gap: Spacing[3] },
+  botonPrimarioMitad: { backgroundColor: colors.primary[600], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', flex: 1, ...Shadow.brand },
+  textoBotonPrimarioMitad: { ...Typography.styles.btn, color: colors.neutral[0], fontWeight: '700', textAlign: 'center' },
+  botonSecundarioMitad: { backgroundColor: colors.primary[100], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', flex: 1, borderWidth: 1, borderColor: colors.primary[300] },
+  textoBotonSecundarioMitad: { ...Typography.styles.btn, color: colors.primary[700], fontWeight: '700', textAlign: 'center' }
 });

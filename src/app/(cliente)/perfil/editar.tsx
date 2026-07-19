@@ -3,10 +3,13 @@ import { decode } from 'base64-arraybuffer';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTheme } from '@/context/ThemeContext';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import NavbarCliente from '../../../components/NavbarCliente';
 
 export default function EditarPerfilClienteScreen() {
+  const { colors, isDark } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const router = useRouter();
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
@@ -107,7 +110,7 @@ export default function EditarPerfilClienteScreen() {
   if (cargando) return <View style={styles.centro}><ActivityIndicator size="large" /></View>;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, backgroundColor: colors.neutral[0] }}>
       <NavbarCliente />
       <ScrollView contentContainerStyle={styles.container}>
         <TouchableOpacity onPress={seleccionarImagen} style={styles.fotoContainer}>
@@ -143,17 +146,17 @@ export default function EditarPerfilClienteScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   centro: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   container: { padding: 20, maxWidth: 600, width: '100%', alignSelf: 'center' },
   fotoContainer: { alignSelf: 'center', marginBottom: 20, alignItems: 'center' },
-  foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#eee' },
-  textoCambiarFoto: { color: '#007bff', marginTop: 10, fontWeight: 'bold' },
-  label: { fontWeight: 'bold', marginBottom: 5 },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 15, borderRadius: 8, fontSize: 16 },
+  foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.neutral[100] },
+  textoCambiarFoto: { color: colors.primary[600], marginTop: 10, fontWeight: 'bold' },
+  label: { fontWeight: 'bold', marginBottom: 5, color: colors.text.primary },
+  input: { borderWidth: 1, borderColor: colors.border.default, padding: 10, marginBottom: 15, borderRadius: 8, fontSize: 16, color: colors.text.primary },
   contenedorBotonesAccion: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, gap: 15 },
-  botonGuardar: { flex: 1, backgroundColor: '#5c4b8a', padding: 15, borderRadius: 8, alignItems: 'center' },
-  botonCancelar: { flex: 1, backgroundColor: '#f4f3f4', padding: 15, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#ccc' },
-  textoBotonGuardar: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  textoBotonCancelar: { color: '#333', fontWeight: 'bold', fontSize: 16 }
+  botonGuardar: { flex: 1, backgroundColor: colors.primary[600], padding: 15, borderRadius: 8, alignItems: 'center' },
+  botonCancelar: { flex: 1, backgroundColor: colors.neutral[100], padding: 15, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: colors.border.default },
+  textoBotonGuardar: { color: colors.neutral[0], fontWeight: 'bold', fontSize: 16 },
+  textoBotonCancelar: { color: colors.text.primary, fontWeight: 'bold', fontSize: 16 }
 });

@@ -11,10 +11,13 @@ import { Radius, Shadow, Spacing } from '../../theme/Spacing';
 import { Typography } from '../../theme/Typography';
 import { useTranslation } from 'react-i18next';
 import { FontAwesome } from '@expo/vector-icons';
+import { useTheme } from '@/context/ThemeContext';
 
 const RATINGS_OPTS = ['1+', '2+', '3+', '4+', '4.5+'];
 
 export default function ClienteDashboard() {
+  const { isDark, colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const { t } = useTranslation();
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -255,7 +258,7 @@ export default function ClienteDashboard() {
       title: 'Mi Ubicación',
       subtitle: 'Estás aquí',
       color: 'plateado' as any
-    });
+    } as any);
   }
 
   let latSum = 0, lonSum = 0;
@@ -276,10 +279,10 @@ export default function ClienteDashboard() {
         <View style={styles.searchBarWrap}>
           <View style={styles.searchContainer}>
             <View style={styles.searchInputRow}>
-              <Ionicons name="search" size={22} color={Colors.primary[600]} />
+              <Ionicons name="search" size={22} color={colors.primary[600]} />
               <TextInput
                 placeholder={t('¿Qué especialista buscas? Ej. Arquitecto, Abogado')}
-                placeholderTextColor={Colors.text.disabled}
+                placeholderTextColor={colors.text.disabled}
                 style={styles.searchInput}
                 value={busqueda}
                 onChangeText={setBusqueda}
@@ -301,17 +304,17 @@ export default function ClienteDashboard() {
           {isMobile ? (
             <View style={styles.mobileFiltersWrapper}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.mobileFiltersScroll}>
-                <Pressable ref={mobileBtnRef as any} style={styles.locBoxMobile} onPress={() => openDropdown(mobileBtnRef)}>
-                  <Ionicons name="briefcase-outline" size={18} color={Colors.primary[600]} />
-                  <Text style={[styles.locInputMobile, !profesionFiltro && { color: Colors.text.disabled }]}>
+                <Pressable ref={mobileBtnRef as any} style={styles.locBoxMobile} onPress={() => openDropdown(mobileBtnRef as any)}>
+                  <Ionicons name="briefcase-outline" size={18} color={colors.primary[600]} />
+                  <Text style={[styles.locInputMobile, !profesionFiltro && { color: colors.text.disabled }]}>
                     {t(PROFESIONES.find(p => p.value === profesionFiltro)?.label || 'Profesión')}
                   </Text>
                 </Pressable>
                 <View style={styles.locBoxMobile}>
-                  <Ionicons name="location-outline" size={18} color={Colors.primary[600]} />
+                  <Ionicons name="location-outline" size={18} color={colors.primary[600]} />
                   <TextInput
                     placeholder={t('Ciudad o CP')}
-                    placeholderTextColor={Colors.text.disabled}
+                    placeholderTextColor={colors.text.disabled}
                     style={styles.locInputMobile}
                     value={ubicacion}
                     onChangeText={setUbicacion}
@@ -319,10 +322,10 @@ export default function ClienteDashboard() {
                   />
                 </View>
                 <View style={styles.locBoxMobile}>
-                  <Ionicons name="navigate-outline" size={18} color={Colors.primary[600]} />
+                  <Ionicons name="navigate-outline" size={18} color={colors.primary[600]} />
                   <TextInput
                     placeholder={t('Máx Km')}
-                    placeholderTextColor={Colors.text.disabled}
+                    placeholderTextColor={colors.text.disabled}
                     style={[styles.locInputMobile, { width: 70 }]}
                     value={distanciaMax}
                     onChangeText={setDistanciaMax}
@@ -353,22 +356,22 @@ export default function ClienteDashboard() {
 
               <View style={styles.filterGroup}>
                 <Text style={styles.filterLabel}>{t('PROFESIÓN')}</Text>
-                <Pressable ref={desktopBtnRef as any} style={styles.locBox} onPress={() => openDropdown(desktopBtnRef)}>
-                  <Ionicons name="briefcase-outline" size={16} color={Colors.primary[600]} />
-                  <Text style={[styles.locInput, { flex: 1 }, !profesionFiltro && { color: Colors.text.disabled }]}>
+                <Pressable ref={desktopBtnRef as any} style={styles.locBox} onPress={() => openDropdown(desktopBtnRef as any)}>
+                  <Ionicons name="briefcase-outline" size={16} color={colors.primary[600]} />
+                  <Text style={[styles.locInput, { flex: 1 }, !profesionFiltro && { color: colors.text.disabled }]}>
                     {t(PROFESIONES.find(p => p.value === profesionFiltro)?.label || 'Todas las profesiones')}
                   </Text>
-                  <Ionicons name="chevron-down" size={14} color={Colors.text.disabled} />
+                  <Ionicons name="chevron-down" size={14} color={colors.text.disabled} />
                 </Pressable>
               </View>
 
               <View style={styles.filterGroup}>
                 <Text style={styles.filterLabel}>{t('UBICACIÓN')}</Text>
                 <View style={styles.locBox}>
-                  <Ionicons name="location-outline" size={16} color={Colors.primary[600]} />
+                  <Ionicons name="location-outline" size={16} color={colors.primary[600]} />
                   <TextInput
                     placeholder={t('Ciudad o CP')}
-                    placeholderTextColor={Colors.text.disabled}
+                    placeholderTextColor={colors.text.disabled}
                     style={styles.locInput}
                     value={ubicacion}
                     onChangeText={setUbicacion}
@@ -376,10 +379,10 @@ export default function ClienteDashboard() {
                   />
                 </View>
                 <View style={[styles.locBox, { marginTop: 8 }]}>
-                  <Ionicons name="navigate-outline" size={16} color={Colors.primary[600]} />
+                  <Ionicons name="navigate-outline" size={16} color={colors.primary[600]} />
                   <TextInput
                     placeholder={t('Distancia Máx (Km)')}
-                    placeholderTextColor={Colors.text.disabled}
+                    placeholderTextColor={colors.text.disabled}
                     style={styles.locInput}
                     value={distanciaMax}
                     onChangeText={setDistanciaMax}
@@ -391,11 +394,11 @@ export default function ClienteDashboard() {
               <View style={styles.filterGroup}>
                 <Text style={styles.filterLabel}>{t('VERIFICACIÓN')}</Text>
                 <Pressable 
-                  style={[styles.locBox, { backgroundColor: soloVerificados ? Colors.primary[50] : '#fff', borderColor: soloVerificados ? Colors.primary[400] : Colors.border.default }]} 
+                  style={[styles.locBox, { backgroundColor: soloVerificados ? colors.primary[50] : colors.neutral[0], borderColor: soloVerificados ? colors.primary[400] : colors.border.default }]} 
                   onPress={() => setSoloVerificados(!soloVerificados)}
                 >
-                  <Ionicons name={soloVerificados ? "checkmark-circle" : "ellipse-outline"} size={16} color={soloVerificados ? Colors.primary[600] : Colors.text.disabled} />
-                  <Text style={{ marginLeft: 8, color: soloVerificados ? Colors.primary[700] : Colors.text.secondary }}>{t('Solo Verificados')}</Text>
+                  <Ionicons name={soloVerificados ? "checkmark-circle" : "ellipse-outline"} size={16} color={soloVerificados ? colors.primary[600] : colors.text.disabled} />
+                  <Text style={{ marginLeft: 8, color: soloVerificados ? colors.primary[700] : colors.text.secondary }}>{t('Solo Verificados')}</Text>
                 </Pressable>
               </View>
 
@@ -432,7 +435,7 @@ export default function ClienteDashboard() {
                      onPress={() => setIsMapModalOpen(true)}
                   >
                      <View style={styles.mapOverlayBtn}>
-                       <Ionicons name="expand-outline" size={20} color="#fff" />
+                       <Ionicons name="expand-outline" size={20} color={colors.neutral[0]} />
                        <Text style={styles.mapOverlayBtnTxt}>{t('Tocar para interactuar')}</Text>
                      </View>
                   </TouchableOpacity>
@@ -454,12 +457,12 @@ export default function ClienteDashboard() {
 
             {cargando ? (
               <View style={styles.loadingWrap}>
-                <ActivityIndicator size="large" color={Colors.primary[600]} />
+                <ActivityIndicator size="large" color={colors.primary[600]} />
                 <Text style={styles.loadingTxt}>{t('Encontrando a los mejores...')}</Text>
               </View>
             ) : resultadosProcesados.length === 0 ? (
               <View style={styles.emptyWrap}>
-                <Ionicons name="search-outline" size={64} color={Colors.neutral[300]} />
+                <Ionicons name="search-outline" size={64} color={colors.neutral[300]} />
                 <Text style={styles.emptyTxt}>{t('No se encontraron profesionistas.')}</Text>
                 <Text style={styles.emptySubTxt}>{t('Intenta con otros términos de búsqueda.')}</Text>
               </View>
@@ -487,7 +490,7 @@ export default function ClienteDashboard() {
                             return estado === 'verificado' || estado === 'aprobado' || estado === 'perfil aprobado';
                           })() && (
                             <View style={styles.verifiedBadge}>
-                              <Ionicons name="checkmark-circle" size={12} color={Colors.primary[700]} />
+                              <Ionicons name="checkmark-circle" size={12} color={colors.primary[700]} />
                               <Text style={styles.verifiedTxt}>{t('Verificado')}</Text>
                             </View>
                           )}
@@ -500,7 +503,7 @@ export default function ClienteDashboard() {
                             if (e && e.preventDefault) e.preventDefault();
                             alternarFavorito(prof.prof_id); 
                           }} style={{ padding: 4, zIndex: 10, flexShrink: 0 }}>
-                            <FontAwesome name={favoritos.includes(prof.prof_id) ? "heart" : "heart-o"} size={20} color={favoritos.includes(prof.prof_id) ? Colors.primary[600] : Colors.text.secondary} />
+                            <FontAwesome name={favoritos.includes(prof.prof_id) ? "heart" : "heart-o"} size={20} color={favoritos.includes(prof.prof_id) ? colors.primary[600] : colors.text.secondary} />
                           </Pressable>
                         </View>
                       </View>
@@ -517,7 +520,7 @@ export default function ClienteDashboard() {
                         <View>
                           <Text style={styles.startingAt}>{t('RESEÑAS')}</Text>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                            <Ionicons name="star" size={16} color={Colors.primary[600]} />
+                            <Ionicons name="star" size={16} color={colors.primary[600]} />
                             <Text style={styles.precio}>{prof.avgRating > 0 ? prof.avgRating : 'N/A'}</Text>
                             <Text style={styles.precioSub}>({prof.reviewCount})</Text>
                           </View>
@@ -525,7 +528,7 @@ export default function ClienteDashboard() {
                       </View>
                       <Pressable style={[styles.viewBtn, isMobile && { justifyContent: 'center', height: 44 }]} onPress={() => router.push(`/(cliente)/profesionista/${prof.prof_id}` as any)}>
                         <Text style={styles.viewBtnTxt}>{t('Agendar / Ver más')}</Text>
-                        <Ionicons name="arrow-forward" size={16} color="#fff" />
+                        <Ionicons name="arrow-forward" size={16} color={colors.neutral[0]} />
                       </Pressable>
                     </View>
                   </Pressable>
@@ -572,7 +575,7 @@ export default function ClienteDashboard() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t('Mapa de Profesionistas')}</Text>
               <TouchableOpacity onPress={() => setIsMapModalOpen(false)} style={styles.modalCloseBtn}>
-                <Ionicons name="close" size={24} color="#333" />
+                <Ionicons name="close" size={24} color={colors.text.primary} />
               </TouchableOpacity>
             </View>
             <View style={{ flex: 1 }}>
@@ -601,13 +604,13 @@ export default function ClienteDashboard() {
             left: dropdownPos.left,
             width: Math.max(dropdownPos.width, 220),
             maxHeight: 300,
-            backgroundColor: '#fff',
+            backgroundColor: colors.neutral[0],
             borderRadius: 12,
             ...Shadow.lg,
             zIndex: 1000,
             overflow: 'hidden',
             borderWidth: 1,
-            borderColor: Colors.border.default
+            borderColor: colors.border.default
           }}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 6 }}>
               {PROFESIONES.map((prof, idx) => {
@@ -619,15 +622,15 @@ export default function ClienteDashboard() {
                       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                       paddingVertical: 10, paddingHorizontal: 12,
                       borderRadius: 8,
-                      backgroundColor: isActive ? Colors.primary[50] : 'transparent',
+                      backgroundColor: isActive ? colors.primary[50] : 'transparent',
                       marginBottom: 2
                     }}
                     onPress={() => { setProfesionFiltro(prof.value); setModalProfesion(false); }}
                   >
-                    <Text style={{ ...Typography.styles.body, fontSize: 14, color: isActive ? Colors.primary[700] : Colors.text.primary, fontWeight: isActive ? '600' : '400' }}>
+                    <Text style={{ ...Typography.styles.body, fontSize: 14, color: isActive ? colors.primary[700] : colors.text.primary, fontWeight: isActive ? '600' : '400' }}>
                       {t(prof.label)}
                     </Text>
-                    {isActive && <Ionicons name="checkmark" size={16} color={Colors.primary[600]} />}
+                    {isActive && <Ionicons name="checkmark" size={16} color={colors.primary[600]} />}
                   </TouchableOpacity>
                 );
               })}
@@ -639,105 +642,105 @@ export default function ClienteDashboard() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8F9FA' },
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.neutral[50] },
 
   // Search Bar Premium
-  searchBarWrap: { backgroundColor: '#fff', paddingVertical: Spacing[3], paddingHorizontal: Spacing[4], zIndex: 10, ...Shadow.sm },
+  searchBarWrap: { backgroundColor: colors.neutral[0], paddingVertical: Spacing[3], paddingHorizontal: Spacing[4], zIndex: 10, ...Shadow.sm },
   searchContainer: { flexDirection: 'row', alignItems: 'center', gap: Spacing[3], maxWidth: 1200, alignSelf: 'center', width: '100%' },
-  searchInputRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing[3], backgroundColor: '#F3F4F6', borderRadius: 999, paddingHorizontal: Spacing[4], height: 48 },
-  searchInput: { flex: 1, ...Typography.styles.body, color: Colors.text.primary, fontSize: 16 },
-  searchBtn: { backgroundColor: Colors.primary[600], paddingHorizontal: Spacing[6], height: 48, justifyContent: 'center', borderRadius: 999, ...Shadow.brand },
-  searchBtnTxt: { ...Typography.styles.btn, color: '#fff', fontSize: 15, fontWeight: '700' },
+  searchInputRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing[3], backgroundColor: isDark ? colors.neutral[100] : '#F3F4F6', borderRadius: 999, paddingHorizontal: Spacing[4], height: 48 },
+  searchInput: { flex: 1, ...Typography.styles.body, color: colors.text.primary, fontSize: 16 },
+  searchBtn: { backgroundColor: colors.primary[600], paddingHorizontal: Spacing[6], height: 48, justifyContent: 'center', borderRadius: 999, ...Shadow.brand },
+  searchBtnTxt: { ...Typography.styles.btn, color: colors.neutral[0], fontSize: 15, fontWeight: '700' },
 
   body: { flex: 1, flexDirection: 'row', maxWidth: 1600, alignSelf: 'center', width: '100%' },
 
   // Filtros Mobile
-  mobileFiltersWrapper: { backgroundColor: '#fff', paddingVertical: Spacing[3] },
+  mobileFiltersWrapper: { backgroundColor: colors.neutral[0], paddingVertical: Spacing[3] },
   mobileFiltersScroll: { paddingHorizontal: Spacing[4], gap: Spacing[3], alignItems: 'center' },
-  locBoxMobile: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#F3F4F6', borderRadius: 999, paddingHorizontal: 16, height: 38 },
-  locInputMobile: { minWidth: 120, ...Typography.styles.bodySm, color: Colors.text.primary, fontWeight: '500' },
-  ratingChipMobile: { paddingHorizontal: 16, height: 38, justifyContent: 'center', borderRadius: 999, backgroundColor: '#F3F4F6' },
-  ratingChipOnMobile: { backgroundColor: Colors.primary[100] },
-  ratingChipTxtMobile: { ...Typography.styles.label, color: Colors.text.secondary, fontSize: 13 },
-  ratingChipTxtOnMobile: { color: Colors.primary[700], fontWeight: '700' },
+  locBoxMobile: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: isDark ? colors.neutral[100] : '#F3F4F6', borderRadius: 999, paddingHorizontal: 16, height: 38 },
+  locInputMobile: { minWidth: 120, ...Typography.styles.bodySm, color: colors.text.primary, fontWeight: '500' },
+  ratingChipMobile: { paddingHorizontal: 16, height: 38, justifyContent: 'center', borderRadius: 999, backgroundColor: isDark ? colors.neutral[100] : '#F3F4F6' },
+  ratingChipOnMobile: { backgroundColor: colors.primary[100] },
+  ratingChipTxtMobile: { ...Typography.styles.label, color: colors.text.secondary, fontSize: 13 },
+  ratingChipTxtOnMobile: { color: colors.primary[700], fontWeight: '700' },
   filterResetBtnMobile: { paddingHorizontal: 12, height: 38, justifyContent: 'center' },
-  filterResetTxtMobile: { ...Typography.styles.label, color: Colors.text.secondary, textDecorationLine: 'underline' },
+  filterResetTxtMobile: { ...Typography.styles.label, color: colors.text.secondary, textDecorationLine: 'underline' },
 
   // Filtros PC
-  filtersPanel: { backgroundColor: '#fff', paddingHorizontal: Spacing[6], paddingVertical: Spacing[6] },
+  filtersPanel: { backgroundColor: colors.neutral[0], paddingHorizontal: Spacing[6], paddingVertical: Spacing[6] },
   filterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing[6] },
-  filterTitle: { ...Typography.styles.h4, color: Colors.text.primary, fontWeight: '700' },
-  filterReset: { ...Typography.styles.bodySm, color: Colors.primary[600], fontWeight: '600' },
+  filterTitle: { ...Typography.styles.h4, color: colors.text.primary, fontWeight: '700' },
+  filterReset: { ...Typography.styles.bodySm, color: colors.primary[600], fontWeight: '600' },
   filterGroup: { marginBottom: Spacing[6] },
-  filterLabel: { ...Typography.styles.overline, color: Colors.text.secondary, marginBottom: Spacing[3], letterSpacing: 0.8 },
-  locBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F3F4F6', borderRadius: 12, paddingHorizontal: 14, height: 46 },
-  locInput: { flex: 1, ...Typography.styles.body, color: Colors.text.primary },
+  filterLabel: { ...Typography.styles.overline, color: colors.text.secondary, marginBottom: Spacing[3], letterSpacing: 0.8 },
+  locBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: isDark ? colors.neutral[100] : '#F3F4F6', borderRadius: 12, paddingHorizontal: 14, height: 46 },
+  locInput: { flex: 1, ...Typography.styles.body, color: colors.text.primary },
   ratingRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  ratingChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6' },
-  ratingChipOn: { backgroundColor: Colors.primary[100] },
-  ratingChipTxt: { ...Typography.styles.label, color: Colors.text.secondary, fontSize: 13 },
-  ratingChipTxtOn: { color: Colors.primary[700], fontWeight: '700' },
+  ratingChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: isDark ? colors.neutral[100] : '#F3F4F6' },
+  ratingChipOn: { backgroundColor: colors.primary[100] },
+  ratingChipTxt: { ...Typography.styles.label, color: colors.text.secondary, fontSize: 13 },
+  ratingChipTxtOn: { color: colors.primary[700], fontWeight: '700' },
   logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 'auto' as any, paddingTop: Spacing[6] },
-  logoutTxt: { ...Typography.styles.body, color: Colors.error.main, fontWeight: '600' },
+  logoutTxt: { ...Typography.styles.body, color: colors.error.main, fontWeight: '600' },
 
   // Resultados
-  cardsCol: { padding: Spacing[5], backgroundColor: '#F8F9FA' },
+  cardsCol: { padding: Spacing[5], backgroundColor: colors.neutral[50] },
   resultsHeader: { marginBottom: Spacing[5] },
-  resultsTitle: { ...Typography.styles.h3, color: Colors.text.primary, fontWeight: '800', letterSpacing: -0.5 },
-  resultsCount: { ...Typography.styles.body, color: Colors.text.secondary, marginTop: 4 },
+  resultsTitle: { ...Typography.styles.h3, color: colors.text.primary, fontWeight: '800', letterSpacing: -0.5 },
+  resultsCount: { ...Typography.styles.body, color: colors.text.secondary, marginTop: 4 },
   cardsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing[4] },
 
   // Loading / Empty
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing[12], gap: Spacing[4] },
-  loadingTxt: { ...Typography.styles.h5, color: Colors.text.secondary },
+  loadingTxt: { ...Typography.styles.h5, color: colors.text.secondary },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing[16], gap: Spacing[3] },
-  emptyTxt: { ...Typography.styles.h4, color: Colors.text.primary, fontWeight: '700' },
-  emptySubTxt: { ...Typography.styles.body, color: Colors.text.secondary },
+  emptyTxt: { ...Typography.styles.h4, color: colors.text.primary, fontWeight: '700' },
+  emptySubTxt: { ...Typography.styles.body, color: colors.text.secondary },
 
   // Premium Card
-  card: { backgroundColor: '#fff', borderRadius: 20, padding: Spacing[5], ...Shadow.md, gap: Spacing[4] },
+  card: { backgroundColor: colors.neutral[0], borderRadius: 20, padding: Spacing[5], ...Shadow.md, gap: Spacing[4] },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   avatarContainer: { position: 'relative' },
   avatar: { width: 56, height: 56, borderRadius: 28 },
-  avatarFallback: { backgroundColor: Colors.primary[100], alignItems: 'center', justifyContent: 'center' },
-  avatarInitial: { ...Typography.styles.h3, color: Colors.primary[700], fontWeight: 'bold' },
+  avatarFallback: { backgroundColor: colors.primary[100], alignItems: 'center', justifyContent: 'center' },
+  avatarInitial: { ...Typography.styles.h3, color: colors.primary[700], fontWeight: 'bold' },
   cardHeaderInfo: { flex: 1 },
-  cardNombre: { ...Typography.styles.h5, color: Colors.text.primary, fontWeight: '700', fontSize: 17 },
-  cardRol: { ...Typography.styles.label, color: Colors.primary[600], fontSize: 13, marginTop: 2, fontWeight: '600' },
-  verifiedBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primary[100], paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999, gap: 2 },
-  verifiedTxt: { ...Typography.styles.caption, color: Colors.primary[700], fontSize: 10, fontWeight: '600' },
-  cardDesc: { ...Typography.styles.body, color: Colors.text.secondary, lineHeight: 22, fontSize: 14 },
+  cardNombre: { ...Typography.styles.h5, color: colors.text.primary, fontWeight: '700', fontSize: 17 },
+  cardRol: { ...Typography.styles.label, color: colors.primary[600], fontSize: 13, marginTop: 2, fontWeight: '600' },
+  verifiedBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primary[100], paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999, gap: 2 },
+  verifiedTxt: { ...Typography.styles.caption, color: colors.primary[700], fontSize: 10, fontWeight: '600' },
+  cardDesc: { ...Typography.styles.body, color: colors.text.secondary, lineHeight: 22, fontSize: 14 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4, paddingTop: Spacing[4] },
-  startingAt: { ...Typography.styles.overline, color: Colors.text.disabled, fontSize: 10, letterSpacing: 0.5, marginBottom: 2 },
-  precio: { ...Typography.styles.h3, color: Colors.text.primary, fontWeight: '800' },
-  precioSub: { fontSize: 14, color: Colors.text.secondary, fontWeight: '500' },
-  viewBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.primary[600], paddingHorizontal: 20, height: 40, borderRadius: 999, ...Shadow.brand },
-  viewBtnTxt: { ...Typography.styles.btn, color: '#fff', fontSize: 13, fontWeight: '700' },
+  startingAt: { ...Typography.styles.overline, color: colors.text.disabled, fontSize: 10, letterSpacing: 0.5, marginBottom: 2 },
+  precio: { ...Typography.styles.h3, color: colors.text.primary, fontWeight: '800' },
+  precioSub: { fontSize: 14, color: colors.text.secondary, fontWeight: '500' },
+  viewBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.primary[600], paddingHorizontal: 20, height: 40, borderRadius: 999, ...Shadow.brand },
+  viewBtnTxt: { ...Typography.styles.btn, color: colors.neutral[0], fontSize: 13, fontWeight: '700' },
   mapOverlayMobile: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.15)' },
-  mapOverlayBtn: { backgroundColor: Colors.primary[700], paddingHorizontal: 20, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 8, ...Shadow.lg },
-  mapOverlayBtnTxt: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  mapOverlayBtn: { backgroundColor: colors.primary[700], paddingHorizontal: 20, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', gap: 8, ...Shadow.lg },
+  mapOverlayBtnTxt: { color: colors.neutral[0], fontWeight: 'bold', fontSize: 15 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 16 },
-  modalContent: { width: '100%', height: '85%', backgroundColor: '#fff', borderRadius: 24, overflow: 'hidden', ...Shadow.xl },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#eee', backgroundColor: '#fff' },
-  modalTitle: { ...Typography.styles.h5, color: Colors.text.primary },
+  modalContent: { width: '100%', height: '85%', backgroundColor: colors.neutral[0], borderRadius: 24, overflow: 'hidden', ...Shadow.lg },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border.default, backgroundColor: colors.neutral[0] },
+  modalTitle: { ...Typography.styles.h5, color: colors.text.primary },
   modalCloseBtn: { padding: 4 },
 
   // Mapa
-  mapCol: { backgroundColor: '#E5E7EB' },
-  mapPlaceholder: { flex: 1, position: 'relative', backgroundColor: '#F3F4F6' },
+  mapCol: { backgroundColor: isDark ? colors.neutral[50] : '#E5E7EB' },
+  mapPlaceholder: { flex: 1, position: 'relative', backgroundColor: isDark ? colors.neutral[100] : '#F3F4F6' },
   mapPin: { position: 'absolute', alignItems: 'center' },
   mapPinDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#000', opacity: 0.2, marginTop: -4 },
-  mapControls: { position: 'absolute', right: 16, bottom: 24, backgroundColor: '#fff', borderRadius: 12, ...Shadow.md, overflow: 'hidden' },
+  mapControls: { position: 'absolute', right: 16, bottom: 24, backgroundColor: colors.neutral[0], borderRadius: 12, ...Shadow.md, overflow: 'hidden' },
   mapControlBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  mapControlTxt: { fontSize: 22, color: Colors.text.secondary, fontWeight: '300' },
+  mapControlTxt: { fontSize: 22, color: colors.text.secondary, fontWeight: '300' },
 
   // Footer
-  footer: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: Spacing[4], paddingHorizontal: Spacing[6], paddingVertical: Spacing[4], backgroundColor: '#fff' },
+  footer: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: Spacing[4], paddingHorizontal: Spacing[6], paddingVertical: Spacing[4], backgroundColor: colors.neutral[0] },
   footerBrand: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  footerLogo: { ...Typography.styles.label, color: Colors.text.primary, fontSize: 14, fontWeight: '700' },
-  footerTag: { ...Typography.styles.caption, color: Colors.text.secondary },
+  footerLogo: { ...Typography.styles.label, color: colors.text.primary, fontSize: 14, fontWeight: '700' },
+  footerTag: { ...Typography.styles.caption, color: colors.text.secondary },
   footerLinks: { flexDirection: 'row', gap: Spacing[5] },
-  footerLink: { ...Typography.styles.caption, color: Colors.text.secondary, fontWeight: '500' },
-  footerCopy: { ...Typography.styles.caption, color: Colors.text.disabled },
+  footerLink: { ...Typography.styles.caption, color: colors.text.secondary, fontWeight: '500' },
+  footerCopy: { ...Typography.styles.caption, color: colors.text.disabled },
 });

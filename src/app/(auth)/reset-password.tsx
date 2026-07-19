@@ -3,8 +3,11 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function ResetPasswordScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const router = useRouter();
   const { t } = useTranslation();
   
@@ -87,7 +90,7 @@ export default function ResetPasswordScreen() {
   const obtenerColorMensaje = () => {
     if (tipoMensaje === 'error') return '#D32F2F';
     if (tipoMensaje === 'exito') return '#388E3C';
-    return '#8E8E93';
+    return colors.text.secondary;
   };
 
   return (
@@ -150,7 +153,7 @@ export default function ResetPasswordScreen() {
           disabled={cargando}
         >
           {cargando ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={colors.neutral[0]} />
           ) : (
             <Text style={styles.textoBoton}>{t('btnGuardarContrasena')}</Text>
           )}
@@ -166,18 +169,18 @@ export default function ResetPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  fondo: { flex: 1, backgroundColor: '#FAFAFC' },
+const getStyles = (colors: any) => StyleSheet.create({
+  fondo: { flex: 1, backgroundColor: colors.neutral[50] },
   contenedorScroll: { flexGrow: 1, justifyContent: 'center', padding: 20 },
-  contenedor: { backgroundColor: '#FFFFFF', padding: 25, borderRadius: 12, borderWidth: 1, borderColor: '#E5E5EA', elevation: 2 },
+  contenedor: { backgroundColor: colors.neutral[0], padding: 25, borderRadius: 12, borderWidth: 1, borderColor: colors.border.default, elevation: 2 },
   botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: 15, paddingVertical: 5 },
   flechaAtras: { fontSize: 20, color: '#5c4b8a', fontWeight: 'bold', marginRight: 5 },
   textoAtrasInline: { fontSize: 16, color: '#5c4b8a', fontWeight: 'bold' },
-  titulo: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#1C1C1E', marginBottom: 5 },
-  subtitulo: { fontSize: 14, color: '#8E8E93', textAlign: 'center', marginBottom: 25 },
-  etiquetaInput: { fontSize: 14, fontWeight: 'bold', color: '#1C1C1E', marginBottom: 8, marginLeft: 5 },
-  input: { backgroundColor: '#F2F2F7', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 14, fontSize: 16, marginBottom: 20, color: '#1C1C1E' },
+  titulo: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: colors.text.primary, marginBottom: 5 },
+  subtitulo: { fontSize: 14, color: colors.text.secondary, textAlign: 'center', marginBottom: 25 },
+  etiquetaInput: { fontSize: 14, fontWeight: 'bold', color: colors.text.primary, marginBottom: 8, marginLeft: 5 },
+  input: { backgroundColor: '#F2F2F7', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 14, fontSize: 16, marginBottom: 20, color: colors.text.primary },
   boton: { backgroundColor: '#5c4b8a', paddingVertical: 15, borderRadius: 8, alignItems: 'center', marginTop: 10 },
-  textoBoton: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
+  textoBoton: { color: colors.neutral[0], fontWeight: 'bold', fontSize: 16 },
   textoMensaje: { marginTop: 20, textAlign: 'center', fontSize: 14, fontWeight: '600' }
 });

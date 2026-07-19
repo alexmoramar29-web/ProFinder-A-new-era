@@ -8,8 +8,11 @@ import { Radius, Shadow, Spacing } from '../../theme/Spacing';
 import { Typography } from '../../theme/Typography';
 import { useNotifications } from '../../context/NotificationContext';
 import NavbarCliente from '../../components/NavbarCliente';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function NotificacionesClienteScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const { t } = useTranslation();
   const router = useRouter();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
@@ -30,20 +33,20 @@ export default function NotificacionesClienteScreen() {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'chat': return <Ionicons name="chatbubbles" size={24} color={Colors.primary[600]} />;
-      case 'appointment_accepted': return <Ionicons name="calendar-outline" size={24} color={Colors.success.main} />;
-      default: return <Ionicons name="notifications" size={24} color={Colors.primary[600]} />;
+      case 'chat': return <Ionicons name="chatbubbles" size={24} color={colors.primary[600]} />;
+      case 'appointment_accepted': return <Ionicons name="calendar-outline" size={24} color={colors.success.main} />;
+      default: return <Ionicons name="notifications" size={24} color={colors.primary[600]} />;
     }
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+    <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
       <NavbarCliente />
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.btnAtras}>
-              <Ionicons name="chevron-back" size={24} color={Colors.text.primary} />
+              <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
             </TouchableOpacity>
             <Text style={styles.titulo}>Notificaciones {unreadCount > 0 && `(${unreadCount})`}</Text>
             {unreadCount > 0 && (
@@ -55,7 +58,7 @@ export default function NotificacionesClienteScreen() {
 
           {notifications.length === 0 ? (
             <View style={styles.vacio}>
-              <Ionicons name="notifications-off-outline" size={64} color={Colors.text.disabled} />
+              <Ionicons name="notifications-off-outline" size={64} color={colors.text.disabled} />
               <Text style={styles.textoVacio}>No tienes notificaciones por el momento.</Text>
             </View>
           ) : (
@@ -82,20 +85,20 @@ export default function NotificacionesClienteScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   scroll: { flexGrow: 1, paddingBottom: Spacing[10] },
   container: { padding: Spacing[5], maxWidth: 800, width: '100%', alignSelf: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing[6], gap: Spacing[3] },
   btnAtras: { padding: Spacing[2] },
-  titulo: { ...Typography.styles.h2, color: Colors.text.primary, fontWeight: 'bold', flex: 1 },
-  marcarLeidas: { ...Typography.styles.caption, color: Colors.primary[600], fontWeight: 'bold' },
+  titulo: { ...Typography.styles.h2, color: colors.text.primary, fontWeight: 'bold', flex: 1 },
+  marcarLeidas: { ...Typography.styles.caption, color: colors.primary[600], fontWeight: 'bold' },
   vacio: { alignItems: 'center', marginTop: Spacing[10] },
-  textoVacio: { ...Typography.styles.body, color: Colors.text.secondary, marginTop: Spacing[4] },
-  tarjeta: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: Spacing[4], borderRadius: Radius.md, marginBottom: Spacing[3], borderWidth: 1, borderColor: Colors.border.default, ...Shadow.sm },
-  tarjetaNoLeida: { backgroundColor: Colors.primary[50], borderColor: Colors.primary[200] },
-  iconoBox: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.primary[100], justifyContent: 'center', alignItems: 'center', marginRight: Spacing[4] },
+  textoVacio: { ...Typography.styles.body, color: colors.text.secondary, marginTop: Spacing[4] },
+  tarjeta: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background.card, padding: Spacing[4], borderRadius: Radius.md, marginBottom: Spacing[3], borderWidth: 1, borderColor: colors.border.default, ...Shadow.sm },
+  tarjetaNoLeida: { backgroundColor: isDark ? colors.neutral[100] : colors.primary[50], borderColor: isDark ? colors.primary[700] : colors.primary[200] },
+  iconoBox: { width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? colors.neutral[200] : colors.primary[100], justifyContent: 'center', alignItems: 'center', marginRight: Spacing[4] },
   contenidoBox: { flex: 1 },
-  textoContenido: { ...Typography.styles.body, color: Colors.text.primary, fontWeight: '600', marginBottom: Spacing[1] },
-  textoFecha: { ...Typography.styles.caption, color: Colors.text.secondary },
-  puntoRojo: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.error.main, marginLeft: Spacing[3] }
+  textoContenido: { ...Typography.styles.body, color: colors.text.primary, fontWeight: '600', marginBottom: Spacing[1] },
+  textoFecha: { ...Typography.styles.caption, color: colors.text.secondary },
+  puntoRojo: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.error.main, marginLeft: Spacing[3] }
 });

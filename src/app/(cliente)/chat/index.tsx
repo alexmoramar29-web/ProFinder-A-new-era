@@ -18,8 +18,11 @@ import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Typography } from '../../../theme/Typography';
 import NavbarCliente from '../../../components/NavbarCliente';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function ChatIndexScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const { t } = useTranslation();
   const router = useRouter();
   const navigation = useNavigation();
@@ -138,24 +141,24 @@ export default function ChatIndexScreen() {
         <View style={styles.sidebar}>
           <View style={styles.sidebarHeader}>
             <Text style={styles.sidebarTitle}>{t('Messages')}</Text>
-            <Pressable><Ionicons name="create-outline" size={20} color={Colors.primary[600]} /></Pressable>
+            <Pressable><Ionicons name="create-outline" size={20} color={colors.primary[600]} /></Pressable>
           </View>
 
           <View style={styles.searchWrap}>
-            <Ionicons name="search-outline" size={15} color={Colors.text.disabled} />
+            <Ionicons name="search-outline" size={15} color={colors.text.disabled} />
             <TextInput 
               style={styles.searchInput} 
               placeholder={t('Search conversations')} 
-              placeholderTextColor={Colors.text.disabled} 
+              placeholderTextColor={colors.text.disabled} 
               value={busqueda} 
               onChangeText={setBusqueda} 
             />
           </View>
 
           {cargando ? (
-            <ActivityIndicator style={{ marginTop: 40 }} size="large" color={Colors.primary[600]} />
+            <ActivityIndicator style={{ marginTop: 40 }} size="large" color={colors.primary[600]} />
           ) : conversaciones.length === 0 ? (
-            <Text style={{ textAlign: 'center', marginTop: 40, color: Colors.text.disabled }}>{t('No tienes conversaciones aún.')}</Text>
+            <Text style={{ textAlign: 'center', marginTop: 40, color: colors.text.disabled }}>{t('No tienes conversaciones aún.')}</Text>
           ) : (
             <FlatList
               data={convFiltradas}
@@ -173,14 +176,12 @@ export default function ChatIndexScreen() {
                   </View>
                   <View style={[styles.convInfo, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1, paddingRight: 8 }}>
-                      {item.verificado && <Ionicons name="checkmark-circle" size={12} color={Colors.primary[700]} />}
+                      {item.verificado && <Ionicons name="checkmark-circle" size={12} color={colors.primary[700]} />}
                       <Text style={styles.convNombre} numberOfLines={1}>{item.nombre}</Text>
                     </View>
                     <View style={{ alignItems: 'flex-end', flexShrink: 1, maxWidth: '60%' }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
-                        <Text style={[styles.convUltimo, { textAlign: 'right', marginRight: 0, flexShrink: 1 }]} numberOfLines={1} ellipsizeMode="tail">
-                          {item.ultimoMensaje}
-                        </Text>
+                        <Text style={[styles.convUltimo, { textAlign: 'right', marginRight: 0, flexShrink: 1 }]} numberOfLines={1} ellipsizeMode="tail">{item.ultimoMensaje.length > 20 ? item.ultimoMensaje.substring(0, 20) + '...' : item.ultimoMensaje}</Text>
                         {item.noLeidos > 0 && (
                           <View style={styles.badge}><Text style={styles.badgeTxt}>{item.noLeidos}</Text></View>
                         )}
@@ -198,39 +199,39 @@ export default function ChatIndexScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.neutral[100] },
-  navbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.primary[600], paddingHorizontal: Spacing[5], paddingVertical: Spacing[3], height: 56 },
+const getStyles = (colors: any) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.neutral[100] },
+  navbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.primary[600], paddingHorizontal: Spacing[5], paddingVertical: Spacing[3], height: 56 },
   navBrand:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
   navLogo:     { width: 32, height: 32 },
-  navLogoText: { ...Typography.styles.h5, color: '#fff' },
+  navLogoText: { ...Typography.styles.h5, color: colors.neutral[0] },
   navLinks:    { flexDirection: 'row', gap: Spacing[5], display: 'flex' },
   navLink:     { ...Typography.styles.body, color: 'rgba(255,255,255,0.75)' },
-  navLinkActive: { ...Typography.styles.body, color: '#fff', fontWeight: '700' },
+  navLinkActive: { ...Typography.styles.body, color: colors.neutral[0], fontWeight: '700' },
   navRight:    { flexDirection: 'row', alignItems: 'center', gap: Spacing[3] },
-  navAvatar:   { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.primary[400], alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)' },
-  navAvatarTxt:{ ...Typography.styles.label, color: '#fff', fontSize: 13 },
-  navUserName: { ...Typography.styles.body, color: '#fff', fontWeight: '600' },
+  navAvatar:   { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary[400], alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)' },
+  navAvatarTxt:{ ...Typography.styles.label, color: colors.neutral[0], fontSize: 13 },
+  navUserName: { ...Typography.styles.body, color: colors.neutral[0], fontWeight: '600' },
 
   body: { flex: 1, alignItems: 'center' },
-  sidebar: { width: '100%', maxWidth: 800, flex: 1, backgroundColor: Colors.background.card, alignSelf: 'center', borderLeftWidth: 1, borderRightWidth: 1, borderColor: Colors.border.default },
-  sidebarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing[4], paddingVertical: Spacing[4], borderBottomWidth: 1, borderBottomColor: Colors.border.default },
-  sidebarTitle: { ...Typography.styles.h5, color: Colors.text.primary },
+  sidebar: { width: '100%', maxWidth: 800, flex: 1, backgroundColor: colors.background.card, alignSelf: 'center', borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.border.default },
+  sidebarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing[4], paddingVertical: Spacing[4], borderBottomWidth: 1, borderBottomColor: colors.border.default },
+  sidebarTitle: { ...Typography.styles.h5, color: colors.text.primary },
 
-  searchWrap:  { flexDirection: 'row', alignItems: 'center', gap: 8, margin: Spacing[3], backgroundColor: Colors.neutral[100], borderRadius: Radius.input, paddingHorizontal: Spacing[3], paddingVertical: 8, borderWidth: 1, borderColor: Colors.border.default },
-  searchInput: { flex: 1, ...Typography.styles.bodySm, color: Colors.text.primary, outlineStyle: 'none' } as any,
+  searchWrap:  { flexDirection: 'row', alignItems: 'center', gap: 8, margin: Spacing[3], backgroundColor: colors.neutral[100], borderRadius: Radius.input, paddingHorizontal: Spacing[3], paddingVertical: 8, borderWidth: 1, borderColor: colors.border.default },
+  searchInput: { flex: 1, ...Typography.styles.bodySm, color: colors.text.primary, outlineStyle: 'none' } as any,
 
-  convItem:       { flexDirection: 'row', alignItems: 'center', gap: Spacing[3], paddingHorizontal: Spacing[4], paddingVertical: Spacing[3], borderBottomWidth: 1, borderBottomColor: Colors.neutral[100] },
+  convItem:       { flexDirection: 'row', alignItems: 'center', gap: Spacing[3], paddingHorizontal: Spacing[4], paddingVertical: Spacing[3], borderBottomWidth: 1, borderBottomColor: colors.neutral[100] },
   convAvatarWrap: { position: 'relative' },
-  convAvatar:     { width: 50, height: 50, borderRadius: 25, backgroundColor: Colors.primary[200], alignItems: 'center', justifyContent: 'center' },
-  convAvatarTxt:  { ...Typography.styles.label, color: Colors.primary[700], fontSize: 16 },
-  onlineDot:      { position: 'absolute', bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.success.main, borderWidth: 2, borderColor: '#fff' },
+  convAvatar:     { width: 50, height: 50, borderRadius: 25, backgroundColor: colors.primary[200], alignItems: 'center', justifyContent: 'center' },
+  convAvatarTxt:  { ...Typography.styles.label, color: colors.primary[700], fontSize: 16 },
+  onlineDot:      { position: 'absolute', bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.success.main, borderWidth: 2, borderColor: colors.neutral[0] },
   convInfo:       { flex: 1 },
   convInfoTop:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
-  convNombre:     { ...Typography.styles.label, color: Colors.text.primary, flex: 1, fontSize: 15 },
-  convHora:       { ...Typography.styles.caption, color: Colors.text.disabled, fontSize: 12 },
+  convNombre:     { ...Typography.styles.label, color: colors.text.primary, flex: 1, fontSize: 15 },
+  convHora:       { ...Typography.styles.caption, color: colors.text.disabled, fontSize: 12 },
   convInfoBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  convUltimo:     { ...Typography.styles.bodySm, color: Colors.text.secondary, flex: 1, fontSize: 13 },
-  badge:          { backgroundColor: Colors.primary[600], borderRadius: Radius.full, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
-  badgeTxt:       { ...Typography.styles.caption, color: '#fff', fontSize: 11, fontWeight: '700' },
+  convUltimo:     { ...Typography.styles.bodySm, color: colors.text.secondary, flex: 1, fontSize: 13 },
+  badge:          { backgroundColor: colors.primary[600], borderRadius: Radius.full, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
+  badgeTxt:       { ...Typography.styles.caption, color: colors.neutral[0], fontSize: 11, fontWeight: '700' },
 });

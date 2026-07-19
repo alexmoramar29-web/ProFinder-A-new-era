@@ -4,8 +4,11 @@ import { FlatList, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity,
 import { supabase } from '../../../lib/supabase';
 import NavbarCliente from '../../../components/NavbarCliente';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function FavoritosDashboard() {
+  const { colors, isDark } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const { t } = useTranslation();
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -42,7 +45,7 @@ export default function FavoritosDashboard() {
       <NavbarCliente />
 
       <View style={{ padding: 20 }}>
-        <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>{t('Mis Favoritos')}</Text>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10, color: colors.text.primary }}>{t('Mis Favoritos')}</Text>
       </View>
       <FlatList 
         data={profesionalesFav}
@@ -50,41 +53,41 @@ export default function FavoritosDashboard() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
         renderItem={({ item }) => (
           <TouchableOpacity 
-            style={{ flexDirection: 'row', alignItems: 'center', padding: 15, borderBottomWidth: 1, borderColor: '#eee', width: '100%' }}
+            style={{ flexDirection: 'row', alignItems: 'center', padding: 15, borderBottomWidth: 1, borderColor: colors.border.default, width: '100%' }}
             onPress={() => router.push(`/(cliente)/profesionista/${item.prof_id}` as any)}
           >
             {item.profile_picture ? (
               <Image source={{ uri: item.profile_picture }} style={{ width: 50, height: 50, borderRadius: 25, marginRight: 15 }} />
             ) : (
-              <View style={{ width: 50, height: 50, borderRadius: 25, marginRight: 15, backgroundColor: '#ddd', justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#555' }}>
+              <View style={{ width: 50, height: 50, borderRadius: 25, marginRight: 15, backgroundColor: colors.neutral[100], justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.text.secondary }}>
                   {item.full_name ? item.full_name.charAt(0).toUpperCase() : 'P'}
                 </Text>
               </View>
             )}
             <View>
-              <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{item.full_name}</Text>
-              <Text style={{ fontSize: 14, color: '#888' }}>{item.speciality}</Text>
+              <Text style={{ fontWeight: 'bold', fontSize: 16, color: colors.text.primary }}>{item.full_name}</Text>
+              <Text style={{ fontSize: 14, color: colors.text.secondary }}>{item.speciality}</Text>
             </View>
           </TouchableOpacity>
         )}
         ListEmptyComponent={() => (
-          <Text style={{ textAlign: 'center', color: '#888', marginTop: 50 }}>{t('Aún no tienes profesionistas favoritos.')}</Text>
+          <Text style={{ textAlign: 'center', color: colors.text.disabled, marginTop: 50 }}>{t('Aún no tienes profesionistas favoritos.')}</Text>
         )}
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  navbar: { height: 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, borderBottomWidth: 1, borderColor: '#eee' },
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.neutral[50] },
+  navbar: { height: 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, borderBottomWidth: 1, borderColor: colors.border.default },
   navbarTitle: { fontSize: 18, fontWeight: 'bold' },
   rightHeaderContainer: { flexDirection: 'row', alignItems: 'center' },
-  profileCircle: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#eee', borderWidth: 1, borderColor: '#ccc' },
+  profileCircle: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.neutral[100], borderWidth: 1, borderColor: colors.border.default },
   modalContainer: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end' },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' },
-  sideMenu: { width: 220, backgroundColor: '#fff', padding: 20, paddingTop: 60, elevation: 10 },
+  sideMenu: { width: 220, backgroundColor: colors.neutral[50], padding: 20, paddingTop: 60, elevation: 10 },
   menuItem: { paddingVertical: 10 },
-  menuText: { fontSize: 16, color: '#333' }
+  menuText: { fontSize: 16, color: colors.text.primary }
 });

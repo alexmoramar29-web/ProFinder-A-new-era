@@ -14,6 +14,7 @@ import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, 
 import { Colors } from '../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../theme/Spacing';
 import { Typography } from '../../theme/Typography';
+import { useTheme } from '@/context/ThemeContext';
 
 let HCaptchaWeb: any;
 if (Platform.OS === 'web') {
@@ -23,6 +24,8 @@ if (Platform.OS === 'web') {
 WebBrowser.maybeCompleteAuthSession();
 
 export default function SignInScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const router = useRouter();
   const { t, i18n } = useTranslation();
 
@@ -125,7 +128,7 @@ export default function SignInScreen() {
         if (insertError) throw new Error('No se pudo crear la cuenta de profesionista: ' + insertError.message);
         await supabase.from('social_logins').insert([{ user_id: idDelUsuario, provider: proveedor, provider_id: idDelUsuario }]);
         await AsyncStorage.setItem('last_portal', 'profesionista');
-        router.replace('/(profesionista)/perfil/editar');
+        router.replace('/(profesionista)/mi-perfil/editar');
         return;
       } else if (!existeProf.profile_picture && fotoDePerfil) {
         await supabase.from('professionals').update({ profile_picture: fotoDePerfil }).eq('prof_id', idDelUsuario);
@@ -327,12 +330,12 @@ export default function SignInScreen() {
 
   // ── UI ──────────────────────────────────────────────────────
   const esCliente = portal === 'cliente';
-  const colorMensaje = tipoMensaje === 'error' ? Colors.error.main : tipoMensaje === 'exito' ? Colors.success.main : Colors.info.main;
-  const bgMensaje    = tipoMensaje === 'error' ? Colors.error.light : tipoMensaje === 'exito' ? Colors.success.light : Colors.info.light;
+  const colorMensaje = tipoMensaje === 'error' ? colors.error.main : tipoMensaje === 'exito' ? colors.success.main : colors.info.main;
+  const bgMensaje    = tipoMensaje === 'error' ? colors.error.light : tipoMensaje === 'exito' ? colors.success.light : colors.info.light;
 
   return (
     <LinearGradient
-      colors={['#ffffff', '#ede9fe', '#7c3aed']}
+      colors={[colors.neutral[0], '#ede9fe', '#7c3aed']}
       start={{ x: 0.1, y: 0 }}
       end={{ x: 0.9, y: 1 }}
       style={styles.fondo}
@@ -342,7 +345,7 @@ export default function SignInScreen() {
 
       {/* Botón volver */}
       <TouchableOpacity style={styles.volverBtn} onPress={() => router.replace('/(auth)/landing')}>
-        <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+        <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
       </TouchableOpacity>
 
       {/* Botón idioma */}
@@ -365,11 +368,11 @@ export default function SignInScreen() {
         {/* Selector portal */}
         <View style={styles.portalSelector}>
           <TouchableOpacity style={[styles.portalTab, esCliente && styles.portalTabActive]} onPress={() => cambiarDePortal('cliente')} disabled={cargando}>
-            <Ionicons name="person-outline" size={15} color={esCliente ? '#fff' : Colors.text.secondary} />
+            <Ionicons name="person-outline" size={15} color={esCliente ? colors.neutral[0] : colors.text.secondary} />
             <Text style={[styles.portalTabTxt, esCliente && styles.portalTabTxtActive]} numberOfLines={1} adjustsFontSizeToFit>{t('soyCliente')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.portalTab, !esCliente && styles.portalTabActive]} onPress={() => cambiarDePortal('profesionista')} disabled={cargando}>
-            <Ionicons name="briefcase-outline" size={15} color={!esCliente ? '#fff' : Colors.text.secondary} />
+            <Ionicons name="briefcase-outline" size={15} color={!esCliente ? colors.neutral[0] : colors.text.secondary} />
             <Text style={[styles.portalTabTxt, !esCliente && styles.portalTabTxtActive]} numberOfLines={1} adjustsFontSizeToFit>{t('soyProfesionista')}</Text>
           </TouchableOpacity>
         </View>
@@ -378,8 +381,8 @@ export default function SignInScreen() {
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>{t('correoOUser', 'Correo electrónico o Usuario')}</Text>
           <View style={styles.inputWrap}>
-            <Ionicons name="mail-outline" size={17} color={Colors.text.disabled} style={styles.inputIcon} />
-            <TextInput style={styles.input} placeholder={t('ejemploCorreo', 'nombre@ejemplo.com')} placeholderTextColor={Colors.text.disabled} value={identificador} onChangeText={setIdentificador} autoCapitalize="none" editable={!cargando} />
+            <Ionicons name="mail-outline" size={17} color={colors.text.disabled} style={styles.inputIcon} />
+            <TextInput style={styles.input} placeholder={t('ejemploCorreo', 'nombre@ejemplo.com')} placeholderTextColor={colors.text.disabled} value={identificador} onChangeText={setIdentificador} autoCapitalize="none" editable={!cargando} />
           </View>
         </View>
 
@@ -393,10 +396,10 @@ export default function SignInScreen() {
               </TouchableOpacity>
             </View>
             <View style={styles.inputWrap}>
-              <Ionicons name="lock-closed-outline" size={17} color={Colors.text.disabled} style={styles.inputIcon} />
-              <TextInput style={styles.input} placeholder="••••••••" placeholderTextColor={Colors.text.disabled} value={password} onChangeText={setPassword} secureTextEntry={!mostrarPass} editable={!cargando} />
+              <Ionicons name="lock-closed-outline" size={17} color={colors.text.disabled} style={styles.inputIcon} />
+              <TextInput style={styles.input} placeholder="••••••••" placeholderTextColor={colors.text.disabled} value={password} onChangeText={setPassword} secureTextEntry={!mostrarPass} editable={!cargando} />
               <Pressable onPress={() => setMostrarPass(v => !v)} style={styles.eyeBtn}>
-                <Ionicons name={mostrarPass ? 'eye-off-outline' : 'eye-outline'} size={17} color={Colors.text.disabled} />
+                <Ionicons name={mostrarPass ? 'eye-off-outline' : 'eye-outline'} size={17} color={colors.text.disabled} />
               </Pressable>
             </View>
           </View>
@@ -433,7 +436,7 @@ export default function SignInScreen() {
 
         {/* Botón principal */}
         <TouchableOpacity testID="btn-login" style={styles.mainBtn} onPress={modoRecuperar ? handleSolicitarRecuperacion : handleLogin} disabled={cargando}>
-          {cargando ? <ActivityIndicator color="#fff" /> : <Text style={styles.mainBtnTxt}>{modoRecuperar ? t('btnEnviarCodigo') : t('btnEntrar')}</Text>}
+          {cargando ? <ActivityIndicator color={colors.neutral[0]} /> : <Text style={styles.mainBtnTxt}>{modoRecuperar ? t('btnEnviarCodigo') : t('btnEntrar')}</Text>}
         </TouchableOpacity>
 
         {/* Cancelar recuperación */}
@@ -457,8 +460,8 @@ export default function SignInScreen() {
                 <Text style={styles.socialBtnTxt}>Google</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.socialBtn, styles.socialBtnGithub]} onPress={() => manejarLoginSocial('github')} disabled={cargando}>
-                <Ionicons name="logo-github" size={17} color="#fff" />
-                <Text style={[styles.socialBtnTxt, { color: '#fff' }]}>GitHub</Text>
+                <Ionicons name="logo-github" size={17} color="#ffffff" />
+                <Text style={[styles.socialBtnTxt, { color: '#ffffff' }]}>GitHub</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.registerRow}>
@@ -477,13 +480,13 @@ export default function SignInScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   fondo:  { flex: 1 },
   scroll: { flexGrow: 1, paddingVertical: Spacing[8], justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing[5] },
 
-  volverBtn: { position: 'absolute', top: 48, left: 20, backgroundColor: 'rgba(255,255,255,0.85)', padding: 8, borderRadius: Radius.full, zIndex: 10, ...Shadow.sm },
-  idiomaBtn: { position: 'absolute', top: 48, right: 20, backgroundColor: 'rgba(255,255,255,0.85)', paddingHorizontal: 12, paddingVertical: 7, borderRadius: Radius.full, zIndex: 10, ...Shadow.sm },
-  idiomaTxt: { ...Typography.styles.label, color: Colors.text.primary },
+  volverBtn: { position: 'absolute', top: 48, left: 20, backgroundColor: colors.neutral[100], padding: 8, borderRadius: Radius.full, zIndex: 10, ...Shadow.sm },
+  idiomaBtn: { position: 'absolute', top: 48, right: 20, backgroundColor: colors.neutral[100], paddingHorizontal: 12, paddingVertical: 7, borderRadius: Radius.full, zIndex: 10, ...Shadow.sm },
+  idiomaTxt: { ...Typography.styles.label, color: colors.text.primary },
 
   header:   { alignItems: 'center', marginBottom: Spacing[4] },
   logoImg:  { width: 56, height: 56, marginBottom: Spacing[1] },
@@ -491,7 +494,7 @@ const styles = StyleSheet.create({
   tagline:  { ...Typography.styles.bodySm, color: '#6B7280', marginTop: 2 },
 
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.neutral[0],
     borderRadius: Radius.xl,
     padding: Spacing[5],
     width: '100%',
@@ -505,45 +508,45 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  title:    { ...Typography.styles.h4, color: Colors.text.primary, textAlign: 'center', marginBottom: 2 },
-  subtitle: { ...Typography.styles.bodySm, color: Colors.text.secondary, textAlign: 'center', marginBottom: Spacing[4] },
+  title:    { ...Typography.styles.h4, color: colors.text.primary, textAlign: 'center', marginBottom: 2 },
+  subtitle: { ...Typography.styles.bodySm, color: colors.text.secondary, textAlign: 'center', marginBottom: Spacing[4] },
 
-  portalSelector:     { flexDirection: 'row', backgroundColor: Colors.neutral[100], borderRadius: Radius.md, padding: 3, gap: 3, marginBottom: Spacing[4] },
+  portalSelector:     { flexDirection: 'row', backgroundColor: colors.neutral[100], borderRadius: Radius.md, padding: 3, gap: 3, marginBottom: Spacing[4] },
   portalTab:          { flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: Radius.sm, gap: 4 },
-  portalTabActive:    { backgroundColor: Colors.primary[600], ...Shadow.sm },
-  portalTabTxt:       { ...Typography.styles.btn, color: Colors.text.secondary, fontSize: 13 },
-  portalTabTxtActive: { color: '#fff' },
+  portalTabActive:    { backgroundColor: colors.primary[600], ...Shadow.sm },
+  portalTabTxt:       { ...Typography.styles.btn, color: colors.text.secondary, fontSize: 13 },
+  portalTabTxtActive: { color: colors.neutral[0] },
 
   inputGroup:    { marginBottom: Spacing[3] },
   inputLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  inputLabel:    { ...Typography.styles.label, color: Colors.text.secondary, textTransform: 'none', letterSpacing: 0, fontSize: 12 },
-  forgotLink:    { ...Typography.styles.bodySm, color: Colors.primary[600], fontSize: 12 },
-  inputWrap:     { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1.5, borderColor: Colors.border.default, borderRadius: Radius.input, minHeight: 44 },
+  inputLabel:    { ...Typography.styles.label, color: colors.text.secondary, textTransform: 'none', letterSpacing: 0, fontSize: 12 },
+  forgotLink:    { ...Typography.styles.bodySm, color: colors.primary[600], fontSize: 12 },
+  inputWrap:     { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.neutral[0], borderWidth: 1.5, borderColor: colors.border.default, borderRadius: Radius.input, minHeight: 44 },
   inputIcon:     { paddingLeft: 12 },
-  input:         { flex: 1, paddingHorizontal: 8, paddingVertical: 10, ...Typography.styles.body, color: Colors.text.primary },
+  input:         { flex: 1, paddingHorizontal: 8, paddingVertical: 10, ...Typography.styles.body, color: colors.text.primary },
   eyeBtn:        { paddingRight: 12, padding: 4 },
 
   mensajeBox: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: Radius.md, padding: Spacing[2], marginBottom: Spacing[2] },
   mensajeTxt: { ...Typography.styles.bodySm, flex: 1, fontSize: 12 },
 
-  mainBtn:    { backgroundColor: Colors.primary[600], paddingVertical: 13, borderRadius: Radius.button, alignItems: 'center', marginTop: Spacing[1], ...Shadow.brand },
-  mainBtnTxt: { ...Typography.styles.btn, color: '#fff' },
+  mainBtn:    { backgroundColor: colors.primary[600], paddingVertical: 13, borderRadius: Radius.button, alignItems: 'center', marginTop: Spacing[1], ...Shadow.brand },
+  mainBtnTxt: { ...Typography.styles.btn, color: colors.neutral[0] },
 
   cancelRow: { alignItems: 'center', marginTop: Spacing[3] },
-  cancelTxt: { ...Typography.styles.bodySm, color: Colors.text.secondary },
+  cancelTxt: { ...Typography.styles.bodySm, color: colors.text.secondary },
 
   dividerRow:  { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: Spacing[4] },
-  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.border.default },
-  dividerTxt:  { ...Typography.styles.caption, color: Colors.text.disabled },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border.default },
+  dividerTxt:  { ...Typography.styles.caption, color: colors.text.disabled },
 
   socialRow:       { flexDirection: 'row', gap: Spacing[2] },
-  socialBtn:       { flex: 1, flexDirection: 'row', paddingVertical: 10, borderRadius: Radius.button, alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderColor: Colors.border.default, backgroundColor: '#fff' },
+  socialBtn:       { flex: 1, flexDirection: 'row', paddingVertical: 10, borderRadius: Radius.button, alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderColor: colors.border.default, backgroundColor: colors.neutral[0] },
   socialBtnGithub: { backgroundColor: '#24292E', borderColor: '#24292E' },
-  socialBtnTxt:    { ...Typography.styles.btn, color: Colors.text.primary, fontSize: 13 },
+  socialBtnTxt:    { ...Typography.styles.btn, color: colors.text.primary, fontSize: 13 },
 
   registerRow:  { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing[4] },
-  registerTxt:  { ...Typography.styles.bodySm, color: Colors.text.secondary },
-  registerLink: { ...Typography.styles.bodySm, color: Colors.primary[600], fontWeight: '600' },
+  registerTxt:  { ...Typography.styles.bodySm, color: colors.text.secondary },
+  registerLink: { ...Typography.styles.bodySm, color: colors.primary[600], fontWeight: '600' },
 
-  footer: { ...Typography.styles.caption, color: Colors.text.disabled, textAlign: 'center', marginTop: Spacing[5] },
+  footer: { ...Typography.styles.caption, color: colors.text.disabled, textAlign: 'center', marginTop: Spacing[5] },
 });

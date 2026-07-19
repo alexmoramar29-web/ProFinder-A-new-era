@@ -11,17 +11,17 @@ export default function AyudaScreen() {
   const { t } = useTranslation();
 
   const listaPreguntas = [
-    { id: 1, categoria: t('catCuenta'), pregunta: t('¿Cómo actualizo mi información de perfil?'), respuesta: t('En el menú lateral, selecciona "Perfil" para actualizar tu foto, biografía y demás datos de contacto.') },
-    { id: 2, categoria: t('catServicios'), pregunta: t('¿Cómo agrego un nuevo servicio?'), respuesta: t('Ve a la pestaña "Servicios", pulsa el botón "+" y completa el formulario con el título, descripción y precio base.') },
-    { id: 3, categoria: t('catCitas'), pregunta: t('¿Cómo acepto o rechazo una solicitud de cita?'), respuesta: t('En la pestaña "Solicitudes" verás las citas pendientes. Abre los detalles de cada cliente y usa los botones de "Aceptar" o "Rechazar".') },
-    { id: 4, categoria: t('catCitas'), pregunta: t('¿Cómo indico que ya terminé un trabajo?'), respuesta: t('Entra al detalle de la cita aceptada en tu calendario y cambia su estado a "Finalizado".') },
-    { id: 5, categoria: t('catChat'), pregunta: t('¿Cómo funciona el chat con el cliente?'), respuesta: t('Al aceptar una solicitud de cita, se abrirá un chat privado en la pestaña "Chat" para coordinar los últimos detalles.') },
+    { id: 1, categoria: t('Cuenta', 'Cuenta'), pregunta: t('¿Cómo actualizo mi información de perfil?'), respuesta: t('En el menú lateral, selecciona "Perfil" para actualizar tu foto, biografía y demás datos de contacto.') },
+    { id: 2, categoria: t('Servicios', 'Servicios'), pregunta: t('¿Cómo agrego un nuevo servicio?'), respuesta: t('Ve a la pestaña "Servicios", pulsa el botón "+" y completa el formulario con el título, descripción y precio base.') },
+    { id: 3, categoria: t('Citas', 'Citas'), pregunta: t('¿Cómo acepto o rechazo una solicitud de cita?'), respuesta: t('En la pestaña "Solicitudes" verás las citas pendientes. Abre los detalles de cada cliente y usa los botones de "Aceptar" o "Rechazar".') },
+    { id: 4, categoria: t('Citas', 'Citas'), pregunta: t('¿Cómo indico que ya terminé un trabajo?'), respuesta: t('Entra al detalle de la cita aceptada en tu calendario y cambia su estado a "Finalizado".') },
+    { id: 5, categoria: t('Chat', 'Chat'), pregunta: t('¿Cómo funciona el chat con el cliente?'), respuesta: t('Al aceptar una solicitud de cita, se abrirá un chat privado en la pestaña "Chat" para coordinar los últimos detalles.') },
   ];
 
-  const categorias = [t('catTodas'), t('catCuenta'), t('catServicios'), t('catCitas'), t('catChat')];
+  const categorias = [t('Todas', 'Todas'), t('Cuenta', 'Cuenta'), t('Servicios', 'Servicios'), t('Citas', 'Citas'), t('Chat', 'Chat')];
 
   const [preguntaAbierta, setPreguntaAbierta] = useState<number | null>(null);
-  const [categoriaActiva, setCategoriaActiva] = useState<string>(t('catTodas'));
+  const [categoriaActiva, setCategoriaActiva] = useState<string>(t('Todas', 'Todas'));
 
   const enviarCorreoSoporte = () => {
     const correo = 'soporte@profinder.com';

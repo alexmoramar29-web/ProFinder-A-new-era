@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { Colors } from '../theme/Colors';
 import { Radius, Shadow, Spacing } from '../theme/Spacing';
 import { Typography } from '../theme/Typography';
+import { useTheme } from '@/context/ThemeContext';
 
 interface LegalModalProps {
   visible: boolean;
@@ -14,6 +15,8 @@ interface LegalModalProps {
 }
 
 export default function LegalModal({ visible, titulo, contenido, onClose }: LegalModalProps) {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const { t } = useTranslation();
   if (!visible) return null;
 
@@ -23,7 +26,7 @@ export default function LegalModal({ visible, titulo, contenido, onClose }: Lega
         <View style={styles.modalCabecera}>
           <Text style={styles.modalTitulo}>{titulo}</Text>
           <TouchableOpacity onPress={onClose} style={styles.btnCerrarX}>
-            <Ionicons name="close" size={24} color={Colors.text.secondary} />
+            <Ionicons name="close" size={24} color={colors.text.secondary} />
           </TouchableOpacity>
         </View>
 
@@ -41,7 +44,7 @@ export default function LegalModal({ visible, titulo, contenido, onClose }: Lega
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   modalFondo: {
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
@@ -52,7 +55,7 @@ const styles = StyleSheet.create({
     padding: Spacing[4]
   },
   modalCaja: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.neutral[0],
     borderRadius: Radius.xl,
     width: '100%',
     maxWidth: 500,
@@ -68,7 +71,7 @@ const styles = StyleSheet.create({
   },
   modalTitulo: {
     ...Typography.styles.h4,
-    color: Colors.neutral[900],
+    color: colors.neutral[900],
     flex: 1
   },
   btnCerrarX: {
@@ -80,7 +83,7 @@ const styles = StyleSheet.create({
   },
   textoLegal: {
     ...Typography.styles.body,
-    color: Colors.neutral[700],
+    color: colors.neutral[700],
     lineHeight: 22,
     textAlign: 'justify'
   },
@@ -90,7 +93,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   btnAceptar: {
-    backgroundColor: Colors.primary[600],
+    backgroundColor: colors.primary[600],
     paddingVertical: 12,
     paddingHorizontal: 28,
     borderRadius: Radius.button,
@@ -98,6 +101,6 @@ const styles = StyleSheet.create({
   },
   btnAceptarTxt: {
     ...Typography.styles.btn,
-    color: '#fff'
+    color: colors.neutral[0]
   }
 });

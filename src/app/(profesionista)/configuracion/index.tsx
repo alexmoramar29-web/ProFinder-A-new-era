@@ -26,7 +26,7 @@ export default function ConfiguracionScreen() {
   };
 
   const abrirPrivacidad = () => {
-    router.push('/(profesionista)/configuracion/privacidad' as any);
+    router.push('/(profesionista)/configuracion/terminos' as any);
   };
 
   return (
@@ -62,16 +62,7 @@ export default function ConfiguracionScreen() {
           <Text style={styles.textoFila}>{t('cambiarContrasenaBtn')}</Text>
           <Text style={styles.flecha}>❯</Text>
         </TouchableOpacity>
-        <View style={styles.filaAjuste}>
-          <Text style={styles.textoFila}>{t('notificacionesPush')}</Text>
-          <Switch 
-            value={notificaciones} 
-            onValueChange={setNotificaciones}
-            trackColor={{ false: Colors.neutral[200], true: Colors.primary[300] }}
-            thumbColor={notificaciones ? Colors.primary[600] : '#FFFFFF'}
-          />
-        </View>
-      </View>
+              </View>
 
       <Text style={styles.tituloBloque}>{t('acercaDe')}</Text>
       <View style={styles.bloqueAjustes}>

@@ -7,8 +7,11 @@ import NavbarCliente from '../../../components/NavbarCliente';
 import { Colors } from '../../../theme/Colors';
 import { Typography } from '../../../theme/Typography';
 import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function PerfilScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const { t } = useTranslation();
   const router = useRouter();
   const [cargando, setCargando] = useState(true);
@@ -45,13 +48,13 @@ export default function PerfilScreen() {
   if (cargando) {
     return (
       <View style={styles.cargandoContainer}>
-        <ActivityIndicator size="large" color={Colors.primary[600]} />
+        <ActivityIndicator size="large" color={colors.primary[600]} />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+    <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
       <NavbarCliente />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         
@@ -110,29 +113,29 @@ export default function PerfilScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   cargandoContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scrollContainer: { flexGrow: 1, backgroundColor: Colors.neutral[50] },
+  scrollContainer: { flexGrow: 1, backgroundColor: colors.neutral[50] },
   container: { flex: 1, padding: Spacing[5], alignItems: 'center' },
   
   fotoContainer: { marginBottom: Spacing[4], position: 'relative' },
-  foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: Colors.neutral[200] },
-  fotoVacia: { width: 120, height: 120, borderRadius: 60, backgroundColor: Colors.neutral[200], justifyContent: 'center', alignItems: 'center' },
-  textoFotoVacia: { color: Colors.text.secondary, fontWeight: 'bold' },
+  foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.neutral[200] },
+  fotoVacia: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.neutral[200], justifyContent: 'center', alignItems: 'center' },
+  textoFotoVacia: { color: colors.text.secondary, fontWeight: 'bold' },
   
   nombreContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: Spacing[5] },
-  nombreTexto: { ...Typography.styles.h2, color: Colors.text.primary, textAlign: 'center', fontWeight: '800' },
+  nombreTexto: { ...Typography.styles.h2, color: colors.text.primary, textAlign: 'center', fontWeight: '800' },
   
-  datosCard: { width: '100%', backgroundColor: '#fff', padding: Spacing[5], borderRadius: Radius.lg, ...Shadow.md, marginBottom: Spacing[6], borderWidth: 1, borderColor: Colors.border.default },
-  datoTitulo: { ...Typography.styles.overline, color: Colors.text.disabled, marginTop: 10, letterSpacing: 0.5 },
-  datoValor: { ...Typography.styles.body, color: Colors.text.primary, marginBottom: 5, fontWeight: '500' },
+  datosCard: { width: '100%', backgroundColor: colors.neutral[0], padding: Spacing[5], borderRadius: Radius.lg, ...Shadow.md, marginBottom: Spacing[6], borderWidth: 1, borderColor: colors.border.default },
+  datoTitulo: { ...Typography.styles.overline, color: colors.text.disabled, marginTop: 10, letterSpacing: 0.5 },
+  datoValor: { ...Typography.styles.body, color: colors.text.primary, marginBottom: 5, fontWeight: '500' },
   
   contenedorBotones: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', gap: Spacing[3], marginBottom: Spacing[6] },
-  botonSecundario: { flex: 1, backgroundColor: Colors.neutral[100], paddingVertical: Spacing[4], borderRadius: Radius.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border.default },
-  textoBotonSecundario: { ...Typography.styles.btn, color: Colors.text.primary, fontWeight: '700' },
+  botonSecundario: { flex: 1, backgroundColor: colors.neutral[100], paddingVertical: Spacing[4], borderRadius: Radius.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border.default },
+  textoBotonSecundario: { ...Typography.styles.btn, color: colors.text.primary, fontWeight: '700' },
   
   modalFondoOscuro: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.95)', justifyContent: 'center', alignItems: 'center' },
   botonCerrarModal: { position: 'absolute', top: 50, right: 20, padding: 10, backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: Radius.button, zIndex: 10 },
-  textoCerrarModal: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  textoCerrarModal: { color: colors.neutral[0], fontWeight: 'bold', fontSize: 16 },
   fotoGigante: { width: '90%', height: '80%' }
 });

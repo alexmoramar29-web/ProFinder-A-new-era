@@ -10,8 +10,11 @@ import { Radius, Shadow, Spacing } from '@/theme/Spacing';
 import { ActivityIndicator, Image, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
 import NavbarProfesionista from '@/components/NavbarProfesionista';
 import MapaWeb from '@/components/shared/MapaWeb';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function PerfilScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const router = useRouter();
   const { t } = useTranslation();
   const [perfil, setPerfil] = useState<any>(null);
@@ -44,7 +47,7 @@ export default function PerfilScreen() {
   if (cargando) {
     return (
       <View style={styles.cargandoContainer}>
-        <ActivityIndicator size="large" color={Colors.primary[600]} />
+        <ActivityIndicator size="large" color={colors.primary[600]} />
       </View>
     );
   }
@@ -60,13 +63,13 @@ export default function PerfilScreen() {
   const esAprobado = estadoLimpio === 'verificado' || estadoLimpio === 'aprobado' || estadoLimpio === 'perfil aprobado';
 
   if (esAprobado) {
-    colorEtiqueta = Colors.success.main; 
+    colorEtiqueta = colors.success.main; 
     textoEtiqueta = t('perfilAprobado');
   } else if (estadoLimpio === 'en revision' || estadoLimpio === 'en revisión') {
-    colorEtiqueta = Colors.warning.main; 
+    colorEtiqueta = colors.warning.main; 
     textoEtiqueta = t('documentosEnRevision');
   } else if (estadoLimpio === 'rechazado') {
-    colorEtiqueta = Colors.error.main; 
+    colorEtiqueta = colors.error.main; 
     textoEtiqueta = t('documentosRechazados');
   }
 
@@ -99,7 +102,7 @@ export default function PerfilScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+    <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
       <NavbarProfesionista />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         
@@ -126,7 +129,7 @@ export default function PerfilScreen() {
 
             {esAprobado && (
               <View style={styles.circuloVerificado}>
-                <Ionicons name="checkmark" size={16} color="#fff" />
+                <Ionicons name="checkmark" size={16} color={colors.neutral[0]} />
               </View>
             )}
           </View>
@@ -185,7 +188,7 @@ export default function PerfilScreen() {
                     </View>
                   </TouchableOpacity>
                   {Platform.OS === 'web' && (
-                    <Text style={{ fontSize: 11, color: Colors.text.disabled, textAlign: 'center', marginTop: 4, fontStyle: 'italic' }}>
+                    <Text style={{ fontSize: 11, color: colors.text.disabled, textAlign: 'center', marginTop: 4, fontStyle: 'italic' }}>
                       Al hacer clic se abrirá Google Maps con la ubicación exacta.
                     </Text>
                   )}
@@ -212,7 +215,7 @@ export default function PerfilScreen() {
           )}
 
           <View style={styles.contenedorBotones}>
-            <TouchableOpacity style={styles.botonSecundario} onPress={() => router.push('/(profesionista)/perfil/editar')}>
+            <TouchableOpacity style={styles.botonSecundario} onPress={() => router.push('/(profesionista)/mi-perfil/editar')}>
               <Text style={styles.textoBotonSecundario}>{t('editarPerfil')}</Text>
             </TouchableOpacity>
             
@@ -241,59 +244,59 @@ export default function PerfilScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   cargandoContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scrollContainer: { flexGrow: 1, backgroundColor: Colors.neutral[50] },
-  bannerPausado: { backgroundColor: Colors.text.secondary, padding: Spacing[3], width: '100%', alignItems: 'center' },
-  textoBannerPausado: { color: '#fff', fontWeight: 'bold', fontSize: 12, textAlign: 'center' },
+  scrollContainer: { flexGrow: 1, backgroundColor: colors.neutral[50] },
+  bannerPausado: { backgroundColor: colors.text.secondary, padding: Spacing[3], width: '100%', alignItems: 'center' },
+  textoBannerPausado: { color: colors.neutral[0], fontWeight: 'bold', fontSize: 12, textAlign: 'center' },
   container: { flex: 1, padding: Spacing[5], alignItems: 'center' },
   fotoContainer: { marginBottom: Spacing[4], position: 'relative' },
-  foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: Colors.neutral[200] },
-  fotoVacia: { width: 120, height: 120, borderRadius: 60, backgroundColor: Colors.neutral[200], justifyContent: 'center', alignItems: 'center' },
-  textoFotoVacia: { color: Colors.text.secondary, fontWeight: 'bold' },
+  foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.neutral[200] },
+  fotoVacia: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.neutral[200], justifyContent: 'center', alignItems: 'center' },
+  textoFotoVacia: { color: colors.text.secondary, fontWeight: 'bold' },
   
   circuloVerificado: {
     position: 'absolute',
     bottom: 0,
     right: 4,
-    backgroundColor: Colors.primary[600],
+    backgroundColor: colors.primary[600],
     width: 28,
     height: 28,
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: Colors.neutral[50],
+    borderColor: colors.neutral[50],
   },
 
   nombreContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 5 },
-  nombreTexto: { ...Typography.styles.h2, color: Colors.text.primary, textAlign: 'center', fontWeight: '800' },
+  nombreTexto: { ...Typography.styles.h2, color: colors.text.primary, textAlign: 'center', fontWeight: '800' },
   
   etiquetaVerificacion: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.full, marginBottom: Spacing[5] },
-  textoEtiqueta: { color: '#fff', fontWeight: '700', fontSize: 11, textTransform: 'uppercase' },
+  textoEtiqueta: { color: colors.neutral[0], fontWeight: '700', fontSize: 11, textTransform: 'uppercase' },
   
-  datosCard: { width: '100%', backgroundColor: '#fff', padding: Spacing[5], borderRadius: Radius.lg, ...Shadow.md, marginBottom: Spacing[5], borderWidth: 1, borderColor: Colors.border.default },
-  datoTitulo: { ...Typography.styles.overline, color: Colors.text.disabled, marginTop: 10, letterSpacing: 0.5 },
-  datoValor: { ...Typography.styles.body, color: Colors.text.primary, marginBottom: 5, fontWeight: '500' },
+  datosCard: { width: '100%', backgroundColor: colors.neutral[0], padding: Spacing[5], borderRadius: Radius.lg, ...Shadow.md, marginBottom: Spacing[5], borderWidth: 1, borderColor: colors.border.default },
+  datoTitulo: { ...Typography.styles.overline, color: colors.text.disabled, marginTop: 10, letterSpacing: 0.5 },
+  datoValor: { ...Typography.styles.body, color: colors.text.primary, marginBottom: 5, fontWeight: '500' },
   
-  mapaContenedor: { width: '100%', backgroundColor: '#fff', padding: Spacing[5], borderRadius: Radius.lg, ...Shadow.md, marginBottom: Spacing[5], borderWidth: 1, borderColor: Colors.border.default },
+  mapaContenedor: { width: '100%', backgroundColor: colors.neutral[0], padding: Spacing[5], borderRadius: Radius.lg, ...Shadow.md, marginBottom: Spacing[5], borderWidth: 1, borderColor: colors.border.default },
   mapaPequeno: { height: 150, width: '100%', borderRadius: Radius.md, overflow: 'hidden', marginTop: 15 },
-  mapaPlaceholder: { width: '100%', height: 100, backgroundColor: Colors.neutral[100], borderRadius: Radius.md, justifyContent: 'center', alignItems: 'center', marginBottom: Spacing[5], borderWidth: 2, borderColor: Colors.border.default, borderStyle: 'dashed' },
-  textoMapa: { color: Colors.text.secondary, fontWeight: 'bold', fontSize: 14 },
+  mapaPlaceholder: { width: '100%', height: 100, backgroundColor: colors.neutral[100], borderRadius: Radius.md, justifyContent: 'center', alignItems: 'center', marginBottom: Spacing[5], borderWidth: 2, borderColor: colors.border.default, borderStyle: 'dashed' },
+  textoMapa: { color: colors.text.secondary, fontWeight: 'bold', fontSize: 14 },
   etiquetaAbrirMapa: { position: 'absolute', bottom: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.full },
-  textoAbrirMapa: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
+  textoAbrirMapa: { color: colors.neutral[0], fontSize: 11, fontWeight: 'bold' },
   
   portafolioContenedor: { width: '100%', marginBottom: Spacing[5] },
-  tituloSeccion: { ...Typography.styles.h4, color: Colors.primary[700], marginBottom: Spacing[3], alignSelf: 'flex-start', fontWeight: '700' },
+  tituloSeccion: { ...Typography.styles.h4, color: colors.primary[700], marginBottom: Spacing[3], alignSelf: 'flex-start', fontWeight: '700' },
   carrusel: { flexDirection: 'row' },
-  fotoTrabajo: { width: 120, height: 120, borderRadius: Radius.md, marginRight: Spacing[4], backgroundColor: Colors.neutral[200], borderWidth: 1, borderColor: Colors.border.default },
+  fotoTrabajo: { width: 120, height: 120, borderRadius: Radius.md, marginRight: Spacing[4], backgroundColor: colors.neutral[200], borderWidth: 1, borderColor: colors.border.default },
   contenedorBotones: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', gap: Spacing[3], marginBottom: Spacing[6] },
-  botonPrimario: { flex: 1, backgroundColor: Colors.primary[600], paddingVertical: Spacing[4], borderRadius: Radius.md, alignItems: 'center', ...Shadow.brand },
-  botonSecundario: { flex: 1, backgroundColor: Colors.neutral[100], paddingVertical: Spacing[4], borderRadius: Radius.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border.default },
-  textoBoton: { ...Typography.styles.btn, color: '#fff', fontWeight: '700' },
-  textoBotonSecundario: { ...Typography.styles.btn, color: Colors.text.primary, fontWeight: '700' },
+  botonPrimario: { flex: 1, backgroundColor: colors.primary[600], paddingVertical: Spacing[4], borderRadius: Radius.md, alignItems: 'center', ...Shadow.brand },
+  botonSecundario: { flex: 1, backgroundColor: colors.neutral[100], paddingVertical: Spacing[4], borderRadius: Radius.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border.default },
+  textoBoton: { ...Typography.styles.btn, color: colors.neutral[0], fontWeight: '700' },
+  textoBotonSecundario: { ...Typography.styles.btn, color: colors.text.primary, fontWeight: '700' },
   modalFondoOscuro: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.95)', justifyContent: 'center', alignItems: 'center' },
   botonCerrarModal: { position: 'absolute', top: 50, right: 20, padding: 10, backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: Radius.button, zIndex: 10 },
-  textoCerrarModal: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  textoCerrarModal: { color: colors.neutral[0], fontWeight: 'bold', fontSize: 16 },
   fotoGigante: { width: '90%', height: '80%' }
 });

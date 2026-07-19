@@ -8,6 +8,7 @@ import { Colors } from '@/theme/Colors';
 import { Typography } from '@/theme/Typography';
 import { Radius, Shadow, Spacing } from '@/theme/Spacing';
 import NavbarProfesionista from '@/components/NavbarProfesionista';
+import { useTheme } from '@/context/ThemeContext';
 
 const HORAS_DISPONIBLES = [
   '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
@@ -24,6 +25,8 @@ interface ScheduleBlock {
 }
 
 export default function HorariosScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const { t } = useTranslation();
 
   const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -272,15 +275,15 @@ export default function HorariosScreen() {
   };
 
   if (cargando) {
-    return <View style={styles.centro}><ActivityIndicator size="large" color={Colors.primary[600]} /></View>;
+    return <View style={styles.centro}><ActivityIndicator size="large" color={colors.primary[600]} /></View>;
   }
 
   if (servicios.length === 0) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+      <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
         <NavbarProfesionista />
         <View style={styles.centro}>
-          <Ionicons name="briefcase-outline" size={60} color={Colors.text.disabled} />
+          <Ionicons name="briefcase-outline" size={60} color={colors.text.disabled} />
           <Text style={[styles.titulo, { marginTop: 20 }]}>Sin servicios</Text>
           <Text style={[styles.subtitulo, { paddingHorizontal: 40 }]}>
             Necesitas agregar al menos un servicio en tu catálogo para poder asignarle un horario.
@@ -291,7 +294,7 @@ export default function HorariosScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+    <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
       <NavbarProfesionista />
       <View style={styles.contenedorFondo}>
         <ScrollView contentContainerStyle={styles.scroll}>
@@ -307,15 +310,15 @@ export default function HorariosScreen() {
                   <Switch
                     value={diasActivos[dia]}
                     onValueChange={(val) => toggleDia(dia, val)}
-                    trackColor={{ false: '#d1d5db', true: Colors.primary[300] }}
-                    thumbColor={diasActivos[dia] ? Colors.primary[600] : '#f3f4f6'}
+                    trackColor={{ false: '#d1d5db', true: colors.primary[300] }}
+                    thumbColor={diasActivos[dia] ? colors.primary[600] : '#f3f4f6'}
                   />
-                  <Text style={[styles.textoDia, !diasActivos[dia] && { color: Colors.text.disabled }]}>{dia}</Text>
+                  <Text style={[styles.textoDia, !diasActivos[dia] && { color: colors.text.disabled }]}>{dia}</Text>
                 </View>
                 
                 {diasActivos[dia] && (
                   <TouchableOpacity style={styles.botonAgregar} onPress={() => agregarBloque(dia)}>
-                    <Ionicons name="add" size={16} color="#fff" />
+                    <Ionicons name="add" size={16} color={colors.neutral[0]} />
                     <Text style={styles.textoAgregar}>Añadir Horario</Text>
                   </TouchableOpacity>
                 )}
@@ -343,7 +346,7 @@ export default function HorariosScreen() {
                       </View>
                       
                       <TouchableOpacity style={styles.botonEliminar} onPress={() => removerBloque(dia, index)}>
-                        <Ionicons name="trash-outline" size={20} color={Colors.error.main} />
+                        <Ionicons name="trash-outline" size={20} color={colors.error.main} />
                       </TouchableOpacity>
                     </View>
 
@@ -377,21 +380,21 @@ export default function HorariosScreen() {
             </View>
           ))}
 
-          <View style={{ backgroundColor: '#fff', padding: 16, borderRadius: 12, marginTop: 24, marginBottom: 20, borderWidth: 1, borderColor: Colors.border.default, ...Shadow.sm }}>
+          <View style={{ backgroundColor: colors.neutral[0], padding: 16, borderRadius: 12, marginTop: 24, marginBottom: 20, borderWidth: 1, borderColor: colors.border.default, ...Shadow.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-              <Ionicons name={perfilActivo ? "eye-outline" : "eye-off-outline"} size={24} color={perfilActivo ? Colors.text.disabled : Colors.warning.main} style={{ marginRight: 8 }} />
-              <Text style={{ ...Typography.styles.h5, color: Colors.text.primary }}>Visibilidad del Perfil</Text>
+              <Ionicons name={perfilActivo ? "eye-outline" : "eye-off-outline"} size={24} color={perfilActivo ? colors.text.disabled : colors.warning.main} style={{ marginRight: 8 }} />
+              <Text style={{ ...Typography.styles.h5, color: colors.text.primary }}>Visibilidad del Perfil</Text>
             </View>
-            <Text style={{ ...Typography.styles.bodySm, color: Colors.text.secondary, marginBottom: 12 }}>
+            <Text style={{ ...Typography.styles.bodySm, color: colors.text.secondary, marginBottom: 12 }}>
               {perfilActivo 
                 ? 'Al ocultar tu perfil, dejarás de aparecer en las búsquedas para nuevos clientes, manteniendo activos tus compromisos previamente agendados.' 
                 : 'Actualmente tu perfil se encuentra oculto. Los clientes nuevos no pueden encontrarte en la plataforma.'}
             </Text>
             <TouchableOpacity 
-              style={{ backgroundColor: perfilActivo ? Colors.neutral[200] : Colors.warning.main, paddingVertical: 10, borderRadius: 8, alignItems: 'center' }}
+              style={{ backgroundColor: perfilActivo ? colors.neutral[200] : colors.warning.main, paddingVertical: 10, borderRadius: 8, alignItems: 'center' }}
               onPress={confirmToggleVacaciones}
             >
-              <Text style={{ color: perfilActivo ? Colors.text.primary : '#fff', fontWeight: 'bold' }}>
+              <Text style={{ color: perfilActivo ? colors.text.primary : colors.neutral[0], fontWeight: 'bold' }}>
                 {perfilActivo ? 'Ocultar Perfil (Pausar Visibilidad)' : 'Mostrar Perfil (Restaurar Visibilidad)'}
               </Text>
             </TouchableOpacity>
@@ -401,14 +404,14 @@ export default function HorariosScreen() {
 
       {mensajeUI && (
         <View style={[styles.mensajeToast, mensajeUI.tipo === 'exito' ? styles.toastExito : styles.toastError]}>
-          <Ionicons name={mensajeUI.tipo === 'exito' ? 'checkmark-circle' : 'warning'} size={24} color="#fff" />
+          <Ionicons name={mensajeUI.tipo === 'exito' ? 'checkmark-circle' : 'warning'} size={24} color={colors.neutral[0]} />
           <Text style={styles.mensajeToastTxt}>{mensajeUI.texto}</Text>
         </View>
       )}
 
       <View style={styles.contenedorFijoAbajo}>
         <TouchableOpacity style={styles.botonPrimario} onPress={handleGuardar} disabled={guardando}>
-          {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoBotonPrimario}>Guardar Calendario</Text>}
+          {guardando ? <ActivityIndicator color={colors.neutral[0]} /> : <Text style={styles.textoBotonPrimario}>Guardar Calendario</Text>}
         </TouchableOpacity>
       </View>
       </View>
@@ -416,44 +419,44 @@ export default function HorariosScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   centro: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  contenedorFondo: { flex: 1, backgroundColor: Colors.neutral[50] },
+  contenedorFondo: { flex: 1, backgroundColor: colors.neutral[50] },
   scroll: { paddingBottom: 100 },
   container: { padding: Spacing[5] },
-  titulo: { ...Typography.styles.h2, color: Colors.primary[700], textAlign: 'center', fontWeight: '800' },
-  subtitulo: { ...Typography.styles.body, color: Colors.text.secondary, textAlign: 'center', marginBottom: Spacing[6], marginTop: Spacing[1] },
+  titulo: { ...Typography.styles.h2, color: colors.primary[700], textAlign: 'center', fontWeight: '800' },
+  subtitulo: { ...Typography.styles.body, color: colors.text.secondary, textAlign: 'center', marginBottom: Spacing[6], marginTop: Spacing[1] },
   
-  tarjetaDia: { backgroundColor: '#fff', borderRadius: Radius.lg, padding: Spacing[4], marginBottom: Spacing[4], ...Shadow.md, borderWidth: 1, borderColor: Colors.border.default },
-  tarjetaApagada: { backgroundColor: Colors.neutral[100], borderColor: Colors.border.default, ...Shadow.sm },
+  tarjetaDia: { backgroundColor: colors.neutral[0], borderRadius: Radius.lg, padding: Spacing[4], marginBottom: Spacing[4], ...Shadow.md, borderWidth: 1, borderColor: colors.border.default },
+  tarjetaApagada: { backgroundColor: colors.neutral[100], borderColor: colors.border.default, ...Shadow.sm },
   
   filaDiaCabecera: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing[2] },
-  textoDia: { ...Typography.styles.h4, fontWeight: '700', color: Colors.text.primary },
+  textoDia: { ...Typography.styles.h4, fontWeight: '700', color: colors.text.primary },
   
-  botonAgregar: { flexDirection: 'row', backgroundColor: Colors.primary[600], paddingHorizontal: Spacing[3], paddingVertical: 6, borderRadius: Radius.md, alignItems: 'center', gap: 4 },
-  textoAgregar: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+  botonAgregar: { flexDirection: 'row', backgroundColor: colors.primary[600], paddingHorizontal: Spacing[3], paddingVertical: 6, borderRadius: Radius.md, alignItems: 'center', gap: 4 },
+  textoAgregar: { color: colors.neutral[0], fontSize: 12, fontWeight: 'bold' },
 
-  textoDescanso: { ...Typography.styles.caption, color: Colors.text.disabled, fontStyle: 'italic', marginTop: 5 },
+  textoDescanso: { ...Typography.styles.caption, color: colors.text.disabled, fontStyle: 'italic', marginTop: 5 },
 
-  cajaBloque: { backgroundColor: Colors.neutral[50], padding: Spacing[3], borderRadius: Radius.md, marginBottom: Spacing[3], borderWidth: 1, borderColor: Colors.border.default },
+  cajaBloque: { backgroundColor: colors.neutral[50], padding: Spacing[3], borderRadius: Radius.md, marginBottom: Spacing[3], borderWidth: 1, borderColor: colors.border.default },
   
   filaServicio: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  bordePickerFull: { flex: 1, borderWidth: 1, borderColor: Colors.border.default, borderRadius: Radius.md, backgroundColor: '#fff', height: 40, justifyContent: 'center', overflow: 'hidden' },
+  bordePickerFull: { flex: 1, borderWidth: 1, borderColor: colors.border.default, borderRadius: Radius.md, backgroundColor: colors.neutral[0], height: 40, justifyContent: 'center', overflow: 'hidden' },
   
-  botonEliminar: { padding: 8, backgroundColor: Colors.error.light, borderRadius: Radius.md },
+  botonEliminar: { padding: 8, backgroundColor: colors.error.light, borderRadius: Radius.md },
 
   filaTiempo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  bordePickerMitad: { flex: 1, borderWidth: 1, borderColor: Colors.border.default, borderRadius: Radius.md, backgroundColor: '#fff', height: 40, justifyContent: 'center', overflow: 'hidden' },
-  separadorHora: { marginHorizontal: 10, fontWeight: 'bold', color: Colors.text.secondary },
+  bordePickerMitad: { flex: 1, borderWidth: 1, borderColor: colors.border.default, borderRadius: Radius.md, backgroundColor: colors.neutral[0], height: 40, justifyContent: 'center', overflow: 'hidden' },
+  separadorHora: { marginHorizontal: 10, fontWeight: 'bold', color: colors.text.secondary },
 
   picker: { width: '100%', height: '100%' },
 
   mensajeToast: { position: 'absolute', bottom: 100, left: 20, right: 20, padding: Spacing[4], borderRadius: Radius.md, flexDirection: 'row', alignItems: 'center', gap: 10, elevation: 5, zIndex: 999 },
-  toastExito: { backgroundColor: Colors.success.main },
-  toastError: { backgroundColor: Colors.error.main },
-  mensajeToastTxt: { ...Typography.styles.body, color: '#fff', fontWeight: 'bold', flex: 1 },
+  toastExito: { backgroundColor: colors.success.main },
+  toastError: { backgroundColor: colors.error.main },
+  mensajeToastTxt: { ...Typography.styles.body, color: colors.neutral[0], fontWeight: 'bold', flex: 1 },
 
-  contenedorFijoAbajo: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing[5], backgroundColor: Colors.neutral[50], borderTopWidth: 1, borderTopColor: Colors.border.default },
-  botonPrimario: { backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', ...Shadow.brand },
-  textoBotonPrimario: { ...Typography.styles.btn, color: '#fff', fontWeight: '700' }
+  contenedorFijoAbajo: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing[5], backgroundColor: colors.neutral[50], borderTopWidth: 1, borderTopColor: colors.border.default },
+  botonPrimario: { backgroundColor: colors.primary[600], padding: Spacing[4], borderRadius: Radius.md, alignItems: 'center', ...Shadow.brand },
+  textoBotonPrimario: { ...Typography.styles.btn, color: colors.neutral[0], fontWeight: '700' }
 });

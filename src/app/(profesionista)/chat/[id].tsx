@@ -21,16 +21,20 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../../lib/supabase';
 import { Colors } from '../../../theme/Colors';
+import { useTheme } from '@/context/ThemeContext';
 import { Radius, Shadow, Spacing } from '../../../theme/Spacing';
 import { Typography } from '../../../theme/Typography';
 import { useTranslation } from 'react-i18next';
 
 export default function ChatIndividualProfesionistaScreen() {
+  const { colors, isDark } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { id, nombre, inicial, foto } = useLocalSearchParams();
+  const { id: idParam, nombre, inicial, foto } = useLocalSearchParams();
+  const id = Array.isArray(idParam) ? idParam[0] : idParam as string;
   const router = useRouter();
-  const navigation = useNavigation();
+    const navigation = useNavigation();
 
   const isFocused = useIsFocused();
   const isFocusedRef = useRef(isFocused);
@@ -47,7 +51,7 @@ export default function ChatIndividualProfesionistaScreen() {
   const [estaBloqueado, setEstaBloqueado] = useState(false);
   const [yoLoBloquee, setYoLoBloquee] = useState(false);
   const [escribiendo, setEscribiendo] = useState(false);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const scrollRef = useRef<ScrollView>(null);
 
@@ -445,7 +449,7 @@ export default function ChatIndividualProfesionistaScreen() {
         {/* Cabecera */}
         <View style={[styles.chatHeader, { paddingTop: Math.max(insets.top, Spacing[3]) }]}>
           <Pressable onPress={() => router.replace('/(profesionista)/chat' as any)} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+            <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </Pressable>
           
           <TouchableOpacity 
@@ -509,11 +513,11 @@ export default function ChatIndividualProfesionistaScreen() {
                         style={{ marginRight: 8, padding: 4 }}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
-                        <Ionicons name="trash-outline" size={20} color={Colors.text.disabled} />
+                        <Ionicons name="trash-outline" size={20} color={colors.text.disabled} />
                       </Pressable>
                     )}
                     <Text style={styles.msgHora}>{m.hora}</Text>
-                    {m.deMi && <Ionicons name="checkmark-done" size={16} color={Colors.primary[400]} />}
+                    {m.deMi && <Ionicons name="checkmark-done" size={16} color={colors.primary[400]} />}
                   </View>
                 </View>
               </View>
@@ -532,14 +536,15 @@ export default function ChatIndividualProfesionistaScreen() {
         {/* Input bar */}
         <View style={styles.inputBar}>
           <Pressable style={styles.inputBarBtn}>
-            <Ionicons name="add-outline" size={24} color={Colors.text.secondary} />
+            <Ionicons name="add-outline" size={24} color={colors.text.secondary} />
           </Pressable>
 
           <View style={styles.inputWrap}>
             <TextInput
+              maxLength={300}
               style={styles.msgInput}
               placeholder={estaBloqueado ? "Chat no disponible" : "Escribe un mensaje..."}
-              placeholderTextColor={Colors.text.disabled}
+              placeholderTextColor={colors.text.disabled}
               value={texto}
               onChangeText={notificarEscribiendo}
               onSubmitEditing={enviarMensaje}
@@ -549,8 +554,8 @@ export default function ChatIndividualProfesionistaScreen() {
             />
           </View>
 
-          <Pressable style={[styles.sendBtn, (texto.trim() && !estaBloqueado) ? styles.sendBtnActive : null]} onPress={enviarMensaje} disabled={estaBloqueado}>
-            <Ionicons name="send" size={18} color={(texto.trim() && !estaBloqueado) ? '#fff' : Colors.text.disabled} />
+          <Pressable style={[styles.sendBtn, (texto.trim() && !estaBloqueado) ? styles.sendBtn : null]} onPress={enviarMensaje} disabled={estaBloqueado}>
+            <Ionicons name="send" size={18} color={(texto.trim() && !estaBloqueado) ? '#fff' : colors.text.disabled} />
           </Pressable>
         </View>
 
@@ -560,14 +565,14 @@ export default function ChatIndividualProfesionistaScreen() {
               <TouchableOpacity style={styles.dropdownMenuItem} onPress={() => { setMostrarMenu(false); router.push(`/(cliente)/perfil/${id}` as any); }}>
                 <Text style={styles.dropdownMenuText}>Ver Perfil del Cliente</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.dropdownMenuItem} onPress={vaciarChat}>
+                            <TouchableOpacity style={styles.dropdownMenuItem} onPress={vaciarChat}>
                 <Text style={styles.dropdownMenuText}>Vaciar Chat local</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.dropdownMenuItem} onPress={manejarReporte}>
                 <Text style={styles.dropdownMenuText}>Reportar Cliente</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.dropdownMenuItem, { borderBottomWidth: 0 }]} onPress={manejarBloqueo}>
-                <Text style={[styles.dropdownMenuText, { color: Colors.error.main }]}>{yoLoBloquee ? 'Desbloquear Cliente' : 'Bloquear Cliente'}</Text>
+                <Text style={[styles.dropdownMenuText, { color: colors.error.main }]}>{yoLoBloquee ? 'Desbloquear Cliente' : 'Bloquear Cliente'}</Text>
               </TouchableOpacity>
             </View>
           </Pressable>
@@ -577,41 +582,41 @@ export default function ChatIndividualProfesionistaScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.neutral[50] },
-  chatArea:   { flex: 1, flexDirection: 'column', maxWidth: 800, width: '100%', alignSelf: 'center', backgroundColor: Colors.background.card, borderLeftWidth: 1, borderRightWidth: 1, borderColor: Colors.border.default },
-  chatHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing[3], paddingHorizontal: Spacing[4], paddingVertical: Spacing[3], borderBottomWidth: 1, borderBottomColor: Colors.border.default, ...Shadow.xs },
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.neutral[50] },
+  chatArea:   { flex: 1, flexDirection: 'column', maxWidth: 800, width: '100%', alignSelf: 'center', backgroundColor: colors.background.card, borderLeftWidth: 1, borderRightWidth: 1, borderColor: colors.border.default },
+  chatHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing[3], paddingHorizontal: Spacing[4], paddingVertical: Spacing[3], borderBottomWidth: 1, borderBottomColor: colors.border.default, ...Shadow.xs },
   backBtn:    { marginRight: 4, padding: 4 },
   
   chatHeaderAvatarWrap: { position: 'relative', marginRight: 12 },
-  chatHeaderAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary[100], justifyContent: 'center', alignItems: 'center' },
+  chatHeaderAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary[100], justifyContent: 'center', alignItems: 'center' },
   chatHeaderAvatarImg: { width: 44, height: 44, borderRadius: 22 },
-  chatHeaderAvatarTxt: { ...Typography.styles.h5, color: Colors.primary[700] },
-  onlineDotLg:          { position: 'absolute', bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.success.main, borderWidth: 2, borderColor: '#fff' },
-  chatHeaderNombre:     { ...Typography.styles.h5, color: Colors.text.primary, fontSize: 16 },
-  chatHeaderStatus:     { ...Typography.styles.caption, color: Colors.text.secondary, marginTop: 1 },
+  chatHeaderAvatarTxt: { ...Typography.styles.h5, color: colors.primary[700] },
+  onlineDotLg:          { position: 'absolute', bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.success.main, borderWidth: 2, borderColor: '#fff' },
+  chatHeaderNombre:     { ...Typography.styles.h5, color: colors.text.primary, fontSize: 16 },
+  chatHeaderStatus:     { ...Typography.styles.caption, color: colors.text.secondary, marginTop: 1 },
   chatActionBtn:        { padding: Spacing[2], borderRadius: Radius.full },
 
-  mensajesScroll:  { flex: 1, backgroundColor: Colors.neutral[50] },
+  mensajesScroll:  { flex: 1, backgroundColor: colors.neutral[50] },
   mensajesContent: { padding: Spacing[4], gap: Spacing[4] },
 
   msgRow:         { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing[2], width: '100%' },
   msgRowMio:      { flexDirection: 'row-reverse' },
-  msgAvatar:      { width: 34, height: 34, borderRadius: 17, backgroundColor: Colors.primary[100], alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
-  msgAvatarTxt:   { ...Typography.styles.caption, color: Colors.primary[700], fontWeight: '700', fontSize: 11 },
+  msgAvatar:      { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.primary[100], alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
+  msgAvatarTxt:   { ...Typography.styles.caption, color: colors.primary[700], fontWeight: '700', fontSize: 11 },
   msgBubble:      { borderRadius: Radius.lg, paddingHorizontal: Spacing[4], paddingVertical: Spacing[3] },
-  msgBubbleMio:   { backgroundColor: Colors.primary[600], borderBottomRightRadius: 4 },
-  msgBubbleEllos: { backgroundColor: Colors.background.card, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: Colors.border.default, ...Shadow.xs },
-  msgTxt:         { ...Typography.styles.body, color: Colors.text.primary, lineHeight: 22 },
+  msgBubbleMio:   { backgroundColor: colors.primary[600], borderBottomRightRadius: 4 },
+  msgBubbleEllos: { backgroundColor: colors.background.card, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: colors.border.default, ...Shadow.xs },
+  msgTxt:         { ...Typography.styles.body, color: colors.text.primary, lineHeight: 22 },
   msgMeta:        { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
-  msgHora:        { ...Typography.styles.caption, color: Colors.text.disabled },
+  msgHora:        { ...Typography.styles.caption, color: colors.text.disabled },
 
-  inputBar:    { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing[2], backgroundColor: Colors.background.card, paddingHorizontal: Spacing[3], paddingVertical: Spacing[3], borderTopWidth: 1, borderTopColor: Colors.border.default },
+  inputBar:    { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing[2], backgroundColor: colors.background.card, paddingHorizontal: Spacing[3], paddingVertical: Spacing[3], borderTopWidth: 1, borderTopColor: colors.border.default },
   inputBarBtn: { padding: 8, alignItems: 'center', justifyContent: 'center' },
-  inputWrap:   { flex: 1, backgroundColor: Colors.neutral[100], borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.border.default, paddingHorizontal: Spacing[3], minHeight: 44, maxHeight: 120 },
-  msgInput:    { flex: 1, ...Typography.styles.body, color: Colors.text.primary, paddingVertical: Platform.OS === 'web' ? 10 : 12, outlineStyle: 'none' } as any,
-  sendBtn:     { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.neutral[200], alignItems: 'center', justifyContent: 'center' },
-  dropdownMenu: { position: 'absolute', top: 60, right: 16, width: 220, backgroundColor: 'white', borderRadius: 8, overflow: 'hidden', ...Shadow.md, zIndex: 100 },
-  dropdownMenuItem: { paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: Colors.border.default, alignItems: 'flex-start' },
-  dropdownMenuText: { ...Typography.styles.body2, color: Colors.text.primary }
+  inputWrap:   { flex: 1, backgroundColor: colors.neutral[100], borderRadius: Radius.lg, borderWidth: 1, borderColor: colors.border.default, paddingHorizontal: Spacing[3], minHeight: 44, maxHeight: 120 },
+  msgInput:    { flex: 1, ...Typography.styles.body, color: colors.text.primary, paddingVertical: Platform.OS === 'web' ? 10 : 12, outlineStyle: 'none' } as any,
+  sendBtn:     { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.neutral[200], alignItems: 'center', justifyContent: 'center' },
+  dropdownMenu: { position: 'absolute', top: 60, right: 16, width: 220, backgroundColor: colors.neutral[0], borderRadius: 8, overflow: 'hidden', ...Shadow.md, zIndex: 100 },
+  dropdownMenuItem: { paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: colors.border.default, alignItems: 'flex-start' },
+  dropdownMenuText: { ...Typography.styles.body, color: colors.text.primary }
 });

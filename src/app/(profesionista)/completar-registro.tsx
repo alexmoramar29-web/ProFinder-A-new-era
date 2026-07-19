@@ -12,8 +12,11 @@ import { Colors } from '@/theme/Colors';
 import { Typography } from '@/theme/Typography';
 import { Radius, Shadow, Spacing } from '@/theme/Spacing';
 import NavbarProfesionista from '@/components/NavbarProfesionista';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function CompletarRegistroScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const router = useRouter();
   const { t } = useTranslation();
   const [speciality, setSpeciality] = useState('Doctor');
@@ -114,22 +117,22 @@ export default function CompletarRegistroScreen() {
       ]);
 
       Alert.alert('Exito', 'Documentos actualizados correctamente');
-      router.replace('/(profesionista)/perfil');
+      router.replace('/(profesionista)/mi-perfil');
     } catch (e: any) { Alert.alert('Error', e.message); } 
     finally { setGuardando(false); setTextoEstado(''); }
   };
 
-  if (cargandoInicial) return <View style={styles.centro}><ActivityIndicator size="large" color={Colors.primary[600]} /></View>;
+  if (cargandoInicial) return <View style={styles.centro}><ActivityIndicator size="large" color={colors.primary[600]} /></View>;
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+    <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
       <NavbarProfesionista />
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.container}>
           <Text style={styles.titulo}>{t('verificacionProfesional')}</Text>
         <Text style={styles.label}>{t('seleccionaTuProfesion')}</Text>
         <View style={styles.pickerContainer}>
-          <Picker selectedValue={speciality} onValueChange={(item) => setSpeciality(item)} enabled={!guardando}>
+          <Picker dropdownIconColor={colors.text.primary} style={{ color: colors.text.primary, backgroundColor: colors.neutral[0] }} selectedValue={speciality} onValueChange={(item) => setSpeciality(item)} enabled={!guardando}>
             <Picker.Item label="Doctor" value="Doctor" />
             <Picker.Item label="Abogado" value="Abogado" />
             <Picker.Item label="Dentista" value="Dentista" />
@@ -161,12 +164,12 @@ export default function CompletarRegistroScreen() {
 
         {/* BOTONES DE ACCION DOBLES */}
         <View style={styles.contenedorBotonesAccion}>
-          <TouchableOpacity style={styles.botonCancelar} onPress={() => router.replace('/(profesionista)/perfil')} disabled={guardando}>
+          <TouchableOpacity style={styles.botonCancelar} onPress={() => router.replace('/(profesionista)/mi-perfil')} disabled={guardando}>
             <Text style={styles.textoBotonCancelar}>{t('cancelar')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={[styles.botonGuardar, guardando && styles.botonDeshabilitado]} onPress={handleGuardar} disabled={guardando}>
-            {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoBotonGuardar}>{t('guardarYEnviar')}</Text>}
+            {guardando ? <ActivityIndicator color={colors.neutral[0]} /> : <Text style={styles.textoBotonGuardar}>{t('guardarYEnviar')}</Text>}
           </TouchableOpacity>
         </View>
 
@@ -176,26 +179,26 @@ export default function CompletarRegistroScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  centro: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.neutral[50] },
-  scroll: { flexGrow: 1, backgroundColor: Colors.neutral[50] },
+const getStyles = (colors: any) => StyleSheet.create({
+  centro: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.neutral[50] },
+  scroll: { flexGrow: 1, backgroundColor: colors.neutral[50] },
   container: { padding: Spacing[5], maxWidth: 800, width: '100%', alignSelf: 'center' },
-  titulo: { ...Typography.styles.h2, fontWeight: 'bold', color: Colors.primary[800], textAlign: 'center', marginBottom: Spacing[5] },
-  label: { ...Typography.styles.label, fontWeight: 'bold', color: Colors.text.primary, marginBottom: 10 },
-  pickerContainer: { backgroundColor: '#fff', borderWidth: 1, borderColor: Colors.border.default, borderRadius: Radius.md, marginBottom: Spacing[5], ...Shadow.sm },
-  tarjeta: { backgroundColor: '#fff', padding: Spacing[4], borderRadius: Radius.md, marginBottom: Spacing[3], borderWidth: 1, borderColor: Colors.border.default, ...Shadow.sm },
+  titulo: { ...Typography.styles.h2, fontWeight: 'bold', color: colors.primary[800], textAlign: 'center', marginBottom: Spacing[5] },
+  label: { ...Typography.styles.label, fontWeight: 'bold', color: colors.text.primary, marginBottom: 10 },
+  pickerContainer: { backgroundColor: colors.neutral[0], borderWidth: 1, borderColor: colors.border.default, borderRadius: Radius.md, marginBottom: Spacing[5], ...Shadow.sm },
+  tarjeta: { backgroundColor: colors.neutral[0], padding: Spacing[4], borderRadius: Radius.md, marginBottom: Spacing[3], borderWidth: 1, borderColor: colors.border.default, ...Shadow.sm },
   headerTarjeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  nombreDoc: { ...Typography.styles.body, fontWeight: 'bold', color: Colors.text.primary },
-  linkVer: { color: Colors.info.main, fontSize: 13, textDecorationLine: 'underline' },
-  btn: { backgroundColor: Colors.neutral[400], padding: Spacing[3], borderRadius: Radius.button, alignItems: 'center' },
-  btnOk: { backgroundColor: Colors.success.main },
-  txtBtn: { color: '#fff', fontWeight: 'bold', ...Typography.styles.btn },
-  textoCargando: { color: Colors.primary[700], fontWeight: 'bold', textAlign: 'center', marginVertical: Spacing[4] },
+  nombreDoc: { ...Typography.styles.body, fontWeight: 'bold', color: colors.text.primary },
+  linkVer: { color: colors.info.main, fontSize: 13, textDecorationLine: 'underline' },
+  btn: { backgroundColor: colors.neutral[400], padding: Spacing[3], borderRadius: Radius.button, alignItems: 'center' },
+  btnOk: { backgroundColor: colors.success.main },
+  txtBtn: { color: colors.neutral[0], ...Typography.styles.btn, fontWeight: 'bold' },
+  textoCargando: { color: colors.primary[700], fontWeight: 'bold', textAlign: 'center', marginVertical: Spacing[4] },
   
   contenedorBotonesAccion: { flexDirection: 'row', justifyContent: 'space-between', marginTop: Spacing[6] },
-  botonCancelar: { flex: 1, backgroundColor: Colors.neutral[200], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginRight: Spacing[2], ...Shadow.sm },
-  textoBotonCancelar: { color: Colors.text.primary, fontWeight: 'bold', ...Typography.styles.btn },
-  botonGuardar: { flex: 1, backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginLeft: Spacing[2], ...Shadow.brand },
-  botonDeshabilitado: { backgroundColor: Colors.text.disabled },
-  textoBotonGuardar: { color: '#fff', fontWeight: 'bold', ...Typography.styles.btn }
+  botonCancelar: { flex: 1, backgroundColor: colors.neutral[200], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginRight: Spacing[2], ...Shadow.sm },
+  textoBotonCancelar: { color: colors.text.primary, ...Typography.styles.btn, fontWeight: 'bold' },
+  botonGuardar: { flex: 1, backgroundColor: colors.primary[600], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginLeft: Spacing[2], ...Shadow.brand },
+  botonDeshabilitado: { backgroundColor: colors.text.disabled },
+  textoBotonGuardar: { color: colors.neutral[0], ...Typography.styles.btn, fontWeight: 'bold' }
 });

@@ -10,8 +10,11 @@ import { Colors } from '@/theme/Colors';
 import { Typography } from '@/theme/Typography';
 import { Radius, Shadow, Spacing } from '@/theme/Spacing';
 import NavbarProfesionista from '@/components/NavbarProfesionista';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function EditarPerfilScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const router = useRouter();
   const { t } = useTranslation();
   const { setFotoGlobal } = usePerfil();
@@ -162,7 +165,7 @@ export default function EditarPerfilScreen() {
       if (updateError) throw updateError;
       if (publicUrl) setFotoGlobal(publicUrl);
 
-      router.replace('/(profesionista)/perfil');
+      router.replace('/(profesionista)/mi-perfil');
     } catch (error) {
       Alert.alert(t('error'), t('errorGuardarCambios'));
     } finally {
@@ -182,11 +185,11 @@ export default function EditarPerfilScreen() {
   const imagenAMostrar = fotoPerfil?.uri || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+    <View style={{ flex: 1, backgroundColor: colors.neutral[50] }}>
       <NavbarProfesionista />
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.container}>
-        <TouchableOpacity onPress={() => router.replace('/(profesionista)/perfil')} style={styles.botonAtrasInline}>
+        <TouchableOpacity onPress={() => router.replace('/(profesionista)/mi-perfil')} style={styles.botonAtrasInline}>
           <Text style={styles.flechaAtras}>❮</Text>
           <Text style={styles.textoAtrasInline}>{t('atras')}</Text>
         </TouchableOpacity>
@@ -206,8 +209,8 @@ export default function EditarPerfilScreen() {
             </Text>
           </View>
           <Switch
-            trackColor={{ false: "#ccc", true: "#5c4b8a" }}
-            thumbColor={isActive ? "#fff" : "#f4f3f4"}
+            trackColor={{ false: colors.border.default, true: "#5c4b8a" }}
+            thumbColor={isActive ? colors.neutral[0] : "#f4f3f4"}
             onValueChange={() => setIsActive(!isActive)}
             value={isActive}
           />
@@ -247,12 +250,12 @@ export default function EditarPerfilScreen() {
         </ScrollView>
 
         <View style={styles.contenedorBotonesAccion}>
-          <TouchableOpacity style={styles.botonCancelar} onPress={() => router.replace('/(profesionista)/perfil')} disabled={guardando}>
+          <TouchableOpacity style={styles.botonCancelar} onPress={() => router.replace('/(profesionista)/mi-perfil')} disabled={guardando}>
             <Text style={styles.textoBotonCancelar}>{t('cancelar')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={[styles.botonGuardar, guardando && styles.botonDeshabilitado]} onPress={handleGuardar} disabled={guardando}>
-            {guardando ? <ActivityIndicator color="#fff" /> : <Text style={styles.textoBotonGuardar}>{t('guardar')}</Text>}
+            {guardando ? <ActivityIndicator color={colors.neutral[0]} /> : <Text style={styles.textoBotonGuardar}>{t('guardar')}</Text>}
           </TouchableOpacity>
         </View>
 
@@ -262,34 +265,34 @@ export default function EditarPerfilScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  centro: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.neutral[50] },
-  scroll: { flexGrow: 1, backgroundColor: Colors.neutral[50], paddingBottom: Spacing[10] },
+const getStyles = (colors: any) => StyleSheet.create({
+  centro: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.neutral[50] },
+  scroll: { flexGrow: 1, backgroundColor: colors.neutral[50], paddingBottom: Spacing[10] },
   container: { padding: Spacing[5], maxWidth: 800, width: '100%', alignSelf: 'center' },
   botonAtrasInline: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing[4] },
-  flechaAtras: { fontSize: 20, color: Colors.primary[700], fontWeight: 'bold', marginRight: 5 },
-  textoAtrasInline: { ...Typography.styles.body, color: Colors.primary[700], fontWeight: '700' },
-  tituloPrincipal: { ...Typography.styles.h2, fontWeight: 'bold', color: Colors.primary[800], textAlign: 'center', marginBottom: Spacing[5] },
+  flechaAtras: { fontSize: 20, color: colors.primary[700], fontWeight: 'bold', marginRight: 5 },
+  textoAtrasInline: { ...Typography.styles.body, color: colors.primary[700], fontWeight: '700' },
+  tituloPrincipal: { ...Typography.styles.h2, fontWeight: 'bold', color: colors.primary[800], textAlign: 'center', marginBottom: Spacing[5] },
   fotoContainer: { alignSelf: 'center', marginBottom: Spacing[6] },
-  foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: Colors.neutral[200], borderWidth: 2, borderColor: Colors.border.default },
-  switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: Spacing[4], borderRadius: Radius.md, marginBottom: Spacing[5], borderWidth: 1, borderColor: Colors.border.default, ...Shadow.sm },
+  foto: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.neutral[200], borderWidth: 2, borderColor: colors.border.default },
+  switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.neutral[0], padding: Spacing[4], borderRadius: Radius.md, marginBottom: Spacing[5], borderWidth: 1, borderColor: colors.border.default, ...Shadow.sm },
   switchTextos: { flex: 1 },
-  switchTitulo: { ...Typography.styles.body, fontWeight: 'bold', color: Colors.text.primary },
-  switchSubtitulo: { ...Typography.styles.caption, color: Colors.text.secondary, marginTop: 2 },
-  label: { ...Typography.styles.label, fontWeight: 'bold', color: Colors.text.primary, marginBottom: 5, marginTop: Spacing[4] },
-  input: { borderWidth: 1, borderColor: Colors.border.default, padding: Spacing[3], borderRadius: Radius.md, backgroundColor: '#fff', ...Typography.styles.body, ...Shadow.sm },
+  switchTitulo: { ...Typography.styles.body, fontWeight: 'bold', color: colors.text.primary },
+  switchSubtitulo: { ...Typography.styles.caption, color: colors.text.secondary, marginTop: 2 },
+  label: { ...Typography.styles.label, fontWeight: 'bold', color: colors.text.primary, marginBottom: 5, marginTop: Spacing[4] },
+  input: { borderWidth: 1, borderColor: colors.border.default, padding: Spacing[3], borderRadius: Radius.md, backgroundColor: colors.neutral[0], ...Typography.styles.body, ...Shadow.sm },
   textArea: { height: 100, textAlignVertical: 'top' },
   carrusel: { flexDirection: 'row', marginTop: Spacing[2], paddingBottom: Spacing[3] },
   fotoTrabajoBox: { marginRight: Spacing[4], position: 'relative' },
-  fotoTrabajo: { width: 100, height: 100, borderRadius: Radius.md, backgroundColor: Colors.neutral[200], borderWidth: 1, borderColor: Colors.border.default },
-  btnBorrarFoto: { position: 'absolute', top: -5, right: -5, backgroundColor: Colors.error.main, width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center', ...Shadow.sm },
-  txtBorrarFoto: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
-  btnAgregarFoto: { width: 100, height: 100, borderRadius: Radius.md, borderWidth: 2, borderColor: Colors.primary[600], borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.primary[50] },
-  txtAgregarFoto: { color: Colors.primary[700], fontWeight: 'bold', ...Typography.styles.caption, textAlign: 'center' },
+  fotoTrabajo: { width: 100, height: 100, borderRadius: Radius.md, backgroundColor: colors.neutral[200], borderWidth: 1, borderColor: colors.border.default },
+  btnBorrarFoto: { position: 'absolute', top: -5, right: -5, backgroundColor: colors.error.main, width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center', ...Shadow.sm },
+  txtBorrarFoto: { color: colors.neutral[0], fontWeight: 'bold', fontSize: 12 },
+  btnAgregarFoto: { width: 100, height: 100, borderRadius: Radius.md, borderWidth: 2, borderColor: colors.primary[600], borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primary[50] },
+  txtAgregarFoto: { color: colors.primary[700], ...Typography.styles.caption, fontWeight: 'bold', textAlign: 'center' },
   contenedorBotonesAccion: { flexDirection: 'row', justifyContent: 'space-between', marginTop: Spacing[8] },
-  botonCancelar: { flex: 1, backgroundColor: Colors.neutral[200], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginRight: Spacing[2], ...Shadow.sm },
-  textoBotonCancelar: { color: Colors.text.primary, fontWeight: 'bold', ...Typography.styles.btn },
-  botonGuardar: { flex: 1, backgroundColor: Colors.primary[600], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginLeft: Spacing[2], ...Shadow.brand },
-  botonDeshabilitado: { backgroundColor: Colors.text.disabled },
-  textoBotonGuardar: { color: '#fff', fontWeight: 'bold', ...Typography.styles.btn }
+  botonCancelar: { flex: 1, backgroundColor: colors.neutral[200], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginRight: Spacing[2], ...Shadow.sm },
+  textoBotonCancelar: { color: colors.text.primary, ...Typography.styles.btn, fontWeight: 'bold' },
+  botonGuardar: { flex: 1, backgroundColor: colors.primary[600], padding: Spacing[4], borderRadius: Radius.button, alignItems: 'center', marginLeft: Spacing[2], ...Shadow.brand },
+  botonDeshabilitado: { backgroundColor: colors.text.disabled },
+  textoBotonGuardar: { color: colors.neutral[0], ...Typography.styles.btn, fontWeight: 'bold' }
 });

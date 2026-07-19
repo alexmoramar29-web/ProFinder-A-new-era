@@ -8,8 +8,11 @@ import NavbarCliente from '../../../components/NavbarCliente';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function ServiciosClienteScreen() {
+  const { isDark, colors } = useTheme();
+  const styles = getStyles(colors);
   const { t } = useTranslation();
   const [pestañaActiva, setPestañaActiva] = useState<'pendientes' | 'proximas' | 'historial'>('pendientes');
   const [citas, setCitas] = useState<any[]>([]);
@@ -175,10 +178,10 @@ export default function ServiciosClienteScreen() {
           </View>
 
           {cargando ? (
-            <ActivityIndicator size="large" color={Colors.primary[600]} style={{ marginTop: 40 }} />
+            <ActivityIndicator size="large" color={colors.primary[600]} style={{ marginTop: 40 }} />
           ) : citas.length === 0 ? (
             <View style={styles.emptyBox}>
-              <Ionicons name="calendar-outline" size={48} color={Colors.text.disabled} />
+              <Ionicons name="calendar-outline" size={48} color={colors.text.disabled} />
               <Text style={styles.emptyTxt}>{t('No tienes citas en esta sección.')}</Text>
             </View>
           ) : (
@@ -218,18 +221,18 @@ export default function ServiciosClienteScreen() {
 
                     <View style={styles.detallesRow}>
                       <View style={styles.detalleItem}>
-                        <Ionicons name="calendar" size={16} color={Colors.text.secondary} />
+                        <Ionicons name="calendar" size={16} color={colors.text.secondary} />
                         <Text style={styles.detalleTxt}>{fechaFormat.charAt(0).toUpperCase() + fechaFormat.slice(1)}</Text>
                       </View>
                       <View style={styles.detalleItem}>
-                        <Ionicons name="time" size={16} color={Colors.text.secondary} />
+                        <Ionicons name="time" size={16} color={colors.text.secondary} />
                         <Text style={styles.detalleTxt}>{cita.appointment_time.substring(0, 5)} hrs</Text>
                       </View>
                     </View>
 
                     {pestañaActiva === 'proximas' && (
                       <View style={styles.contadorCaja}>
-                        <Ionicons name="timer-outline" size={20} color={Colors.primary[700]} />
+                        <Ionicons name="timer-outline" size={20} color={colors.primary[700]} />
                         <Text style={styles.contadorTxt}>
                           {calcularTiempoRestante(cita.appointment_date, cita.appointment_time)}
                         </Text>
@@ -239,7 +242,7 @@ export default function ServiciosClienteScreen() {
                     {pestañaActiva === 'historial' && (
                       yaReseñado ? (
                         <View style={styles.reseñaHechaBox}>
-                          <Ionicons name="checkmark-circle" size={18} color={Colors.success.main} />
+                          <Ionicons name="checkmark-circle" size={18} color={colors.success.main} />
                           <Text style={styles.reseñaHechaTxt}>{t('Reseña ya hecha')}</Text>
                         </View>
                       ) : (
@@ -252,7 +255,7 @@ export default function ServiciosClienteScreen() {
                             setModalReseña({ visible: true, cita });
                           }}
                         >
-                          <Ionicons name="star" size={18} color="#fff" />
+                          <Ionicons name="star" size={18} color={colors.neutral[0]} />
                           <Text style={styles.reseñaBtnTxt}>{t('Dejar una Reseña')}</Text>
                         </TouchableOpacity>
                       )
@@ -280,7 +283,7 @@ export default function ServiciosClienteScreen() {
                     style={{ position: 'absolute' }}
                     name={estrellas >= num ? 'star' : (estrellas >= num - 0.5 ? 'star-half-o' : 'star-o')} 
                     size={40} 
-                    color={estrellas >= num - 0.5 ? Colors.primary[600] : Colors.text.disabled} 
+                    color={estrellas >= num - 0.5 ? colors.primary[600] : colors.text.disabled} 
                   />
                   <View style={{ flexDirection: 'row', width: '100%', height: '100%' }}>
                     <TouchableOpacity
@@ -297,7 +300,7 @@ export default function ServiciosClienteScreen() {
             </View>
 
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.primary[600] }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: colors.primary[600] }}>
                 {estrellas > 0 ? `${estrellas} ${t('Estrellas')}` : t('Toca para calificar')}
               </Text>
             </View>
@@ -328,13 +331,13 @@ export default function ServiciosClienteScreen() {
                 style={[
                   styles.modalBtnGuardar, 
                   guardandoReseña && { opacity: 0.7 },
-                  confirmandoReseña && { backgroundColor: Colors.warning.main }
+                  confirmandoReseña && { backgroundColor: colors.warning.main }
                 ]} 
                 onPress={guardarReseña}
                 disabled={guardandoReseña}
               >
                 {guardandoReseña ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={colors.neutral[0]} />
                 ) : confirmandoReseña ? (
                   <Text style={styles.modalTxtGuardar}>{t('¿Estás seguro?')}</Text>
                 ) : (
@@ -349,7 +352,7 @@ export default function ServiciosClienteScreen() {
       {/* Toast */}
       {mensajeUI && (
         <View style={[styles.mensajeToast, mensajeUI.tipo === 'exito' ? styles.toastExito : styles.toastError]}>
-          <Ionicons name={mensajeUI.tipo === 'exito' ? 'checkmark-circle' : 'warning'} size={24} color="#fff" />
+          <Ionicons name={mensajeUI.tipo === 'exito' ? 'checkmark-circle' : 'warning'} size={24} color={colors.neutral[0]} />
           <Text style={styles.mensajeToastTxt}>{mensajeUI.texto}</Text>
         </View>
       )}
@@ -358,69 +361,69 @@ export default function ServiciosClienteScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.neutral[50] },
+const getStyles = (colors: any) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.neutral[50] },
   scroll: { padding: Spacing[4] },
   container: { maxWidth: 800, width: '100%', alignSelf: 'center', padding: Spacing[4] },
   
-  title: { ...Typography.styles.h2, color: Colors.primary[800], marginBottom: 2 },
-  subtitle: { ...Typography.styles.body, color: Colors.text.secondary, marginBottom: Spacing[6] },
+  title: { ...Typography.styles.h2, color: colors.primary[800], marginBottom: 2 },
+  subtitle: { ...Typography.styles.body, color: colors.text.secondary, marginBottom: Spacing[6] },
 
   tabsContainer: { flexDirection: 'row', backgroundColor: '#e5e7eb', borderRadius: 8, padding: 4, marginBottom: Spacing[6] },
   tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 6 },
-  tabActiva: { backgroundColor: '#fff', ...Shadow.sm },
-  tabTxt: { ...Typography.styles.body, color: Colors.text.secondary, fontWeight: '500' },
-  tabTxtActiva: { color: Colors.primary[700], fontWeight: 'bold' },
+  tabActiva: { backgroundColor: colors.neutral[0], ...Shadow.sm },
+  tabTxt: { ...Typography.styles.body, color: colors.text.secondary, fontWeight: '500' },
+  tabTxtActiva: { color: colors.primary[700], fontWeight: 'bold' },
 
   emptyBox: { alignItems: 'center', marginTop: 60, gap: 10 },
-  emptyTxt: { ...Typography.styles.body, color: Colors.text.disabled },
+  emptyTxt: { ...Typography.styles.body, color: colors.text.disabled },
 
   lista: { gap: Spacing[4] },
-  tarjeta: { backgroundColor: '#fff', borderRadius: Radius.card, padding: Spacing[5], ...Shadow.md, borderWidth: 1, borderColor: Colors.border.default },
+  tarjeta: { backgroundColor: colors.neutral[0], borderRadius: Radius.card, padding: Spacing[5], ...Shadow.md, borderWidth: 1, borderColor: colors.border.default },
   
   tarjetaCabecera: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  tarjetaTitulo: { ...Typography.styles.h4, color: Colors.text.primary, flex: 1 },
+  tarjetaTitulo: { ...Typography.styles.h4, color: colors.text.primary, flex: 1 },
   
-  profTxt: { ...Typography.styles.body, color: Colors.primary[600], fontWeight: '500', marginBottom: Spacing[4] },
+  profTxt: { ...Typography.styles.body, color: colors.primary[600], fontWeight: '500', marginBottom: Spacing[4] },
 
   detallesRow: { flexDirection: 'row', gap: Spacing[4], flexWrap: 'wrap', marginBottom: Spacing[2] },
   detalleItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  detalleTxt: { ...Typography.styles.bodySm, color: Colors.text.secondary },
+  detalleTxt: { ...Typography.styles.bodySm, color: colors.text.secondary },
 
-  badgePendiente: { backgroundColor: Colors.neutral[200], paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
-  badgeTxtPendiente: { fontSize: 10, fontWeight: 'bold', color: Colors.text.secondary },
+  badgePendiente: { backgroundColor: colors.neutral[200], paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
+  badgeTxtPendiente: { fontSize: 10, fontWeight: 'bold', color: colors.text.secondary },
 
-  badgeEnCurso: { backgroundColor: Colors.success.main, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
-  badgeTxtEnCurso: { fontSize: 10, fontWeight: 'bold', color: '#fff' },
+  badgeEnCurso: { backgroundColor: colors.success.main, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
+  badgeTxtEnCurso: { fontSize: 10, fontWeight: 'bold', color: colors.neutral[0] },
 
-  badgeFinalizado: { backgroundColor: Colors.neutral[600], paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
-  badgeTxtFinalizado: { fontSize: 10, fontWeight: 'bold', color: '#fff' },
+  badgeFinalizado: { backgroundColor: colors.neutral[600], paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
+  badgeTxtFinalizado: { fontSize: 10, fontWeight: 'bold', color: colors.neutral[0] },
 
-  contadorCaja: { marginTop: Spacing[4], backgroundColor: Colors.primary[50], padding: Spacing[3], borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: Colors.primary[200] },
-  contadorTxt: { ...Typography.styles.body, color: Colors.primary[800], fontWeight: '600' },
+  contadorCaja: { marginTop: Spacing[4], backgroundColor: colors.primary[50], padding: Spacing[3], borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: colors.primary[200] },
+  contadorTxt: { ...Typography.styles.body, color: colors.primary[800], fontWeight: '600' },
 
-  reseñaBtn: { marginTop: Spacing[4], backgroundColor: Colors.primary[600], padding: Spacing[3], borderRadius: 8, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, ...Shadow.sm },
-  reseñaBtnTxt: { ...Typography.styles.btn, color: '#fff', fontSize: 15 },
+  reseñaBtn: { marginTop: Spacing[4], backgroundColor: colors.primary[600], padding: Spacing[3], borderRadius: 8, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, ...Shadow.sm },
+  reseñaBtnTxt: { ...Typography.styles.btn, color: colors.neutral[0], fontSize: 15 },
 
-  reseñaHechaBox: { marginTop: Spacing[4], backgroundColor: Colors.neutral[100], padding: Spacing[3], borderRadius: 8, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
-  reseñaHechaTxt: { ...Typography.styles.body, color: Colors.success.main, fontWeight: 'bold' },
+  reseñaHechaBox: { marginTop: Spacing[4], backgroundColor: colors.neutral[100], padding: Spacing[3], borderRadius: 8, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
+  reseñaHechaTxt: { ...Typography.styles.body, color: colors.success.main, fontWeight: 'bold' },
 
   modalFondo: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-  modalCaja: { backgroundColor: '#fff', padding: 24, borderRadius: 16, width: '90%', maxWidth: 400, ...Shadow.md },
-  modalTitulo: { ...Typography.styles.h4, color: Colors.text.primary, textAlign: 'center', marginBottom: 4 },
-  modalSub: { ...Typography.styles.bodySm, color: Colors.text.secondary, textAlign: 'center', marginBottom: 20 },
+  modalCaja: { backgroundColor: colors.neutral[0], padding: 24, borderRadius: 16, width: '90%', maxWidth: 400, ...Shadow.md },
+  modalTitulo: { ...Typography.styles.h4, color: colors.text.primary, textAlign: 'center', marginBottom: 4 },
+  modalSub: { ...Typography.styles.bodySm, color: colors.text.secondary, textAlign: 'center', marginBottom: 20 },
   estrellasCaja: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginBottom: 8 },
-  calificacionTexto: { textAlign: 'center', ...Typography.styles.body, fontWeight: 'bold', color: Colors.primary[700], marginBottom: 24 },
-  inputLabel: { ...Typography.styles.bodySm, fontWeight: 'bold', color: Colors.text.primary, marginBottom: 8 },
-  inputComentario: { borderWidth: 1, borderColor: Colors.border.default, borderRadius: 8, padding: 12, minHeight: 80, ...Typography.styles.body, backgroundColor: Colors.neutral[50], marginBottom: 24 },
+  calificacionTexto: { textAlign: 'center', ...Typography.styles.body, fontWeight: 'bold', color: colors.primary[700], marginBottom: 24 },
+  inputLabel: { ...Typography.styles.bodySm, fontWeight: 'bold', color: colors.text.primary, marginBottom: 8 },
+  inputComentario: { borderWidth: 1, borderColor: colors.border.default, borderRadius: 8, padding: 12, minHeight: 80, ...Typography.styles.body, backgroundColor: colors.neutral[50], marginBottom: 24, color: colors.text.primary },
   modalBotones: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12 },
-  modalBtnCancelar: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: Colors.neutral[100] },
-  modalTxtCancelar: { color: Colors.text.secondary, fontWeight: 'bold' },
-  modalBtnGuardar: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: Colors.primary[600] },
-  modalTxtGuardar: { color: '#fff', fontWeight: 'bold' },
+  modalBtnCancelar: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: colors.neutral[100] },
+  modalTxtCancelar: { color: colors.text.secondary, fontWeight: 'bold' },
+  modalBtnGuardar: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: colors.primary[600] },
+  modalTxtGuardar: { color: colors.neutral[0], fontWeight: 'bold' },
 
   mensajeToast: { position: 'absolute', bottom: 40, left: 20, right: 20, padding: 15, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 10, elevation: 5, zIndex: 999 },
-  toastExito: { backgroundColor: Colors.success.main },
-  toastError: { backgroundColor: Colors.error.main },
-  mensajeToastTxt: { color: '#fff', fontWeight: 'bold', fontSize: 14, flex: 1 }
+  toastExito: { backgroundColor: colors.success.main },
+  toastError: { backgroundColor: colors.error.main },
+  mensajeToastTxt: { color: colors.neutral[0], fontWeight: 'bold', fontSize: 14, flex: 1 }
 });
