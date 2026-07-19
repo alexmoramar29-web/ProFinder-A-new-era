@@ -106,7 +106,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const colors = isDark ? (DarkColors as typeof Colors) : Colors;
+  const colors = isDark ? (DarkColors as unknown as typeof Colors) : Colors;
 
   return (
     <ThemeContext.Provider value={{ isDark, toggleTheme, colors }}>

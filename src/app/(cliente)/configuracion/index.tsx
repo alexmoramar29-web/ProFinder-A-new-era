@@ -4,6 +4,7 @@ import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, Modal, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
+import { useTheme } from '../../../context/ThemeContext';
 import NavbarCliente from '../../../components/NavbarCliente';
 
 export default function ConfiguracionScreen() {
@@ -11,8 +12,9 @@ export default function ConfiguracionScreen() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [modoOscuro, setModoOscuro] = useState(false);
-  const [notificaciones, setNotificaciones] = useState(true);
+  const { isDark, toggleTheme, colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+  
 
   const cargarFotoPerfil = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -49,7 +51,7 @@ export default function ConfiguracionScreen() {
         <View style={styles.bloqueAjustes}>
           <View style={[styles.filaAjuste, styles.lineaDivisora]}>
             <Text style={styles.textoFila}>{t('modoOscuro')}</Text>
-            <Switch value={modoOscuro} onValueChange={setModoOscuro} trackColor={{ false: '#E5E5EA', true: '#5c4b8a' }} thumbColor={'#FFFFFF'} />
+            <Switch value={isDark} onValueChange={toggleTheme} trackColor={{ false: '#E5E5EA', true: '#5c4b8a' }} thumbColor={isDark ? colors.primary[600] : '#FFFFFF'} />
           </View>
           <TouchableOpacity style={styles.filaAjuste} onPress={async () => { const lang = i18n.language === 'en' ? 'es' : 'en'; await AsyncStorage.setItem('user-language', lang); i18n.changeLanguage(lang); }}>
             <Text style={styles.textoFila}>{t('idiomaAplicacion')}</Text>
@@ -63,10 +65,7 @@ export default function ConfiguracionScreen() {
             <Text style={styles.textoFila}>{t('cambiarContrasenaBtn')}</Text>
             <Text style={styles.flecha}>❯</Text>
           </TouchableOpacity>
-          <View style={styles.filaAjuste}>
-            <Text style={styles.textoFila}>{t('notificacionesPush')}</Text>
-            <Switch value={notificaciones} onValueChange={setNotificaciones} trackColor={{ false: '#E5E5EA', true: '#5c4b8a' }} />
-          </View>
+          
         </View>
 
         <Text style={styles.tituloBloque}>{t('acercaDe')}</Text>
@@ -85,26 +84,26 @@ export default function ConfiguracionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAFAFC' },
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background.app },
   navbar: { height: 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, backgroundColor: '#5c4b8a' },
   navbarTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff', textAlign: 'left' },
   rightHeaderContainer: { flexDirection: 'row', alignItems: 'center' },
   profileCircle: { width: 38, height: 38, borderRadius: 19, borderWidth: 2, borderColor: '#fff' },
   modalContainer: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end' },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' },
-  sideMenu: { width: 220, backgroundColor: '#fff', padding: 20, paddingTop: 60, elevation: 10 },
+  sideMenu: { width: 220, backgroundColor: colors.background.card, padding: 20, paddingTop: 60, elevation: 10 },
   menuItem: { paddingVertical: 10 },
-  menuText: { fontSize: 16, color: '#333' },
+  menuText: { fontSize: 16, color: colors.text.primary },
   scroll: { padding: 20 },
   cabecera: { marginBottom: 25 },
-  tituloSeccion: { fontSize: 28, fontWeight: '800', color: '#1C1C1E' },
-  subtituloSeccion: { fontSize: 15, color: '#8E8E93', marginTop: 5 },
-  tituloBloque: { fontSize: 14, fontWeight: '600', color: '#8E8E93', marginTop: 20, marginBottom: 10, paddingHorizontal: 10, textTransform: 'uppercase' },
-  bloqueAjustes: { backgroundColor: '#FFFFFF', borderRadius: 12, overflow: 'hidden' },
-  filaAjuste: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 15, paddingHorizontal: 20, backgroundColor: '#FFFFFF' },
-  lineaDivisora: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#C6C6C8' },
-  textoFila: { fontSize: 17, color: '#1C1C1E', fontWeight: '400' },
-  textoSecundario: { fontSize: 17, color: '#8E8E93' },
-  flecha: { fontSize: 18, color: '#C6C6C8' },
+  tituloSeccion: { fontSize: 28, fontWeight: '800', color: colors.text.primary },
+  subtituloSeccion: { fontSize: 15, color: colors.text.secondary, marginTop: 5 },
+  tituloBloque: { fontSize: 14, fontWeight: '600', color: colors.text.secondary, marginTop: 20, marginBottom: 10, paddingHorizontal: 10, textTransform: 'uppercase' },
+  bloqueAjustes: { backgroundColor: colors.background.card, borderRadius: 12, overflow: 'hidden' },
+  filaAjuste: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 15, paddingHorizontal: 20, backgroundColor: colors.background.card },
+  lineaDivisora: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border.default },
+  textoFila: { fontSize: 17, color: colors.text.primary, fontWeight: '400' },
+  textoSecundario: { fontSize: 17, color: colors.text.secondary },
+  flecha: { fontSize: 18, color: colors.text.disabled },
 });

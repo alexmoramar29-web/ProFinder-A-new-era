@@ -1,3 +1,4 @@
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerActions } from '@react-navigation/native';
 import { useNavigation, usePathname, useRouter } from 'expo-router';
@@ -6,7 +7,6 @@ import { useTranslation } from 'react-i18next';
 import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNotifications } from '../context/NotificationContext';
-import { useTheme } from '@/context/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { Colors } from '../theme/Colors';
 import { Shadow, Spacing } from '../theme/Spacing';
