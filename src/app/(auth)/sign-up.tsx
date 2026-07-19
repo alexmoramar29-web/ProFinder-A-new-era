@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import ConfirmHcaptcha from '@hcaptcha/react-native-hcaptcha';
 import { Picker } from '@react-native-picker/picker';
+import { StatusBar } from 'expo-status-bar';
 import { decode } from 'base64-arraybuffer';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
@@ -142,6 +143,7 @@ export default function SignUpScreen() {
 
   return (
     <LinearGradient colors={['#ffffff', '#ede9fe', '#7c3aed']} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={styles.fondo}>
+      <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Botón volver */}
         <TouchableOpacity style={styles.volverBtn} onPress={() => router.replace('/(auth)/landing')}>
@@ -164,14 +166,14 @@ export default function SignUpScreen() {
               onPress={() => setRol('cliente')} disabled={cargando}
             >
               <Ionicons name="person-outline" size={16} color={esCliente ? '#fff' : Colors.text.secondary} />
-              <Text style={[styles.rolTabTxt, esCliente && styles.rolTabTxtActive]}>{t('soyCliente')}</Text>
+              <Text style={[styles.rolTabTxt, esCliente && styles.rolTabTxtActive]} numberOfLines={1} adjustsFontSizeToFit>{t('soyCliente')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.rolTab, !esCliente && styles.rolTabActive]}
               onPress={() => setRol('profesionista')} disabled={cargando}
             >
               <Ionicons name="briefcase-outline" size={16} color={!esCliente ? '#fff' : Colors.text.secondary} />
-              <Text style={[styles.rolTabTxt, !esCliente && styles.rolTabTxtActive]}>{t('soyProfesionista')}</Text>
+              <Text style={[styles.rolTabTxt, !esCliente && styles.rolTabTxtActive]} numberOfLines={1} adjustsFontSizeToFit>{t('soyProfesionista')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -360,7 +362,7 @@ export default function SignUpScreen() {
           )}
         </View>
 
-        <Text style={styles.footer}>{t('footerText', '© 2024 ProFinder. Conectando visionarios con expertos.')}</Text>
+        <Text style={styles.footer}>{t('footerText', '© 2026 ProFinder. Conectando visionarios con expertos.')}</Text>
       </ScrollView>
 
       {/* Modal de Textos Legales movido fuera del ScrollView para que sea fijo */}
@@ -388,7 +390,7 @@ const styles = StyleSheet.create({
   volverBtn: { position: 'absolute', top: 48, left: 20, backgroundColor: 'rgba(255,255,255,0.85)', padding: 8, borderRadius: Radius.full, zIndex: 10, ...Shadow.sm },
 
   // Cabecera fuera del card
-  header:     { alignItems: 'center', marginBottom: Spacing[5] },
+  header:     { alignItems: 'center', marginBottom: Spacing[5], marginTop: 60 },
   headerTitle:{ ...Typography.styles.h2, color: Colors.neutral[900], textAlign: 'center' },
   headerSub:  { ...Typography.styles.body, color: Colors.neutral[600], marginTop: 4 },
 
@@ -409,7 +411,7 @@ const styles = StyleSheet.create({
 
   // Selector de rol
   rolSelector:     { flexDirection: 'row', backgroundColor: Colors.neutral[100], borderRadius: Radius.md, padding: 4, gap: 4, marginBottom: Spacing[5] },
-  rolTab:          { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: Radius.sm, gap: 6 },
+  rolTab:          { flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: Radius.sm, gap: 4 },
   rolTabActive:    { backgroundColor: Colors.primary[600], ...Shadow.sm },
   rolTabTxt:       { ...Typography.styles.btn, color: Colors.text.secondary, fontSize: 13 },
   rolTabTxtActive: { color: '#fff' },
@@ -422,9 +424,8 @@ const styles = StyleSheet.create({
   input:       { flex: 1, paddingHorizontal: 8, paddingVertical: 10, ...Typography.styles.body, color: Colors.text.primary },
   eyeBtn:      { paddingRight: 12 },
 
-  // Picker
   pickerWrap: { borderWidth: 1.5, borderColor: Colors.border.default, borderRadius: Radius.input, backgroundColor: '#fff', overflow: 'hidden' },
-  picker:     { height: 44, color: Colors.text.primary },
+  picker:     { height: 60, color: Colors.text.primary, justifyContent: 'center', transform: [{ translateY: -4 }] },
 
   // Documentos
   docsSection:      { marginBottom: Spacing[4] },

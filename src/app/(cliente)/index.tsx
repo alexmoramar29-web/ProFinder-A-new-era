@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions, Modal, TouchableOpacity, Platform } from 'react-native';
 import NavbarCliente from '../../components/NavbarCliente';
 import MapaWeb from '../../components/shared/MapaWeb';
@@ -27,6 +27,19 @@ export default function ClienteDashboard() {
   const [ubicacion, setUbicacion] = useState('');
   const [ratingMin, setRatingMin] = useState('');
   const [distanciaMax, setDistanciaMax] = useState('');
+  const [profesionFiltro, setProfesionFiltro] = useState('');
+  const [modalProfesion, setModalProfesion] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
+  const desktopBtnRef = useRef<View>(null);
+  const mobileBtnRef = useRef<View>(null);
+
+  const openDropdown = (ref: React.RefObject<View>) => {
+    ref.current?.measure((fx, fy, width, height, px, py) => {
+      setDropdownPos({ top: py + height + 4, left: px, width });
+      setModalProfesion(true);
+    });
+  };
+
   const [soloVerificados, setSoloVerificados] = useState(false);
   const [buscado, setBuscado] = useState(false);
   const [resultados, setResultados] = useState<any[]>([]);
@@ -35,6 +48,18 @@ export default function ClienteDashboard() {
   const [userId, setUserId] = useState<string | null>(null);
   const [miUbicacion, setMiUbicacion] = useState<any>(null);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+
+  const PROFESIONES = [
+    { label: 'Todas las profesiones', value: '' },
+    { label: 'Doctor', value: 'Doctor' },
+    { label: 'Abogado', value: 'Abogado' },
+    { label: 'Dentista', value: 'Dentista' },
+    { label: 'Ingeniero en Sistemas (Hardware)', value: 'Ingeniero en Sistemas Hardware' },
+    { label: 'Ingeniero en Sistemas (Software)', value: 'Ingeniero en Sistemas Software' },
+    { label: 'Ingeniero Civil', value: 'Ingeniero Civil' },
+    { label: 'Arquitecto', value: 'Arquitecto' },
+    { label: 'Otro', value: 'Otro' },
+  ];
 
   useEffect(() => {
     (async () => {
@@ -54,7 +79,7 @@ export default function ClienteDashboard() {
     try {
       setCargando(true);
       setBuscado(true);
-      let query = supabase.from('professionals').select('*, services(reviews(rating))');
+      let query = supabase.from('professionals').select('*, services(reviews(rating))').eq('is_active', true);
 
       if (termino.trim()) {
         const terminoLower = termino.toLowerCase().trim();
@@ -101,6 +126,20 @@ export default function ClienteDashboard() {
     };
     initData();
   }, []);
+
+  const isFirstMount = useRef(true);
+
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    const delayDebounceFn = setTimeout(() => {
+      buscarProfesionales(busqueda);
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [busqueda]);
 
   const alternarFavorito = async (profId: string) => {
     if (!userId) return;
@@ -168,6 +207,14 @@ export default function ClienteDashboard() {
     if (ratingMin === '2+' && prof.avgRating < 2) return false;
     if (ratingMin === '1+' && prof.avgRating < 1) return false;
 
+    if (profesionFiltro.trim()) {
+      const pNorm = profesionFiltro.toLowerCase().trim();
+      const specNorm = (prof.speciality || '').toLowerCase();
+      if (!specNorm.includes(pNorm)) {
+        return false;
+      }
+    }
+
     if (soloVerificados) {
       const estado = (prof.verification_status || '').toLowerCase();
       const esAprobado = estado === 'verificado' || estado === 'aprobado' || estado === 'perfil aprobado';
@@ -231,7 +278,7 @@ export default function ClienteDashboard() {
             <View style={styles.searchInputRow}>
               <Ionicons name="search" size={22} color={Colors.primary[600]} />
               <TextInput
-                placeholder={t('¿Qué servicio buscas? Ej. Plomero, Electricista')}
+                placeholder={t('¿Qué especialista buscas? Ej. Arquitecto, Abogado')}
                 placeholderTextColor={Colors.text.disabled}
                 style={styles.searchInput}
                 value={busqueda}
@@ -254,6 +301,12 @@ export default function ClienteDashboard() {
           {isMobile ? (
             <View style={styles.mobileFiltersWrapper}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.mobileFiltersScroll}>
+                <Pressable ref={mobileBtnRef as any} style={styles.locBoxMobile} onPress={() => openDropdown(mobileBtnRef)}>
+                  <Ionicons name="briefcase-outline" size={18} color={Colors.primary[600]} />
+                  <Text style={[styles.locInputMobile, !profesionFiltro && { color: Colors.text.disabled }]}>
+                    {t(PROFESIONES.find(p => p.value === profesionFiltro)?.label || 'Profesión')}
+                  </Text>
+                </Pressable>
                 <View style={styles.locBoxMobile}>
                   <Ionicons name="location-outline" size={18} color={Colors.primary[600]} />
                   <TextInput
@@ -284,7 +337,7 @@ export default function ClienteDashboard() {
                     <Text style={[styles.ratingChipTxtMobile, ratingMin === r && styles.ratingChipTxtOnMobile]}>{r}★</Text>
                   </Pressable>
                 ))}
-                <Pressable onPress={() => { setRatingMin(''); setUbicacion(''); setDistanciaMax(''); setSoloVerificados(false); buscarProfesionales(busqueda); }} style={styles.filterResetBtnMobile}>
+                <Pressable onPress={() => { setRatingMin(''); setUbicacion(''); setDistanciaMax(''); setProfesionFiltro(''); setSoloVerificados(false); buscarProfesionales(busqueda); }} style={styles.filterResetBtnMobile}>
                    <Text style={styles.filterResetTxtMobile}>{t('Limpiar')}</Text>
                 </Pressable>
               </ScrollView>
@@ -293,8 +346,19 @@ export default function ClienteDashboard() {
             <View style={[styles.filtersPanel, { width: 280 }]}>
               <View style={styles.filterHeader}>
                 <Text style={styles.filterTitle}>{t('Filtros')}</Text>
-                <Pressable onPress={() => { setRatingMin(''); setUbicacion(''); setDistanciaMax(''); setSoloVerificados(false); buscarProfesionales(busqueda); }}>
+                <Pressable onPress={() => { setRatingMin(''); setUbicacion(''); setDistanciaMax(''); setProfesionFiltro(''); setSoloVerificados(false); buscarProfesionales(busqueda); }}>
                   <Text style={styles.filterReset}>{t('Limpiar')}</Text>
+                </Pressable>
+              </View>
+
+              <View style={styles.filterGroup}>
+                <Text style={styles.filterLabel}>{t('PROFESIÓN')}</Text>
+                <Pressable ref={desktopBtnRef as any} style={styles.locBox} onPress={() => openDropdown(desktopBtnRef)}>
+                  <Ionicons name="briefcase-outline" size={16} color={Colors.primary[600]} />
+                  <Text style={[styles.locInput, { flex: 1 }, !profesionFiltro && { color: Colors.text.disabled }]}>
+                    {t(PROFESIONES.find(p => p.value === profesionFiltro)?.label || 'Todas las profesiones')}
+                  </Text>
+                  <Ionicons name="chevron-down" size={14} color={Colors.text.disabled} />
                 </Pressable>
               </View>
 
@@ -497,7 +561,7 @@ export default function ClienteDashboard() {
               <Pressable key={l}><Text style={styles.footerLink}>{l}</Text></Pressable>
             ))}
           </View>
-          <Text style={styles.footerCopy}>{t('© 2024 ProFinder.')}</Text>
+          <Text style={styles.footerCopy}>{t('© 2026 ProFinder.')}</Text>
         </View>
       </ScrollView>
 
@@ -526,6 +590,50 @@ export default function ClienteDashboard() {
             </View>
           </View>
         </View>
+      </Modal>
+
+      {/* ── DROPDOWN PROFESIONES ── */}
+      <Modal visible={modalProfesion} transparent={true} animationType="none" onRequestClose={() => setModalProfesion(false)}>
+        <Pressable style={{ flex: 1 }} onPress={() => setModalProfesion(false)}>
+          <View style={{
+            position: 'absolute',
+            top: dropdownPos.top,
+            left: dropdownPos.left,
+            width: Math.max(dropdownPos.width, 220),
+            maxHeight: 300,
+            backgroundColor: '#fff',
+            borderRadius: 12,
+            ...Shadow.lg,
+            zIndex: 1000,
+            overflow: 'hidden',
+            borderWidth: 1,
+            borderColor: Colors.border.default
+          }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 6 }}>
+              {PROFESIONES.map((prof, idx) => {
+                const isActive = profesionFiltro === prof.value;
+                return (
+                  <TouchableOpacity
+                    key={idx}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                      paddingVertical: 10, paddingHorizontal: 12,
+                      borderRadius: 8,
+                      backgroundColor: isActive ? Colors.primary[50] : 'transparent',
+                      marginBottom: 2
+                    }}
+                    onPress={() => { setProfesionFiltro(prof.value); setModalProfesion(false); }}
+                  >
+                    <Text style={{ ...Typography.styles.body, fontSize: 14, color: isActive ? Colors.primary[700] : Colors.text.primary, fontWeight: isActive ? '600' : '400' }}>
+                      {t(prof.label)}
+                    </Text>
+                    {isActive && <Ionicons name="checkmark" size={16} color={Colors.primary[600]} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </Pressable>
       </Modal>
     </View>
   );

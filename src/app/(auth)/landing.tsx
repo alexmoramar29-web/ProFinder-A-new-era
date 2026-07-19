@@ -4,7 +4,11 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import i18n from '../../i18n';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Dimensions,
   Image,
@@ -13,18 +17,40 @@ import {
   StyleSheet,
   Text,
   View,
+  Linking,
+  Modal,
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { Colors } from '../../theme/Colors';
 import { Radius, Shadow, Spacing } from '../../theme/Spacing';
 import { Typography } from '../../theme/Typography';
 
-const { width: SCREEN_W } = Dimensions.get('window');
-const IS_MOBILE = SCREEN_W < 768;
+const { width: INITIAL_WIDTH } = Dimensions.get('window');
+const INITIAL_IS_MOBILE = INITIAL_WIDTH < 900;
 
 export default function LandingScreen() {
+  const { width: SCREEN_W } = useWindowDimensions();
+  const IS_MOBILE = SCREEN_W < 768;
+  const HIDE_NAV_LINKS = SCREEN_W < 1050;
+  const CENTER_PROS = SCREEN_W >= 1280;
+  const styles = React.useMemo(() => getStyles(IS_MOBILE), [IS_MOBILE]);
+
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const router    = useRouter();
   const scrollRef = useRef<ScrollView>(null);
+  const [howItWorksY, setHowItWorksY] = useState(0);
+  const [prosY, setProsY] = useState(0);
+  const [featuresY, setFeaturesY] = useState(0);
+  const [infoY, setInfoY] = useState(0);
+
+  const cambiarIdioma = async () => {
+    const nuevoIdioma = i18n.language === 'es' ? 'en' : 'es';
+    await i18n.changeLanguage(nuevoIdioma);
+    await AsyncStorage.setItem('user-language', nuevoIdioma);
+  };
 
   // ── Guardián de sesión inteligente ─────────────────────────
   useEffect(() => {
@@ -37,9 +63,15 @@ export default function LandingScreen() {
 
       const pendingPortal = await AsyncStorage.getItem('pending_oauth_portal');
       if (pendingPortal) {
-        // Están a mitad de un flujo OAuth. No interrumpir, enviarlos a sign-in.
-        router.replace('/(auth)/sign-in');
-        return;
+        if (Platform.OS === 'web') {
+          // Están a mitad de un flujo OAuth en web. No interrumpir, enviarlos a sign-in.
+          router.replace('/(auth)/sign-in');
+          return;
+        } else {
+          // En móvil, si están en landing es porque cancelaron el in-app browser
+          await AsyncStorage.removeItem('pending_oauth_portal');
+          await AsyncStorage.removeItem('pending_oauth_provider');
+        }
       }
 
       // 1. Si tienen una preferencia explícita y existen en esa base de datos
@@ -107,32 +139,45 @@ export default function LandingScreen() {
       {/* ══════════════════════════════════════════
           NAVBAR
       ══════════════════════════════════════════ */}
-      <View style={styles.navbar}>
-        <Pressable style={styles.navLogo} onPress={() => scrollRef.current?.scrollTo({ y: 0 })}>
+      <View style={{ backgroundColor: Colors.primary[600], paddingTop: Platform.OS === 'web' ? 0 : Math.max(insets.top || 30, 0) }}>
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingVertical: Spacing[3],
+          paddingHorizontal: IS_MOBILE ? Spacing[2] : Spacing[6],
+          flexWrap: 'nowrap'
+        }}>
+          <Pressable style={styles.navLogo} onPress={() => scrollRef.current?.scrollTo({ y: 0 })}>
           <Image
             source={require('../../../assets/images/logo.png')}
-            style={styles.navLogoImg}
+            style={[styles.navLogoImg, IS_MOBILE && { width: 36, height: 36 }]}
             resizeMode="contain"
           />
-          <Text style={styles.navLogoText}>ProFinder</Text>
+          {!IS_MOBILE && <Text style={styles.navLogoText}>ProFinder</Text>}
         </Pressable>
 
-        {!IS_MOBILE && (
+        {!HIDE_NAV_LINKS && (
           <View style={styles.navLinks}>
-            <Pressable onPress={() => router.push('/(cliente)')}><Text style={styles.navLink}>Find Professionals</Text></Pressable>
-            <Pressable><Text style={styles.navLink}>How it works</Text></Pressable>
-            <Pressable><Text style={styles.navLink}>Messages</Text></Pressable>
-            <Pressable><Text style={styles.navLink}>Appointments</Text></Pressable>
+            <Pressable onPress={() => scrollRef.current?.scrollTo({ y: prosY, animated: true })}><Text style={styles.navLink}>{t('Encontrar Profesionistas')}</Text></Pressable>
+            <Pressable onPress={() => scrollRef.current?.scrollTo({ y: howItWorksY, animated: true })}><Text style={styles.navLink}>{t('Cómo funciona')}</Text></Pressable>
+            <Pressable onPress={() => scrollRef.current?.scrollTo({ y: featuresY, animated: true })}><Text style={styles.navLink}>{t('Mensajes')}</Text></Pressable>
+            <Pressable onPress={() => scrollRef.current?.scrollTo({ y: featuresY, animated: true })}><Text style={styles.navLink}>{t('Citas')}</Text></Pressable>
           </View>
         )}
 
-        <View style={styles.navActions}>
-          <Pressable onPress={irALogin} style={styles.navBtnOutline}>
-            <Text style={styles.navBtnOutlineText}>Iniciar sesión</Text>
+        <View style={[styles.navActions, IS_MOBILE && { gap: 2, flexShrink: 1 }]}>
+          <Pressable onPress={cambiarIdioma} style={({ hovered, pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: IS_MOBILE ? 2 : 10, paddingVertical: 8, borderRadius: 8 }, hovered && { backgroundColor: 'rgba(255,255,255,0.1)' }, pressed && { transform: [{ scale: 0.95 }] }] as any}>
+            <Ionicons name="globe-outline" size={IS_MOBILE ? 20 : 20} color="#fff" />
+            {!IS_MOBILE && <Text style={{ fontWeight: 'bold', color: '#fff', fontSize: 15 }}>{i18n.language === 'es' ? 'ES' : 'EN'}</Text>}
           </Pressable>
-          <Pressable onPress={irARegistro} style={styles.navBtnPrimary}>
-            <Text style={styles.navBtnPrimaryText}>Registrarse</Text>
+          <Pressable onPress={irALogin} style={({ hovered, pressed }) => [styles.navBtnOutline, IS_MOBILE && { paddingHorizontal: 6, paddingVertical: 6 }, hovered && { backgroundColor: 'rgba(255,255,255,0.1)' }, pressed && { transform: [{ scale: 0.97 }] }] as any}>
+            <Text style={[styles.navBtnOutlineText, IS_MOBILE && { fontSize: 11 }]} numberOfLines={1} adjustsFontSizeToFit>{t('Iniciar sesión')}</Text>
           </Pressable>
+          <Pressable onPress={irARegistro} style={({ hovered, pressed }) => [styles.navBtnPrimary, IS_MOBILE && { paddingHorizontal: 6, paddingVertical: 6 }, hovered && { opacity: 0.9 }, pressed && { transform: [{ scale: 0.97 }] }] as any}>
+            <Text style={[styles.navBtnPrimaryText, IS_MOBILE && { fontSize: 11 }]} numberOfLines={1} adjustsFontSizeToFit>{t('Registrarse')}</Text>
+          </Pressable>
+        </View>
         </View>
       </View>
 
@@ -143,28 +188,27 @@ export default function LandingScreen() {
         <View style={[styles.heroLeft, IS_MOBILE && styles.heroLeftMobile]}>
           <View style={styles.heroBadge}>
             <Ionicons name="shield-checkmark" size={13} color={Colors.primary[600]} />
-            <Text style={styles.heroBadgeText}>TRUSTED BY 10,000+ PROFESSIONALS</Text>
+            <Text style={styles.heroBadgeText}>{t('ÚNETE A NUESTRA COMUNIDAD PIONERA')}</Text>
           </View>
 
           <Text style={styles.heroTitle}>
-            Find and Book the{'\n'}
-            <Text style={styles.heroTitleAccent}>Right</Text>
-            {' '}Professional{'\n'}
-            for You
+            {t('Encuentra al')}{'\n'}
+            <Text style={styles.heroTitleAccent}>{t('Mejor')}</Text>
+            {' '}{t('Profesionista')}{'\n'}
+            {t('para ti')}
           </Text>
 
           <Text style={styles.heroSubtitle}>
-            Connect with verified experts across tech, design, marketing, and strategy.
-            ProFinder handles the sourcing so you can focus on the interview.
+            {t('Conecta con expertos verificados en tecnología, diseño, mantenimiento y más. ProFinder se encarga de la búsqueda para que tú te enfoques en los resultados.')}
           </Text>
 
           <View style={styles.heroButtons}>
-            <Pressable onPress={irARegistro} style={styles.heroBtnPrimary}>
-              <Text style={styles.heroBtnPrimaryText}>Get Started</Text>
+            <Pressable onPress={irARegistro} style={({ hovered, pressed }) => [styles.heroBtnPrimary, hovered && { opacity: 0.9 }, pressed && { transform: [{ scale: 0.97 }] }] as any}>
+              <Text style={styles.heroBtnPrimaryText}>{t('Comenzar ahora')}</Text>
               <Ionicons name="arrow-forward" size={16} color={Colors.text.inverse} />
             </Pressable>
-            <Pressable style={styles.heroBtnGhost}>
-              <Text style={styles.heroBtnGhostText}>View Showcase</Text>
+            <Pressable onPress={() => scrollRef.current?.scrollTo({ y: prosY, animated: true })} style={({ hovered, pressed }) => [styles.heroBtnGhost, hovered && { backgroundColor: '#F3F4F6' }, pressed && { transform: [{ scale: 0.97 }] }] as any}>
+              <Text style={styles.heroBtnGhostText}>{t('Ver perfiles')}</Text>
             </Pressable>
           </View>
 
@@ -176,7 +220,7 @@ export default function LandingScreen() {
                 </View>
               ))}
             </View>
-            <Text style={styles.socialProofText}>Join our growing community of experts</Text>
+            <Text style={styles.socialProofText}>{t('Forma parte de nuestros primeros expertos')}</Text>
           </View>
         </View>
 
@@ -201,11 +245,11 @@ export default function LandingScreen() {
                   </View>
                 </View>
                 <View style={styles.mockupHero}>
-                  <Text style={styles.mockupHeroTitle}>Find and Book the{'\n'}
-                    <Text style={{ color: Colors.primary[600] }}>Right</Text> Professional
+                  <Text style={styles.mockupHeroTitle}>{t('Encuentra al')}{'\n'}
+                    <Text style={{ color: Colors.primary[600] }}>{t('Mejor')}</Text> {t('Profesionista')}
                   </Text>
-                  <Pressable style={styles.mockupBtn}>
-                    <Text style={styles.mockupBtnText}>Get Started →</Text>
+                  <Pressable onPress={irARegistro} style={({ hovered, pressed }) => [styles.mockupBtn, hovered && { opacity: 0.9 }, pressed && { transform: [{ scale: 0.97 }] }] as any}>
+                    <Text style={styles.mockupBtnText}>{t('Comenzar ahora')} →</Text>
                   </Pressable>
                 </View>
                 <View style={styles.mockupCards}>
@@ -232,21 +276,69 @@ export default function LandingScreen() {
       </View>
 
       {/* ══════════════════════════════════════════
+          PROFESIONALES DESTACADOS
+      ══════════════════════════════════════════ */}
+      <View style={styles.prosSection} onLayout={(e) => setProsY(e.nativeEvent.layout.y - 100)}>
+        <View style={{ alignItems: 'center', paddingHorizontal: Spacing[6] }}>
+          <Text style={styles.sectionEyebrow}>{t('TALENTO VERIFICADO')}</Text>
+          <Text style={styles.sectionTitle}>{t('Encuentra a los Mejores')}</Text>
+          <Text style={styles.sectionSubtitle}>{t('Navega entre cientos de perfiles evaluados y listos para trabajar.')}</Text>
+        </View>
+        
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.prosScroll, CENTER_PROS && { justifyContent: 'center', flexGrow: 1 }]}>
+          {[
+            { name: 'Doctor', icon: 'medkit-outline' as const },
+            { name: 'Abogado', icon: 'briefcase-outline' as const },
+            { name: 'Dentista', icon: 'medical-outline' as const },
+            { name: 'Ingeniero en Sistemas (Hardware)', icon: 'hardware-chip-outline' as const },
+            { name: 'Ingeniero en Sistemas (Software)', icon: 'code-slash-outline' as const },
+            { name: 'Ingeniero Civil', icon: 'business-outline' as const },
+            { name: 'Arquitecto', icon: 'color-palette-outline' as const },
+            { name: 'Otro', icon: 'ellipsis-horizontal-outline' as const }
+          ].map((cat, i) => (
+             <View key={i} style={styles.proCategoryCard}>
+               <Ionicons name={cat.icon} size={32} color={Colors.primary[600]} />
+               <Text style={styles.proCategoryTitle}>{t(cat.name)}</Text>
+               <Pressable onPress={irARegistro} style={styles.proCategoryBtn}>
+                 <Text style={styles.proCategoryBtnText}>{t('Explorar')}</Text>
+               </Pressable>
+             </View>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* ══════════════════════════════════════════
+          FEATURES (Mensajes y Citas)
+      ══════════════════════════════════════════ */}
+      <View style={[styles.featuresSection, IS_MOBILE && { flexDirection: 'column' }]} onLayout={(e) => setFeaturesY(e.nativeEvent.layout.y - 80)}>
+         <View style={styles.featureBlock}>
+            <View style={styles.featureIcon}><Ionicons name="chatbubbles" size={28} color="#fff" /></View>
+            <Text style={styles.featureTitle}>{t('Mensajería Integrada')}</Text>
+            <Text style={styles.featureDesc}>{t('Chatea directamente con los profesionales sin compartir tu número personal hasta que estés listo.')}</Text>
+         </View>
+         <View style={styles.featureBlock}>
+            <View style={styles.featureIcon}><Ionicons name="calendar" size={28} color="#fff" /></View>
+            <Text style={styles.featureTitle}>{t('Citas y Calendarios')}</Text>
+            <Text style={styles.featureDesc}>{t('Sincroniza agendas y realiza videollamadas dentro de nuestra plataforma con un solo clic.')}</Text>
+         </View>
+      </View>
+
+      {/* ══════════════════════════════════════════
           HOW PROFINDER WORKS
       ══════════════════════════════════════════ */}
-      <View style={styles.howSection}>
-        <Text style={styles.sectionEyebrow}>PROCESO SIMPLE</Text>
+      <View style={styles.howSection} onLayout={(e) => setHowItWorksY(e.nativeEvent.layout.y - 100)}>
+        <Text style={styles.sectionEyebrow}>{t('PROCESO SIMPLE')}</Text>
         <Text style={styles.sectionTitle}>
-          How <Text style={styles.sectionTitleAccent}>ProFinder</Text> Works
+          {t('Cómo Funciona')} <Text style={styles.sectionTitleAccent}>ProFinder</Text>
         </Text>
         <Text style={styles.sectionSubtitle}>
-          Three simple steps to connect with high-caliber talent ready to contribute to your success.
+          {t('Tres sencillos pasos para conectar con talento de alto calibre listo para contribuir a tu éxito.')}
         </Text>
         <View style={styles.stepsRow}>
           {[
-            { icon: 'search-outline' as const, step: '01', title: 'Look for professionals', desc: 'Search through our curated marketplace of professionals using advanced filters for skills, experience, and location.', cta: 'Explore Search' },
-            { icon: 'person-circle-outline' as const, step: '02', title: 'Read their profiles', desc: 'Dive deep into verified portfolio, client testimonials, and technical assessment results for every single candidate.', cta: 'View Sample' },
-            { icon: 'calendar-outline' as const, step: '03', title: 'Book an interview', desc: 'Sync with their calendar and book a virtual meeting directly through our platform in just a few clicks.', cta: 'Book Now' },
+            { icon: 'search-outline' as const, step: '01', title: t('Busca profesionales'), desc: t('Navega por nuestro mercado seleccionado de profesionales utilizando filtros avanzados.'), cta: t('Explorar Búsqueda') },
+            { icon: 'person-circle-outline' as const, step: '02', title: t('Lee sus perfiles'), desc: t('Analiza a fondo el portafolio verificado y las reseñas de clientes para cada candidato.'), cta: t('Ver Muestra') },
+            { icon: 'calendar-outline' as const, step: '03', title: t('Agenda una cita'), desc: t('Sincroniza con su calendario y programa una reunión virtual directamente desde nuestra plataforma.'), cta: t('Agendar Ahora') },
           ].map((s, i) => (
             <View key={i} style={[styles.stepCard, IS_MOBILE && styles.stepCardMobile]}>
               <View style={styles.stepIconWrap}>
@@ -255,7 +347,7 @@ export default function LandingScreen() {
               <Text style={styles.stepNumber}>{s.step}</Text>
               <Text style={styles.stepTitle}>{s.title}</Text>
               <Text style={styles.stepDesc}>{s.desc}</Text>
-              <Pressable style={styles.stepCta}>
+              <Pressable onPress={irARegistro} style={({ hovered, pressed }) => [styles.stepCta, hovered && { opacity: 0.7 }, pressed && { transform: [{ scale: 0.97 }] }] as any}>
                 <Text style={styles.stepCtaText}>{s.cta}</Text>
                 <Ionicons name="arrow-forward-outline" size={13} color={Colors.primary[600]} />
               </Pressable>
@@ -268,18 +360,42 @@ export default function LandingScreen() {
           CTA BANNER
       ══════════════════════════════════════════ */}
       <View style={styles.ctaBanner}>
-        <Text style={styles.ctaTitle}>Ready to hire your next superstar?</Text>
+        <Text style={styles.ctaTitle}>{t('¿Listo para contratar a tu próxima estrella?')}</Text>
         <Text style={styles.ctaSubtitle}>
-          Join thousands of companies already finding talent through ProFinder.
+          {t('Únete a la nueva era del talento y empieza a crecer hoy mismo con ProFinder.')}
         </Text>
         <View style={styles.ctaButtons}>
-          <Pressable onPress={irARegistro} style={styles.ctaBtnWhite}>
-            <Text style={styles.ctaBtnWhiteText}>Start Hiring</Text>
+          <Pressable onPress={irARegistro} style={({ hovered, pressed }) => [styles.ctaBtnWhite, hovered && { opacity: 0.9 }, pressed && { transform: [{ scale: 0.97 }] }] as any}>
+            <Text style={styles.ctaBtnWhiteText}>{t('Comenzar ahora')}</Text>
           </Pressable>
-          <Pressable style={styles.ctaBtnOutline}>
-            <Text style={styles.ctaBtnOutlineText}>Browse Talent</Text>
+          <Pressable onPress={() => scrollRef.current?.scrollTo({ y: prosY, animated: true })} style={({ hovered, pressed }) => [styles.ctaBtnOutline, hovered && { backgroundColor: 'rgba(255,255,255,0.1)' }, pressed && { transform: [{ scale: 0.97 }] }] as any}>
+            <Text style={styles.ctaBtnOutlineText}>{t('Ver perfiles')}</Text>
           </Pressable>
         </View>
+      </View>
+
+      {/* ══════════════════════════════════════════
+          INFORMACIÓN CORPORATIVA Y LEGAL
+      ══════════════════════════════════════════ */}
+      <View style={styles.infoSection} onLayout={(e) => setInfoY(e.nativeEvent.layout.y - 80)}>
+         <View style={styles.infoGrid}>
+            <View style={styles.infoCol}>
+               <Text style={styles.infoTitle}>{t('Privacidad')}</Text>
+               <Text style={styles.infoText}>{t('Nos tomamos tu privacidad muy en serio. No compartiremos tus datos con terceros sin tu permiso explícito y protegemos toda tu información bajo estándares de seguridad.')}</Text>
+            </View>
+            <View style={styles.infoCol}>
+               <Text style={styles.infoTitle}>{t('Términos')}</Text>
+               <Text style={styles.infoText}>{t('Al usar ProFinder aceptas no subir contenido inapropiado, comportarte de manera profesional y respetar los acuerdos de trabajo de nuestra plataforma.')}</Text>
+            </View>
+            <View style={styles.infoCol}>
+               <Text style={styles.infoTitle}>{t('Soporte y Prensa')}</Text>
+               <Text style={styles.infoText}>{t('Si tienes problemas con la plataforma contáctanos. Para consultas de prensa, envía tus solicitudes a través de nuestras redes sociales o chat directo.')}</Text>
+            </View>
+            <View style={styles.infoCol}>
+               <Text style={styles.infoTitle}>{t('Carreras')}</Text>
+               <Text style={styles.infoText}>{t('Estamos en constante crecimiento. Mantente atento a nuestras redes para unirte a nuestro equipo global como desarrollador o diseñador.')}</Text>
+            </View>
+         </View>
       </View>
 
       {/* ══════════════════════════════════════════
@@ -288,21 +404,22 @@ export default function LandingScreen() {
       <View style={styles.footer}>
         <View style={styles.footerLeft}>
           <Text style={styles.footerLogo}>ProFinder</Text>
-          <Text style={styles.footerTagline}>Connecting visionaries with experts.</Text>
-          <Text style={styles.footerCopy}>© 2024 ProFinder. All rights reserved.</Text>
+          <Text style={styles.footerTagline}>{t('Conectando visionarios con expertos.')}</Text>
+          <Text style={styles.footerCopy}>© 2026 ProFinder. {t('Todos los derechos reservados.')}</Text>
         </View>
         <View style={styles.footerLinks}>
-          {['Privacy', 'Terms', 'Support', 'Careers', 'Press'].map(l => (
-            <Pressable key={l}><Text style={styles.footerLink}>{l}</Text></Pressable>
-          ))}
+          <Pressable onPress={() => scrollRef.current?.scrollTo({ y: infoY, animated: true })}><Text style={styles.footerLink}>{t('Privacidad')}</Text></Pressable>
+          <Pressable onPress={() => scrollRef.current?.scrollTo({ y: infoY, animated: true })}><Text style={styles.footerLink}>{t('Términos')}</Text></Pressable>
+          <Pressable onPress={() => scrollRef.current?.scrollTo({ y: infoY, animated: true })}><Text style={styles.footerLink}>{t('Soporte')}</Text></Pressable>
+          <Pressable onPress={() => scrollRef.current?.scrollTo({ y: infoY, animated: true })}><Text style={styles.footerLink}>{t('Carreras')}</Text></Pressable>
+          <Pressable onPress={() => scrollRef.current?.scrollTo({ y: infoY, animated: true })}><Text style={styles.footerLink}>{t('Prensa')}</Text></Pressable>
         </View>
       </View>
-
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (IS_MOBILE: boolean) => StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background.app },
 
   navbar: {
@@ -332,7 +449,7 @@ const styles = StyleSheet.create({
   heroLeft:       { flex: 1, gap: Spacing[5] },
   heroLeftMobile: { alignItems: 'center' },
   heroBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
+    flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: IS_MOBILE ? 'center' : 'flex-start',
     backgroundColor: Colors.primary[50], borderRadius: Radius.full,
     paddingHorizontal: 12, paddingVertical: 5,
     borderWidth: 1, borderColor: Colors.primary[200],
@@ -346,10 +463,10 @@ const styles = StyleSheet.create({
   heroBtnPrimaryText: { ...Typography.styles.btnLg, color: '#fff' },
   heroBtnGhost:     { paddingHorizontal: 22, paddingVertical: 13, borderRadius: Radius.button, borderWidth: 1.5, borderColor: Colors.border.default },
   heroBtnGhostText: { ...Typography.styles.btnLg, color: Colors.text.primary },
-  socialProof:      { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  socialProof:      { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'center', maxWidth: '100%' },
   avatarStack:      { flexDirection: 'row' },
   avatarCircle:     { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
-  socialProofText:  { ...Typography.styles.bodySm, color: Colors.text.secondary },
+  socialProofText:  { ...Typography.styles.bodySm, color: Colors.text.secondary, textAlign: 'center', flexShrink: 1 },
 
   heroRight:       { flex: 1, alignItems: 'center' },
   mockupFrame:     { width: '100%', maxWidth: 420, backgroundColor: Colors.background.card, borderRadius: Radius.xl, overflow: 'hidden', ...Shadow.lg, borderWidth: 1, borderColor: Colors.border.default },
@@ -373,6 +490,19 @@ const styles = StyleSheet.create({
   mockupCardRole:  { ...Typography.styles.caption, color: Colors.text.secondary },
   mockupCardRating:{ ...Typography.styles.label, color: Colors.primary[600], fontSize: 11 },
 
+  prosSection:       { paddingVertical: Spacing[10], backgroundColor: '#fff', width: '100%' },
+  prosScroll:        { gap: Spacing[4], marginTop: Spacing[6], paddingHorizontal: Spacing[6] },
+  proCategoryCard:   { width: 140, padding: 16, borderRadius: Radius.card, backgroundColor: Colors.primary[50], alignItems: 'center', gap: 12, borderWidth: 1, borderColor: Colors.primary[100] },
+  proCategoryTitle:  { ...Typography.styles.label, color: Colors.text.primary, textAlign: 'center' },
+  proCategoryBtn:    { backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: Radius.button, borderWidth: 1, borderColor: Colors.border.default },
+  proCategoryBtnText:{ ...Typography.styles.caption, color: Colors.primary[600], fontWeight: '600' },
+
+  featuresSection:   { flexDirection: 'row', gap: Spacing[8], paddingHorizontal: Spacing[6], paddingVertical: Spacing[12], backgroundColor: Colors.primary[700], alignItems: 'center', justifyContent: 'center' },
+  featureBlock:      { flex: 1, alignItems: 'center', gap: Spacing[3], maxWidth: 400 },
+  featureIcon:       { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+  featureTitle:      { ...Typography.styles.h4, color: '#fff', textAlign: 'center' },
+  featureDesc:       { ...Typography.styles.body, color: Colors.primary[100], textAlign: 'center', lineHeight: 22 },
+
   howSection:        { paddingHorizontal: Spacing[6], paddingVertical: Spacing[12], alignItems: 'center', backgroundColor: Colors.background.card },
   sectionEyebrow:    { ...Typography.styles.overline, color: Colors.primary[600], marginBottom: Spacing[2] },
   sectionTitle:      { ...Typography.styles.h2, color: Colors.text.primary, textAlign: 'center', marginBottom: Spacing[3] },
@@ -391,13 +521,19 @@ const styles = StyleSheet.create({
   ctaBanner:         { margin: Spacing[6], borderRadius: Radius['2xl'], backgroundColor: Colors.primary[600], padding: Spacing[10], alignItems: 'center', gap: Spacing[4], ...Shadow.brand },
   ctaTitle:          { ...Typography.styles.h2, color: '#fff', textAlign: 'center' },
   ctaSubtitle:       { ...Typography.styles.bodyLg, color: Colors.primary[200], textAlign: 'center', maxWidth: 460 },
-  ctaButtons:        { flexDirection: 'row', gap: Spacing[3], marginTop: Spacing[2] },
-  ctaBtnWhite:       { backgroundColor: '#fff', paddingHorizontal: 22, paddingVertical: 13, borderRadius: Radius.button },
+  ctaButtons:        { flexDirection: IS_MOBILE ? 'column' : 'row', gap: Spacing[3], marginTop: Spacing[2], width: IS_MOBILE ? '100%' : 'auto' },
+  ctaBtnWhite:       { backgroundColor: '#fff', paddingHorizontal: 22, paddingVertical: 13, borderRadius: Radius.button, width: IS_MOBILE ? '100%' : 'auto', alignItems: 'center' },
   ctaBtnWhiteText:   { ...Typography.styles.btnLg, color: Colors.primary[600] },
-  ctaBtnOutline:     { borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)', paddingHorizontal: 22, paddingVertical: 13, borderRadius: Radius.button },
+  ctaBtnOutline:     { borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)', paddingHorizontal: 22, paddingVertical: 13, borderRadius: Radius.button, width: IS_MOBILE ? '100%' : 'auto', alignItems: 'center' },
   ctaBtnOutlineText: { ...Typography.styles.btnLg, color: '#fff' },
 
-  footer:        { flexDirection: IS_MOBILE ? 'column' : 'row', justifyContent: 'space-between', alignItems: IS_MOBILE ? 'flex-start' : 'center', paddingHorizontal: Spacing[6], paddingVertical: Spacing[6], borderTopWidth: 1, borderTopColor: Colors.border.default, gap: Spacing[4] },
+  infoSection:       { paddingHorizontal: Spacing[6], paddingVertical: Spacing[10], backgroundColor: Colors.background.card, borderTopWidth: 1, borderTopColor: Colors.border.default, width: '100%' },
+  infoGrid:          { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing[6], maxWidth: 1100, width: '100%', alignSelf: 'center' },
+  infoCol:           { flex: 1, minWidth: IS_MOBILE ? '100%' : 220, gap: 8 },
+  infoTitle:         { ...Typography.styles.h6, color: Colors.text.primary },
+  infoText:          { ...Typography.styles.bodySm, color: Colors.text.secondary, lineHeight: 22 },
+
+  footer:        { flexDirection: IS_MOBILE ? 'column' : 'row', justifyContent: 'space-between', alignItems: IS_MOBILE ? 'flex-start' : 'center', paddingHorizontal: Spacing[6], paddingVertical: Spacing[6], borderTopWidth: 1, borderTopColor: Colors.border.default, gap: Spacing[4], backgroundColor: Colors.background.app },
   footerLeft:    { gap: 4 },
   footerLogo:    { ...Typography.styles.h5, color: Colors.text.primary },
   footerTagline: { ...Typography.styles.body, color: Colors.text.secondary },

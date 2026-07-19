@@ -40,6 +40,7 @@ export default function HorariosScreen() {
   const [servicios, setServicios] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [perfilActivo, setPerfilActivo] = useState(true);
   const [mensajeUI, setMensajeUI] = useState<{tipo: 'exito'|'error'|'info', texto: string} | null>(null);
 
   const mostrarMensaje = (tipo: 'exito'|'error'|'info', texto: string) => {
@@ -56,6 +57,12 @@ export default function HorariosScreen() {
       setCargando(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No se encontró sesión activa.');
+
+      // Cargar estado activo
+      const { data: perfil } = await supabase.from('professionals').select('is_active').eq('prof_id', user.id).single();
+      if (perfil) {
+        setPerfilActivo(perfil.is_active !== false);
+      }
 
       // Cargar servicios
       const { data: servs, error: errServs } = await supabase
@@ -167,6 +174,44 @@ export default function HorariosScreen() {
       nuevaLista[index] = { ...nuevaLista[index], [campo]: valor };
       return { ...prev, [dia]: nuevaLista };
     });
+  };
+
+  const confirmToggleVacaciones = () => {
+    const titulo = perfilActivo ? '¿Ocultar Perfil?' : '¿Restaurar Visibilidad de Perfil?';
+    const mensaje = perfilActivo 
+      ? 'Al confirmar, tu perfil dejará de aparecer en las búsquedas para nuevos clientes. Ten en cuenta que tus citas previamente agendadas y los chats en curso seguirán operando con normalidad. ¿Deseas continuar?'
+      : 'Al confirmar, tu perfil volverá a estar visible y disponible en las búsquedas de la plataforma. ¿Deseas continuar?';
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(`${titulo}\n\n${mensaje}`)) {
+        ejecutarToggleVacaciones();
+      }
+    } else {
+      Alert.alert(titulo, mensaje, [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sí, continuar', onPress: ejecutarToggleVacaciones, style: 'destructive' }
+      ]);
+    }
+  };
+
+  const ejecutarToggleVacaciones = async () => {
+    try {
+      setCargando(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const nuevoEstado = !perfilActivo;
+      
+      const { error } = await supabase.from('professionals').update({ is_active: nuevoEstado }).eq('prof_id', user.id);
+      if (error) throw error;
+      
+      setPerfilActivo(nuevoEstado);
+      mostrarMensaje('exito', nuevoEstado ? 'Visibilidad restaurada. Tu perfil ahora es público.' : 'Visibilidad pausada. Tu perfil se ha ocultado correctamente.');
+    } catch (e) {
+      console.log('Error al actualizar estado:', e);
+      mostrarMensaje('error', 'No se pudo cambiar el estado.');
+    } finally {
+      setCargando(false);
+    }
   };
 
   const handleGuardar = async () => {
@@ -331,6 +376,26 @@ export default function HorariosScreen() {
 
             </View>
           ))}
+
+          <View style={{ backgroundColor: '#fff', padding: 16, borderRadius: 12, marginTop: 24, marginBottom: 20, borderWidth: 1, borderColor: Colors.border.default, ...Shadow.sm }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              <Ionicons name={perfilActivo ? "eye-outline" : "eye-off-outline"} size={24} color={perfilActivo ? Colors.text.disabled : Colors.warning.main} style={{ marginRight: 8 }} />
+              <Text style={{ ...Typography.styles.h5, color: Colors.text.primary }}>Visibilidad del Perfil</Text>
+            </View>
+            <Text style={{ ...Typography.styles.bodySm, color: Colors.text.secondary, marginBottom: 12 }}>
+              {perfilActivo 
+                ? 'Al ocultar tu perfil, dejarás de aparecer en las búsquedas para nuevos clientes, manteniendo activos tus compromisos previamente agendados.' 
+                : 'Actualmente tu perfil se encuentra oculto. Los clientes nuevos no pueden encontrarte en la plataforma.'}
+            </Text>
+            <TouchableOpacity 
+              style={{ backgroundColor: perfilActivo ? Colors.neutral[200] : Colors.warning.main, paddingVertical: 10, borderRadius: 8, alignItems: 'center' }}
+              onPress={confirmToggleVacaciones}
+            >
+              <Text style={{ color: perfilActivo ? Colors.text.primary : '#fff', fontWeight: 'bold' }}>
+                {perfilActivo ? 'Ocultar Perfil (Pausar Visibilidad)' : 'Mostrar Perfil (Restaurar Visibilidad)'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
 

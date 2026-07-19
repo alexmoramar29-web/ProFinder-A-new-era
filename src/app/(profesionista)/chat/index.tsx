@@ -169,8 +169,8 @@ export default function BandejaChatScreen() {
                       <Text style={styles.convNombre} numberOfLines={1}>{item.nombre}</Text>
                     </View>
                     <View style={{ alignItems: 'flex-end', flexShrink: 1, maxWidth: '60%' }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <Text style={[styles.convUltimo, { textAlign: 'right', marginRight: 0 }]} numberOfLines={1}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
+                        <Text style={[styles.convUltimo, { textAlign: 'right', marginRight: 0, flexShrink: 1 }]} numberOfLines={1} ellipsizeMode="tail">
                           {item.ultimoMensaje}
                         </Text>
                         {item.noLeidos > 0 && (

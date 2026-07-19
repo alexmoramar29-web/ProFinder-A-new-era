@@ -7,6 +7,7 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -48,6 +49,12 @@ export default function SignInScreen() {
         if (Platform.OS === 'web' && window.location.hash.includes('access_token')) {
           return; // Tampoco limpiar si apenas llegó el hash y no se ha leído
         }
+        await supabase.auth.signOut();
+      } else if (Platform.OS !== 'web') {
+        // En móvil el flujo OAuth no recarga la app, por lo que si se monta el componente
+        // significa que el usuario volvió manualmente sin terminar o canceló el flujo
+        await AsyncStorage.removeItem('pending_oauth_portal');
+        await AsyncStorage.removeItem('pending_oauth_provider');
         await supabase.auth.signOut();
       }
     };
@@ -196,12 +203,18 @@ export default function SignInScreen() {
           try { await procesarUsuarioAutenticado(sessionData.user, portal, proveedor); }
           catch (err: any) { setMensaje('Error de sincronización: ' + err.message); setTipoMensaje('error'); setCargando(false); }
         } else {
+           await AsyncStorage.removeItem('pending_oauth_portal');
+           await AsyncStorage.removeItem('pending_oauth_provider');
            setCargando(false);
         }
       } else {
+          await AsyncStorage.removeItem('pending_oauth_portal');
+          await AsyncStorage.removeItem('pending_oauth_provider');
           setCargando(false);
       }
     } catch (error: any) {
+      await AsyncStorage.removeItem('pending_oauth_portal');
+      await AsyncStorage.removeItem('pending_oauth_provider');
       setMensaje('Error: ' + (error.message || `No se pudo iniciar sesión con ${proveedor}`));
       setTipoMensaje('error');
       setCargando(false);
@@ -324,6 +337,7 @@ export default function SignInScreen() {
       end={{ x: 0.9, y: 1 }}
       style={styles.fondo}
     >
+    <StatusBar style="dark" />
     <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
       {/* Botón volver */}
@@ -345,7 +359,6 @@ export default function SignInScreen() {
 
       {/* Card del formulario */}
       <View style={styles.card}>
-        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>{modoRecuperar ? t('recuperaAcceso') : t('bienvenidoDeNuevo', 'Bienvenido de nuevo')}</Text>
         <Text style={styles.subtitle}>{modoRecuperar ? t('ingresaCorreoRecuperar', 'Ingresa tu correo o usuario para recuperar tu cuenta.') : t('iniciaSesion')}</Text>
 
@@ -353,11 +366,11 @@ export default function SignInScreen() {
         <View style={styles.portalSelector}>
           <TouchableOpacity style={[styles.portalTab, esCliente && styles.portalTabActive]} onPress={() => cambiarDePortal('cliente')} disabled={cargando}>
             <Ionicons name="person-outline" size={15} color={esCliente ? '#fff' : Colors.text.secondary} />
-            <Text style={[styles.portalTabTxt, esCliente && styles.portalTabTxtActive]}>{t('soyCliente')}</Text>
+            <Text style={[styles.portalTabTxt, esCliente && styles.portalTabTxtActive]} numberOfLines={1} adjustsFontSizeToFit>{t('soyCliente')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.portalTab, !esCliente && styles.portalTabActive]} onPress={() => cambiarDePortal('profesionista')} disabled={cargando}>
             <Ionicons name="briefcase-outline" size={15} color={!esCliente ? '#fff' : Colors.text.secondary} />
-            <Text style={[styles.portalTabTxt, !esCliente && styles.portalTabTxtActive]}>{t('soyProfesionista')}</Text>
+            <Text style={[styles.portalTabTxt, !esCliente && styles.portalTabTxtActive]} numberOfLines={1} adjustsFontSizeToFit>{t('soyProfesionista')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -456,10 +469,9 @@ export default function SignInScreen() {
             </View>
           </>
         )}
-        </ScrollView>
       </View>
 
-      <Text style={styles.footer}>{t('footerText', '© 2024 ProFinder. Conectando visionarios con expertos.')}</Text>
+      <Text style={styles.footer}>{t('footerText', '© 2026 ProFinder. Conectando visionarios con expertos.')}</Text>
     </ScrollView>
     </LinearGradient>
   );
@@ -482,8 +494,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: Radius.xl,
     padding: Spacing[5],
-    width: 380,
-    height: 520,
+    width: '100%',
+    maxWidth: 380,
     ...Shadow.lg,
     shadowColor: '#4c1d95',
     shadowOpacity: 0.3,
@@ -497,7 +509,7 @@ const styles = StyleSheet.create({
   subtitle: { ...Typography.styles.bodySm, color: Colors.text.secondary, textAlign: 'center', marginBottom: Spacing[4] },
 
   portalSelector:     { flexDirection: 'row', backgroundColor: Colors.neutral[100], borderRadius: Radius.md, padding: 3, gap: 3, marginBottom: Spacing[4] },
-  portalTab:          { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, borderRadius: Radius.sm, gap: 5 },
+  portalTab:          { flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: Radius.sm, gap: 4 },
   portalTabActive:    { backgroundColor: Colors.primary[600], ...Shadow.sm },
   portalTabTxt:       { ...Typography.styles.btn, color: Colors.text.secondary, fontSize: 13 },
   portalTabTxtActive: { color: '#fff' },
