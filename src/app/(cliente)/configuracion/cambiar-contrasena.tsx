@@ -246,7 +246,7 @@ export default function CambiarContrasenaScreen() {
           <ConfirmHcaptcha
             ref={captchaRef}
             siteKey={SITE_KEY}
-            baseUrl="https://hcaptcha.com"
+            baseUrl="https://profinder-a-new-era-1.onrender.com"
             languageCode="es"
             size="invisible"
             onMessage={(event: any) => {

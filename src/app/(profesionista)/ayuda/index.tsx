@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '@/theme/Colors';
+import { useTheme } from '@/context/ThemeContext';
 import { Typography } from '@/theme/Typography';
 import { Radius, Shadow, Spacing } from '@/theme/Spacing';
 import NavbarProfesionista from '@/components/NavbarProfesionista';
@@ -9,6 +10,8 @@ import NavbarProfesionista from '@/components/NavbarProfesionista';
 // 1. Aquí están tus preguntas, ahora separadas por categorías
 export default function AyudaScreen() {
   const { t } = useTranslation();
+  const { isDark, colors } = useTheme();
+  const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const listaPreguntas = [
     { id: 1, categoria: t('Cuenta', 'Cuenta'), pregunta: t('¿Cómo actualizo mi información de perfil?'), respuesta: t('En el menú lateral, selecciona "Perfil" para actualizar tu foto, biografía y demás datos de contacto.') },
@@ -62,7 +65,7 @@ export default function AyudaScreen() {
     : listaPreguntas.filter((item) => item.categoria === categoriaActiva);
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.neutral[50] }}>
+    <View style={{ flex: 1, backgroundColor: colors.background.app }}>
       <NavbarProfesionista />
       <ScrollView contentContainerStyle={styles.scroll} style={styles.contenedorFondo}>
       
@@ -136,37 +139,37 @@ export default function AyudaScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  contenedorFondo: { flex: 1, backgroundColor: Colors.neutral[50] },
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  contenedorFondo: { flex: 1, backgroundColor: colors.background.app },
   scroll: { padding: Spacing[5], paddingBottom: 50 },
   cabecera: { marginBottom: Spacing[5] },
-  tituloSeccion: { ...Typography.styles.h2, fontWeight: '800', color: Colors.primary[700], marginBottom: 5 },
-  subtituloSeccion: { ...Typography.styles.body, color: Colors.text.secondary, lineHeight: 20 },
-  tarjetaSoporte: { backgroundColor: Colors.primary[600], borderRadius: Radius.lg, padding: Spacing[5], marginBottom: Spacing[6], ...Shadow.md },
-  tituloTarjetaSoporte: { color: '#FFFFFF', ...Typography.styles.h4, fontWeight: 'bold', marginBottom: 6 },
-  textoSoporte: { color: Colors.primary[100], ...Typography.styles.body, lineHeight: 20, marginBottom: 15 },
+  tituloSeccion: { ...Typography.styles.h2, fontWeight: '800', color: colors.primary[700], marginBottom: 5 },
+  subtituloSeccion: { ...Typography.styles.body, color: colors.text.secondary, lineHeight: 20 },
+  tarjetaSoporte: { backgroundColor: colors.primary[600], borderRadius: Radius.lg, padding: Spacing[5], marginBottom: Spacing[6], ...Shadow.md },
+  tituloTarjetaSoporte: { color: isDark ? '#fff' : '#FFFFFF', ...Typography.styles.h4, fontWeight: 'bold', marginBottom: 6 },
+  textoSoporte: { color: colors.primary[100], ...Typography.styles.body, lineHeight: 20, marginBottom: 15 },
   
   // Acomodo de los dos botones en fila
   contenedorBotonesContacto: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing[3] },
   botonContacto: { flex: 1, paddingVertical: Spacing[3], borderRadius: Radius.md, alignItems: 'center', ...Shadow.sm },
-  botonWhatsApp: { backgroundColor: '#25D366' },
-  botonCorreo: { backgroundColor: '#FFFFFF' },
-  textoBotonWhatsApp: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 15 },
-  textoBotonCorreo: { color: Colors.primary[600], fontWeight: 'bold', fontSize: 15 },
+  botonWhatsApp: { backgroundColor: isDark ? '#1da851' : '#25D366' },
+  botonCorreo: { backgroundColor: colors.background.card },
+  textoBotonWhatsApp: { color: isDark ? '#fff' : '#FFFFFF', fontWeight: 'bold', fontSize: 15 },
+  textoBotonCorreo: { color: colors.primary[600], fontWeight: 'bold', fontSize: 15 },
   
-  tituloPreguntas: { ...Typography.styles.h5, fontWeight: 'bold', color: Colors.text.primary, marginBottom: 15 },
+  tituloPreguntas: { ...Typography.styles.h5, fontWeight: 'bold', color: colors.text.primary, marginBottom: 15 },
   
   // Estilos de los botones de categoría
   contenedorFiltros: { flexDirection: 'row', marginBottom: Spacing[4], maxHeight: 40 },
-  botonFiltro: { backgroundColor: Colors.neutral[200], paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radius.full, marginRight: 10, justifyContent: 'center' },
-  botonFiltroActivo: { backgroundColor: Colors.primary[600] },
-  textoFiltro: { color: Colors.text.secondary, fontSize: 14, fontWeight: '600' },
-  textoFiltroActivo: { color: '#FFFFFF' },
+  botonFiltro: { backgroundColor: colors.neutral[200], paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radius.full, marginRight: 10, justifyContent: 'center' },
+  botonFiltroActivo: { backgroundColor: colors.primary[600] },
+  textoFiltro: { color: colors.text.secondary, fontSize: 14, fontWeight: '600' },
+  textoFiltroActivo: { color: isDark ? '#fff' : '#FFFFFF' },
   
-  contenedorAcordeon: { backgroundColor: '#FFFFFF', borderRadius: Radius.lg, marginBottom: 12, borderWidth: 1, borderColor: Colors.border.default, overflow: 'hidden', ...Shadow.sm },
-  botonPregunta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Spacing[4], backgroundColor: '#FFFFFF' },
-  textoPregunta: { ...Typography.styles.body, fontWeight: '600', color: Colors.text.primary, flex: 0.9 },
-  flecha: { fontSize: 14, color: Colors.primary[600], fontWeight: 'bold' },
-  contenedorRespuesta: { padding: Spacing[4], paddingTop: 0, backgroundColor: Colors.neutral[50], borderTopWidth: 1, borderTopColor: Colors.neutral[100] },
-  textoRespuesta: { ...Typography.styles.body, color: Colors.text.secondary, lineHeight: 22 }
+  contenedorAcordeon: { backgroundColor: colors.background.card, borderRadius: Radius.lg, marginBottom: 12, borderWidth: 1, borderColor: colors.border.default, overflow: 'hidden', ...Shadow.sm },
+  botonPregunta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Spacing[4], backgroundColor: colors.background.card },
+  textoPregunta: { ...Typography.styles.body, fontWeight: '600', color: colors.text.primary, flex: 0.9 },
+  flecha: { fontSize: 14, color: colors.primary[600], fontWeight: 'bold' },
+  contenedorRespuesta: { padding: Spacing[4], paddingTop: 0, backgroundColor: colors.background.app, borderTopWidth: 1, borderTopColor: colors.border.default },
+  textoRespuesta: { ...Typography.styles.body, color: colors.text.secondary, lineHeight: 22 }
 });

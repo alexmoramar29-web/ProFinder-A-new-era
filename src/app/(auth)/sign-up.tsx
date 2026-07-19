@@ -354,7 +354,7 @@ export default function SignUpScreen() {
 
           {/* hCaptcha Móvil */}
           {Platform.OS !== 'web' && (
-            <ConfirmHcaptcha ref={captchaRef} siteKey={SITE_KEY} baseUrl="https://hcaptcha.com" languageCode="es" size="invisible"
+            <ConfirmHcaptcha ref={captchaRef} siteKey={SITE_KEY} baseUrl="https://profinder-a-new-era-1.onrender.com" languageCode="es" size="invisible"
               onMessage={(event: any) => {
                 if (event && event.nativeEvent.data) {
                   if (['cancel', 'error', 'expired'].includes(event.nativeEvent.data)) { setCargando(false); setMensajeError('Falló la verificación de seguridad. Intenta nuevamente.'); return; }
